@@ -45,11 +45,9 @@ export const FontFamilies = {
 
 export const FontSizes = {
   // Display sizes (largest)
-  display2XL: responsiveSize(72),
-  displayXL: responsiveSize(60),
-  displayLG: responsiveSize(48),
-  displayMD: responsiveSize(36),
-  displaySM: responsiveSize(30),
+  displayXL: responsiveSize(40),
+  displayLG: responsiveSize(36),
+  displayMD: responsiveSize(30),
   
   // Heading sizes
   heading2XL: responsiveSize(24),
@@ -98,19 +96,19 @@ export const Typography = {
   // Display text (largest sizes for hero sections, main titles) - League Spartan
   displayLarge: {
     fontSize: FontSizes.displayXL,
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     lineHeight: FontSizes.displayXL * LineHeights.tight,
   } as TextStyle,
 
   displayMedium: {
     fontSize: FontSizes.displayLG,
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     lineHeight: FontSizes.displayLG * LineHeights.tight,
   } as TextStyle,
 
   displaySmall: {
     fontSize: FontSizes.displayMD,
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     lineHeight: FontSizes.displayMD * LineHeights.tight,
   } as TextStyle,
 
@@ -143,7 +141,7 @@ export const Typography = {
   bodyMedium: {
     fontSize: FontSizes.bodyMD,
     fontFamily: FontFamilies.spartanRegular,
-    lineHeight: FontSizes.bodyMD * LineHeights.relaxed,
+    lineHeight: FontSizes.bodyMD * LineHeights.none,
   } as TextStyle,
 
   bodySmall: {

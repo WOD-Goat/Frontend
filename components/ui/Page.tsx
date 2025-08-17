@@ -3,36 +3,36 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { ReactNode } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
 interface PageProps {
   children: ReactNode;
-  
+
   // Header props
   title?: string;
   subtitle?: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
   headerRight?: ReactNode;
-  
+
   // Layout props
   scrollable?: boolean;
   keyboardAvoiding?: boolean;
   backgroundColor?: string;
   contentPadding?: number;
-  
+
   // Footer props
   footer?: ReactNode;
-  
+
   // Style overrides
   contentStyle?: ViewStyle;
   headerStyle?: ViewStyle;
@@ -53,7 +53,6 @@ export default function Page({
   contentStyle,
   headerStyle,
 }: PageProps) {
-  
   const handleBackPress = () => {
     if (onBackPress) {
       onBackPress();
@@ -63,34 +62,34 @@ export default function Page({
   };
 
   const renderHeader = () => {
-    if (!title && !showBackButton && !headerRight) return null;
+    if (!title && !showBackButton && !headerRight && !subtitle) return null;
 
     return (
       <View style={[styles.header, headerStyle]}>
         <View style={styles.headerTop}>
           {showBackButton && (
-            <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={handleBackPress}
+            >
               <Ionicons name="arrow-back" size={24} color="#000000" />
             </TouchableOpacity>
           )}
-          
-          <View style={styles.headerRightContainer}>
-            {headerRight}
-          </View>
+
+          {title && (
+            <Text style={[styles.headerTitle, Typography.headingMedium]}>
+              {title}
+            </Text>
+          )}
+
+          <View style={styles.headerRightContainer}>{headerRight}</View>
         </View>
-        
-        {(title || subtitle) && (
-          <View style={styles.titleSection}>
-            {title && (
-              <Text style={[styles.title, Typography.headingLarge]}>
-                {title}
-              </Text>
-            )}
-            {subtitle && (
-              <Text style={[styles.subtitle, Typography.bodyMedium]}>
-                {subtitle}
-              </Text>
-            )}
+
+        {subtitle && (
+          <View style={styles.subtitleSection}>
+            <Text style={[styles.subtitle, Typography.bodyMedium]}>
+              {subtitle}
+            </Text>
           </View>
         )}
       </View>
@@ -99,11 +98,13 @@ export default function Page({
 
   const renderContent = () => {
     const contentWithPadding = (
-      <View style={[
-        styles.content, 
-        { paddingHorizontal: contentPadding },
-        contentStyle
-      ]}>
+      <View
+        style={[
+          styles.content,
+          { paddingHorizontal: contentPadding },
+          contentStyle,
+        ]}
+      >
         {children}
       </View>
     );
@@ -128,11 +129,7 @@ export default function Page({
     <View style={[styles.container, { backgroundColor }]}>
       {renderHeader()}
       {renderContent()}
-      {footer && (
-        <View style={styles.footerContainer}>
-          {footer}
-        </View>
-      )}
+      {footer && <View style={styles.footerContainer}>{footer}</View>}
     </View>
   );
 
@@ -166,7 +163,7 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
-  
+
   // Header styles
   header: {
     paddingHorizontal: 24,
@@ -177,14 +174,23 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    minHeight: 40,
   },
   backButton: {
     padding: 8,
     marginLeft: -8, // Align with content padding
   },
+  headerTitle: {
+    flex: 1,
+    color: "#000000",
+    marginLeft: 8,
+  },
   headerRightContainer: {
     alignItems: "center",
+  },
+  subtitleSection: {
+    paddingTop: 8,
+    alignItems: "flex-start",
   },
   titleSection: {
     alignItems: "flex-start",
@@ -196,7 +202,7 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#666666",
   },
-  
+
   // Content styles
   scrollView: {
     flex: 1,
@@ -207,13 +213,11 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  
+
   // Footer styles
   footerContainer: {
     paddingHorizontal: 24,
     paddingBottom: 32,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
+    paddingTop: 8,
   },
 });

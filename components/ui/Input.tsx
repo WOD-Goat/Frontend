@@ -1,3 +1,4 @@
+import { Colors, Typography } from '@/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
@@ -26,24 +27,17 @@ export default function Input({
 
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
-      
+      {label && <Text style={[styles.label, Typography.labelLarge]}>{label}</Text>}
+
       <View style={[
         styles.inputContainer,
         styles[variant],
         isFocused && styles.focused,
         error && styles.error,
       ]}>
-        {leftIcon && (
-          <Ionicons 
-            name={leftIcon} 
-            size={20} 
-            color={error ? '#FF3B30' : isFocused ? '#007AFF' : '#8E8E93'} 
-          />
-        )}
-        
+
         <TextInput
-          style={[styles.input, leftIcon && styles.inputWithLeftIcon]}
+          style={[styles.input, Typography.bodyMedium]}
           placeholder={placeholder}
           placeholderTextColor="#999999"
           onFocus={() => setIsFocused(true)}
@@ -52,10 +46,10 @@ export default function Input({
         />
         
         {rightIcon && (
-          <Ionicons 
-            name={rightIcon} 
-            size={20} 
-            color={error ? '#FF3B30' : isFocused ? '#007AFF' : '#8E8E93'}
+          <Ionicons
+            name={rightIcon}
+            size={20}
+            color={error ? Colors.error[500] : isFocused ? Colors.secondary[500] : '#8E8E93'}
             onPress={onRightIconPress}
           />
         )}
@@ -68,7 +62,7 @@ export default function Input({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   label: {
     fontSize: 16,
@@ -83,6 +77,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     gap: 12,
+    height: 48,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
   },
   
   // Variants
@@ -100,21 +99,12 @@ const styles = StyleSheet.create({
   
   // States
   focused: {
-    borderColor: '#007AFF',
+    borderColor: Colors.secondary[500],
     borderWidth: 2,
   },
   error: {
-    borderColor: '#FF3B30',
+    borderColor: Colors.error[500],
     borderWidth: 1,
-  },
-  
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1C1C1E',
-  },
-  inputWithLeftIcon: {
-    marginLeft: 0,
   },
   errorText: {
     fontSize: 14,
