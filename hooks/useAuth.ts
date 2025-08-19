@@ -1,5 +1,5 @@
 import { authService } from '@/api/services/auth';
-import type { User } from '@/types/api';
+import type { AuthResponse, User } from '@/types/auth';
 import { useState } from 'react';
 
 interface UseAuthReturn {
@@ -20,19 +20,18 @@ export const useAuth = (): UseAuthReturn => {
   const login = async (email: string, password: string): Promise<boolean> => {
     setLoading(true);
     setError(null);
-
     try {
-      const response = await authService.login(email, password);
-      
-      if (response.success && response.data) {
-        setUser(response.data);
+      const response: AuthResponse = await authService.login(email, password);
+
+      if (response.success && response.user) {
+        setUser(response.user);
         return true;
       } else {
-        setError(response.message || 'Login failed');
+        setError(response.message || response.error || 'Login failed');
         return false;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed';
       setError(errorMessage);
       return false;
     } finally {
@@ -46,16 +45,16 @@ export const useAuth = (): UseAuthReturn => {
 
     try {
       const response = await authService.register(userData);
-      
+
       if (response.success && response.data) {
         setUser(response.data);
         return true;
       } else {
-        setError(response.message || 'Registration failed');
+        setError(response.message || response.error || 'Registration failed');
         return false;
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Registration failed';
       setError(errorMessage);
       return false;
     } finally {

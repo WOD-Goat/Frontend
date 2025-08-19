@@ -79,15 +79,25 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    console.log('📱 LoginScreen: handleLogin called');
+    console.log('📱 LoginScreen: Email valid:', isEmailValid, 'Password valid:', isPasswordValid);
+    
     // Only proceed if both fields are already valid
     if (!isEmailValid || !isPasswordValid) {
+      console.log('📱 LoginScreen: Validation failed, not proceeding with login');
       return;
     }
 
+    console.log('📱 LoginScreen: Calling login with:', { email, password: '***' });
     const success = await login(email, password);
+    
+    console.log('📱 LoginScreen: Login result:', success);
+
     if (success) {
+      console.log('📱 LoginScreen: Login successful, navigating to tabs');
       router.replace("/(tabs)");
     } else {
+      console.log('📱 LoginScreen: Login failed, error:', error);
       Alert.alert("Login Failed", error || "Please check your credentials and try again");
     }
   };

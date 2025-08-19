@@ -1,11 +1,6 @@
-const API_BASE_URL = 'https://backend-s3j0.onrender.com';
+import type { ApiResponse } from '@/types/common';
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-}
+const API_BASE_URL = 'https://backend-s3j0.onrender.com';
 
 export class ApiClient {
   private baseURL: string;

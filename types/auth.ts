@@ -1,3 +1,4 @@
+
 // User Types
 
 export enum Gender {
@@ -21,3 +22,11 @@ export interface User {
   token?: string;
 }
 
+// Auth specific response type
+export interface AuthResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  token?: string;
+  user?: User;
+}
