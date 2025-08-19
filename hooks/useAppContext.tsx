@@ -1,5 +1,8 @@
 import { useAuth } from '@/hooks/useAuth';
+import * as SecureStore from 'expo-secure-store';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+
+const ONBOARDING_KEY = 'onboarding_complete';
 
 interface AppContextType {
   isOnboardingComplete: boolean;
@@ -17,19 +20,44 @@ interface AppProviderProps {
 export function AppProvider({ children }: AppProviderProps) {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isInitialized } = useAuth();
 
+  // Load onboarding status from storage
   useEffect(() => {
-    // Simulate loading check
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
+    const loadOnboardingStatus = async () => {
+      try {
+        const status = await SecureStore.getItemAsync(ONBOARDING_KEY);
+        if (status === 'true') {
+          setIsOnboardingComplete(true);
+        }
+      } catch (error) {
+        console.error('Failed to load onboarding status:', error);
+      }
+    };
+
+    loadOnboardingStatus();
   }, []);
 
-  const completeOnboarding = () => {
-    setIsOnboardingComplete(true);
+  useEffect(() => {
+    // Wait for auth initialization and onboarding status load
+    if (isInitialized) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 500); // Reduced time since auth is already initialized
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isInitialized]);
+
+  const completeOnboarding = async () => {
+    try {
+      await SecureStore.setItemAsync(ONBOARDING_KEY, 'true');
+      setIsOnboardingComplete(true);
+    } catch (error) {
+      console.error('Failed to save onboarding status:', error);
+      // Still set local state even if storage fails
+      setIsOnboardingComplete(true);
+    }
   };
 
   return (

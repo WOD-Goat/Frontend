@@ -1,21 +1,9 @@
-import { Gender } from '@/types/auth';
+import { RegisterUserData } from '@/types/auth';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
-interface SignupData {
-  email: string;
-  password: string;
-  fullName: string;
-  nickname: string;
-  mobileNumber: string;
-  gender: Gender;
-  age: number;
-  weight: number;
-  height: number;
-}
-
 interface SignupContextType {
-  signupData: Partial<SignupData>;
-  updateSignupData: (data: Partial<SignupData>) => void;
+  signupData: Partial<RegisterUserData>;
+  updateSignupData: (data: Partial<RegisterUserData>) => void;
   clearSignupData: () => void;
 }
 
@@ -26,9 +14,9 @@ interface SignupProviderProps {
 }
 
 export function SignupProvider({ children }: SignupProviderProps) {
-  const [signupData, setSignupData] = useState<Partial<SignupData>>({});
+  const [signupData, setSignupData] = useState<Partial<RegisterUserData>>({});
 
-  const updateSignupData = (data: Partial<SignupData>) => {
+  const updateSignupData = (data: Partial<RegisterUserData>) => {
     setSignupData(prev => ({ ...prev, ...data }));
     console.log('📝 SignupData updated:', { ...signupData, ...data });
   };
