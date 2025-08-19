@@ -1,5 +1,7 @@
 import { Button, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
+import { useSignupContext } from "@/hooks";
+import { Gender } from "@/types";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -12,19 +14,20 @@ import {
 
 const { width: screenWidth } = Dimensions.get("window");
 
-type Gender = "male" | "female" | null;
 export default function GenderSelectionScreen() {
-  const [selectedGender, setSelectedGender] = useState<Gender>(null);
+  const { signupData, updateSignupData } = useSignupContext();
+  const [selectedGender, setSelectedGender] = useState<Gender | null>(signupData.gender || null);
 
   const handleContinue = () => {
     if (selectedGender) {
+      updateSignupData({ gender: selectedGender });
       console.log("Selected gender:", selectedGender);
       router.push("./age");
     }
   };
 
   const renderGenderOption = (
-    gender: "male" | "female",
+    gender: Gender,
     symbol: string,
     label: string
   ) => {
@@ -77,8 +80,8 @@ export default function GenderSelectionScreen() {
 
         {/* Gender Options */}
         <View style={styles.optionsContainer}>
-          {renderGenderOption("male", "♂", "Male")}
-          {renderGenderOption("female", "♀", "Female")}
+          {renderGenderOption(Gender.MALE, "♂", "Male")}
+          {renderGenderOption(Gender.FEMALE, "♀", "Female")}
         </View>
       </View>
     </Page>

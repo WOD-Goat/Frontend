@@ -1,5 +1,6 @@
 import { Button, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
+import { useSignupContext } from "@/hooks";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
@@ -8,13 +9,15 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_WIDTH = 60;
 
 export default function AgeSelectionScreen() {
-  const [selectedAge, setSelectedAge] = useState(22);
+  const { signupData, updateSignupData } = useSignupContext();
+  const [selectedAge, setSelectedAge] = useState(signupData.age || 22);
   const flatListRef = useRef<FlatList>(null);
 
   // Generate ages from 16 to 80 (no intermediate marks needed)
   const ages = Array.from({ length: 65 }, (_, i) => i + 16);
 
   const handleContinue = () => {
+    updateSignupData({ age: selectedAge });
     console.log("Selected age:", selectedAge);
     router.push("./weight");
   };

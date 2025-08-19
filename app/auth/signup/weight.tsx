@@ -1,5 +1,6 @@
 import { Button, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
+import { useSignupContext } from "@/hooks";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
@@ -9,7 +10,8 @@ const ITEM_WIDTH = 25;
 const ITEM_HEIGHT = 100;
 
 export default function WeightSelectionScreen() {
-  const [selectedWeight, setSelectedWeight] = useState(80);
+  const { signupData, updateSignupData } = useSignupContext();
+  const [selectedWeight, setSelectedWeight] = useState(signupData.weight || 80);
   const flatListRef = useRef<FlatList>(null);
 
   // Generate weights from 40 to 150 kg with intermediate marks
@@ -30,6 +32,7 @@ export default function WeightSelectionScreen() {
   const mainWeights = Array.from({ length: 111 }, (_, i) => i + 40);
 
   const handleContinue = () => {
+    updateSignupData({ weight: selectedWeight });
     console.log("Selected weight:", selectedWeight);
     router.push("./height");
   };
