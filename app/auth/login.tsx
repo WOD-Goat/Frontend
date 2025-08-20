@@ -70,6 +70,7 @@ export default function LoginScreen() {
             onPress={handleLogin}
             variant="secondary"
             size="large"
+            disabled={!email || !password}
           />
 
           {/* Forgot Password Link */}

@@ -1,4 +1,4 @@
-import { Colors, Typography } from '@/constants';
+import { Colors, responsiveSize, Typography } from '@/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
@@ -74,10 +74,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
     borderRadius: 12,
     gap: 12,
-    height: 48,
+    height: responsiveSize(48),
   },
   input: {
     flex: 1,

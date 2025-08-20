@@ -5,7 +5,6 @@ import { ReactNode } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -13,6 +12,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 interface PageProps {
   children: ReactNode;
@@ -167,8 +167,7 @@ const styles = StyleSheet.create({
   // Header styles
   header: {
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 20,
+    paddingTop: 10,
   },
   headerTop: {
     flexDirection: "row",

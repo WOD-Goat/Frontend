@@ -21,11 +21,11 @@ export default function SignupScreen() {
     // Validate form data here
     console.log("Form data:", formData);
     // Navigate to gender selection
-    router.push("./signup/gender");
+    router.push("./gender");
   };
 
   const handleLogin = () => {
-    router.push("/auth/login");
+    router.back();
   };
 
   const renderFooter = () => (
@@ -35,11 +35,18 @@ export default function SignupScreen() {
       variant="secondary"
       size="large"
       fullWidth
+      disabled={
+        !formData.fullName ||
+        !formData.nickname ||
+        !formData.email ||
+        !formData.mobileNumber ||
+        !formData.password
+      }
     />
   );
 
   return (
-    <Page title="Sign Up" footer={renderFooter()}>
+    <Page footer={renderFooter()}>
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
@@ -146,6 +153,7 @@ const styles = StyleSheet.create({
   formSection: {
     flex: 1,
     justifyContent: "flex-start",
+    marginBottom: 24,
   },
   inputGroup: {
     marginBottom: 10,

@@ -14,7 +14,7 @@ const heightMultiplier = screenHeight / baseHeight;
 const fontMultiplier = Math.min(widthMultiplier, heightMultiplier);
 
 // Responsive font size function
-const responsiveSize = (size: number): number => {
+export const responsiveSize = (size: number): number => {
   return Math.round(size * fontMultiplier);
 };
 
