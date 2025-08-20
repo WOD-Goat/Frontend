@@ -35,10 +35,6 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
-
 export interface RefreshTokenResponse {
   success: boolean;
   message: string;

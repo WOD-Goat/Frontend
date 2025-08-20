@@ -3,8 +3,6 @@ import { API_ENDPOINTS } from '@/api/endpoints';
 import type {
   AuthResponse,
   LogoutResponse,
-  RefreshTokenRequest,
-  RefreshTokenResponse,
   RegisterUserData
 } from '@/types/auth';
 
@@ -41,7 +39,7 @@ export const authService = {
         API_ENDPOINTS.AUTH.LOGIN, 
         { email, password }
       );
-      
+      console.log('🔄 API Client: Response data:', response);
       console.log('🔐 AuthService: Login response:', response);
       
       // The response IS the auth response, not wrapped in ApiResponse
@@ -58,44 +56,6 @@ export const authService = {
       return authResponse;
     } catch (error) {
       console.error('🔐 AuthService: Login error:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Refresh access token
-   */
-  refreshToken: async (): Promise<RefreshTokenResponse> => {
-    console.log('🔐 AuthService: Refresh token attempt');
-    
-    const refreshToken = apiClient.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    try {
-      const requestData: RefreshTokenRequest = { refreshToken };
-      
-      const response = await apiClient.post<RefreshTokenResponse>(
-        API_ENDPOINTS.AUTH.REFRESH_TOKEN,
-        requestData
-      );
-      
-      console.log('🔐 AuthService: Refresh token response:', response);
-      
-      const refreshResponse = response as unknown as RefreshTokenResponse;
-      
-      // Update access token if refresh is successful
-      if (refreshResponse.success && refreshResponse.accessToken) {
-        console.log('🔐 AuthService: Setting new access token from refresh');
-        await apiClient.setAccessToken(refreshResponse.accessToken);
-      }
-      
-      return refreshResponse;
-    } catch (error) {
-      console.error('🔐 AuthService: Refresh token error:', error);
-      // Clear tokens on refresh failure
-      await apiClient.clearTokens();
       throw error;
     }
   },
@@ -131,42 +91,15 @@ export const authService = {
   },
 
   /**
-   * Clear stored tokens (local logout)
-   */
-  clearSession: async () => {
-    console.log('🔐 AuthService: Clearing session');
-    await apiClient.clearTokens();
-  },
-
-  /**
-   * Get current access token
-   */
-  getAccessToken: () => {
-    const token = apiClient.getAccessToken();
-    console.log('🔐 AuthService: Current access token:', token ? 'exists' : 'null');
-    return token;
-  },
-
-  /**
-   * Get current refresh token
-   */
-  getRefreshToken: () => {
-    const token = apiClient.getRefreshToken();
-    console.log('🔐 AuthService: Current refresh token:', token ? 'exists' : 'null');
-    return token;
-  },
-
-  /**
-   * Initialize auth service (wait for token loading)
-   */
-  initialize: async () => {
-    await apiClient.waitForInitialization();
-  },
-
-  /**
    * Check if user is authenticated
    */
   isAuthenticated: () => {
-    return !!apiClient.getAccessToken();
+    const accessToken = apiClient.getAccessToken();
+    const refreshToken = apiClient.getRefreshToken();
+    // If no tokens exist, definitely not authenticated
+    if (!accessToken || !refreshToken) {
+      return false;
+    }
+    return true;
   },
 };

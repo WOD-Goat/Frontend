@@ -1,4 +1,3 @@
-import { useAuth } from '@/hooks/useAuth';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
@@ -6,8 +5,6 @@ const ONBOARDING_KEY = 'onboarding_complete';
 
 interface AppContextType {
   isOnboardingComplete: boolean;
-  isAuthenticated: boolean;
-  isLoading: boolean;
   completeOnboarding: () => void;
 }
 
@@ -19,8 +16,6 @@ interface AppProviderProps {
 
 export function AppProvider({ children }: AppProviderProps) {
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated, isInitialized } = useAuth();
 
   // Load onboarding status from storage
   useEffect(() => {
@@ -38,16 +33,7 @@ export function AppProvider({ children }: AppProviderProps) {
     loadOnboardingStatus();
   }, []);
 
-  useEffect(() => {
-    // Wait for auth initialization and onboarding status load
-    if (isInitialized) {
-      const timer = setTimeout(() => {
-        setIsLoading(false);
-      }, 500); // Reduced time since auth is already initialized
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isInitialized]);
+  
 
   const completeOnboarding = async () => {
     try {
@@ -64,8 +50,6 @@ export function AppProvider({ children }: AppProviderProps) {
     <AppContext.Provider
       value={{
         isOnboardingComplete,
-        isAuthenticated,
-        isLoading,
         completeOnboarding,
       }}
     >

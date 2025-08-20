@@ -86,7 +86,9 @@ export class ApiClient {
     this.refreshToken = null;
   }
 
-  private async refreshAccessToken(): Promise<boolean> {
+  
+
+  async refreshAccessToken(): Promise<boolean> {
     if (!this.refreshToken) {
       return false;
     }
@@ -102,6 +104,13 @@ export class ApiClient {
       });
 
       if (!response.ok) {
+        // Check if this is a 401 
+        if (response.status === 401 || this.refreshToken === null) {
+          console.log('⚠️ Session expired, please log in again');
+          await this.clearTokens();
+          const { router } = await import('expo-router');
+          router.push('/auth/login');
+        }
         await this.clearTokens();
         return false;
       }
@@ -110,6 +119,7 @@ export class ApiClient {
       
       if (data.success && data.accessToken) {
         await this.setAccessToken(data.accessToken);
+        console.log('✅ Access token refreshed successfully');
         return true;
       }
       
@@ -150,16 +160,21 @@ export class ApiClient {
     try {
       return await makeRequest();
     } catch (error) {
-      // If we get a 401 and this isn't a refresh token request, try refreshing
+      // If we get a 401 or invalid token error and this isn't a refresh token request, try refreshing
       if (error instanceof Error && 
-          error.message.includes('401') && 
+          (error.message.includes('401') || error.message.toLowerCase().includes('invalid token')) &&
           !endpoint.includes('refresh-token') && 
           this.refreshToken) {
         
+        console.log('🔄 API Client: Detected token error, attempting refresh...');
         const refreshed = await this.refreshAccessToken();
         if (refreshed) {
+          console.log('🔄 API Client: Token refreshed, retrying original request...');
           // Retry the original request with the new token
           return await makeRequest();
+        } else {
+          console.log('🔄 API Client: Token refresh failed, tokens cleared');
+          // Redirect is already handled in refreshAccessToken()
         }
       }
       
