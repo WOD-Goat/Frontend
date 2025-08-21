@@ -2,13 +2,15 @@ import { useFonts } from 'expo-font';
 import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { preloadImages } from '../utils/imagePreloader';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [imagesLoaded, setImagesLoaded] = useState(false);
   const [loaded, error] = useFonts({
     // League Spartan fonts
     'LeagueSpartan-Thin': require('../assets/fonts/League_Spartan/static/LeagueSpartan-Thin.ttf'),
@@ -33,13 +35,22 @@ export default function RootLayout() {
     'Poppins-Black': require('../assets/fonts/Poppins (1)/Poppins-Black.ttf'),
   });
 
+  // Preload images when component mounts
   useEffect(() => {
-    if (loaded || error) {
+    const loadImages = async () => {
+      await preloadImages();
+      setImagesLoaded(true);
+    };
+    loadImages();
+  }, []);
+
+  useEffect(() => {
+    if ((loaded || error) && imagesLoaded) {
       SplashScreen.hideAsync();
     }
-  }, [loaded, error]);
+  }, [loaded, error, imagesLoaded]);
 
-  if (!loaded && !error) {
+  if ((!loaded && !error) || !imagesLoaded) {
     return null;
   }
 

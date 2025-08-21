@@ -165,8 +165,8 @@ export const Typography = {
 
   labelSmall: {
     fontSize: FontSizes.labelSM,
-    fontFamily: FontFamilies.spartanMedium,
-    lineHeight: FontSizes.labelSM * LineHeights.normal,
+    fontFamily: FontFamilies.spartanSemiBold,
+    lineHeight: FontSizes.labelSM * LineHeights.tight,
   } as TextStyle,
 
   // Special text styles
