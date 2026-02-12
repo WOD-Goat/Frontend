@@ -1,10 +1,17 @@
 import { Button, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
 import { useAuth, useSignupContext } from "@/hooks";
-import { User } from "@/types";
+import { RegisterUserData, User } from "@/types";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Alert, Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_HEIGHT = 20;
@@ -13,7 +20,9 @@ const ITEM_WIDTH = 100;
 export default function HeightSelectionScreen() {
   const { signupData, updateSignupData } = useSignupContext();
   const { register } = useAuth();
-  const [selectedHeight, setSelectedHeight] = useState(signupData.height || 180);
+  const [selectedHeight, setSelectedHeight] = useState(
+    signupData.height || 180,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
@@ -39,41 +48,27 @@ export default function HeightSelectionScreen() {
       setIsLoading(true);
       // Update signup data with final height
       updateSignupData({ height: selectedHeight });
-      
+
       // Get complete signup data
       const completeSignupData = { ...signupData, height: selectedHeight };
       console.log("Complete signup data:", completeSignupData);
-      
-      // Validate all required fields are present
-      if (!completeSignupData.email || 
-          !completeSignupData.password || 
-          !completeSignupData.fullName || 
-          !completeSignupData.nickname || 
-          !completeSignupData.mobileNumber || 
-          !completeSignupData.gender ||
-          !completeSignupData.age ||
-          !completeSignupData.weight ||
-          !completeSignupData.height) {
-        Alert.alert("Error", "Please complete all signup steps");
-        return;
-      }
-      
+
       // Create User object with all required fields
-      const userData: User = {
-        email: completeSignupData.email,
-        password: completeSignupData.password,
-        fullName: completeSignupData.fullName,
-        nickname: completeSignupData.nickname,
-        mobileNumber: completeSignupData.mobileNumber,
-        gender: completeSignupData.gender,
-        age: completeSignupData.age,
-        weight: completeSignupData.weight,
-        height: completeSignupData.height,
+      const userData: RegisterUserData = {
+        email: completeSignupData.email!,
+        password: completeSignupData.password!,
+        fullName: completeSignupData.fullName!,
+        nickname: completeSignupData.nickname!,
+        mobileNumber: completeSignupData.mobileNumber!,
+        gender: completeSignupData.gender!,
+        age: completeSignupData.age!,
+        weight: completeSignupData.weight!,
+        height: completeSignupData.height!,
       };
-      
+
       // Call register function
       const success = await register(userData);
-      
+
       if (success) {
         console.log("Registration completed successfully!");
         router.replace("/(tabs)");
@@ -143,7 +138,18 @@ export default function HeightSelectionScreen() {
             variant="secondary"
             size="large"
             fullWidth
-            disabled={isLoading}
+            disabled={
+              isLoading ||
+              !signupData.email ||
+              !signupData.password ||
+              !signupData.fullName ||
+              !signupData.nickname ||
+              !signupData.mobileNumber ||
+              !signupData.gender ||
+              !signupData.age ||
+              !signupData.weight ||
+              !selectedHeight
+            }
           />
         </View>
       }
