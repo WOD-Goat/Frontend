@@ -23,9 +23,7 @@ export default function HomeScreen() {
       <HeaderSection
         userName={userName.charAt(0).toUpperCase() + userName.slice(1)}
       />
-      <BannerCarousel />
-      <ServicesSection />
-      <SubscriptionOffers />
+      
     </Page>
   );
 }

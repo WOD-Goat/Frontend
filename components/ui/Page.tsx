@@ -1,4 +1,4 @@
-import { Typography } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { ReactNode } from "react";
@@ -47,7 +47,7 @@ export default function Page({
   headerRight,
   scrollable = true,
   keyboardAvoiding = true,
-  backgroundColor = "#FFFFFF",
+  backgroundColor = Colors.background.primary,
   contentPadding = 24,
   footer,
   contentStyle,

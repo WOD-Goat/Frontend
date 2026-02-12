@@ -1,4 +1,5 @@
 import { banners } from '@/assets/images';
+import { Colors } from '@/constants';
 import React, { useState } from 'react';
 import {
   Dimensions,
@@ -156,11 +157,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 3,
   },
   activeDot: {
-    backgroundColor: '#FFD700',
+    backgroundColor: Colors.primary[500],
     width: 20,
   },
   inactiveDot: {
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#A6A6A6',
   },
 });
 

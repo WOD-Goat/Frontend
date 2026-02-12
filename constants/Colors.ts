@@ -2,16 +2,16 @@
 export const Colors = {
   // Primary Colors (Yellow/Gold)
   primary: {
-    50: "#FFFEF0",
-    100: "#FFFDE1",
-    200: "#FFFBC3",
-    300: "#FFF8A4",
-    400: "#FAF437",
-    500: "#F8E805", // Main primary color
-    600: "#C6BA04",
-    700: "#948B03",
-    800: "#625D02",
-    900: "#312E01",
+    50: "#FFF5F0",
+    100: "#FFE7DB",
+    200: "#FFCDB8",
+    300: "#FFB089",
+    400: "#FF8E5C",
+    500: "#FF6B2C", // Main primary color
+    600: "#E65724",
+    700: "#BF481E",
+    800: "#993A18",
+    900: "#7A2F13",
   },
 
   // Secondary Colors (Dark Gray)
@@ -86,7 +86,7 @@ export const Colors = {
 
   // Background Colors
   background: {
-    primary: "#FFFFFF",
+    primary: "#1C1C1E",
     secondary: "#F2F2F7",
     tertiary: "#FAFAFA",
     dark: "#1C1C1E",
@@ -95,7 +95,7 @@ export const Colors = {
 
   // Text Colors
   text: {
-    primary: "#1C1C1E",
+    primary: "#E6EDF3",
     secondary: "#8E8E93",
     tertiary: "#C7C7CC",
     inverse: "#FFFFFF",
