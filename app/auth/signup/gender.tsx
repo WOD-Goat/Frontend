@@ -66,7 +66,7 @@ export default function GenderSelectionScreen() {
         <Button
           title="Continue →"
           onPress={handleContinue}
-          variant="secondary"
+          variant="primary"
           size="large"
           fullWidth
           disabled={!selectedGender}
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     textAlign: "center",
   },
 
@@ -123,7 +123,6 @@ const styles = StyleSheet.create({
     borderRadius: screenWidth * 0.175,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 4,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -132,16 +131,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    backgroundColor: Colors.background.primary,
   },
 
   selectedOption: {
     backgroundColor: Colors.primary[500],
-    borderColor: Colors.primary[500],
   },
 
   unselectedOption: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#000000",
+    backgroundColor: "#ffffff",
   },
 
   genderIconContainer: {

@@ -1,6 +1,6 @@
 import { Button, Input, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
-import { Typography } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -193,7 +193,7 @@ export default function SignupScreen() {
       <Button
         title="Continue →"
         onPress={handleContinue}
-        variant="secondary"
+        variant="primary"
         size="large"
         fullWidth
         disabled={isDisabled}
@@ -206,7 +206,7 @@ export default function SignupScreen() {
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
-          Join WODGoat Family 💛
+          Join WODGoat Family 🐐
         </Text>
         <Text style={[styles.welcomeSubtitle, Typography.bodyMedium]}>
           Enter your account details to continue
@@ -239,7 +239,7 @@ export default function SignupScreen() {
             value={formData.nickname}
             onChangeText={(value) => handleInputChange("nickname", value)}
             onBlur={() => handleFieldBlur("nickname")}
-            autoCapitalize="none"
+            autoCapitalize="words"
           />
           {errors.nickname ? (
             <Text style={styles.errorText}>{errors.nickname}</Text>
@@ -318,11 +318,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   welcomeTitle: {
-    color: "#000000",
+    color: Colors.text.primary,
     marginBottom: 8,
   },
   welcomeSubtitle: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
 
   // Form Section
@@ -335,11 +335,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   label: {
-    color: "#000000",
+    color: Colors.text.primary,
     marginBottom: 8,
   },
   errorText: {
-    color: "#FF6B6B",
+    color: Colors.error[500],
     fontSize: 12,
     marginTop: 4,
     marginLeft: 4,
@@ -358,10 +358,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loginText: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
   loginLink: {
-    color: "#FFD700",
+    color: Colors.primary[500],
     fontWeight: "bold",
   },
 });

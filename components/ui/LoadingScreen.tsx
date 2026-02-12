@@ -1,13 +1,11 @@
-import { Typography } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 export default function LoadingScreen() {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#FFD700" />
-      <Text style={[styles.text, Typography.bodyMedium]}>
-        Loading...
-      </Text>
+      <ActivityIndicator size="large" color={Colors.primary[500]} />
+      <Text style={[styles.text, Typography.bodyMedium]}>Loading...</Text>
     </View>
   );
 }
@@ -15,12 +13,12 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: Colors.background.primary,
   },
   text: {
     marginTop: 16,
-    color: '#666666',
+    color: Colors.text.primary,
   },
 });

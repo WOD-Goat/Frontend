@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1C1C1E',
+    color: Colors.text.primary,
     marginBottom: 8,
   },
   inputContainer: {

@@ -95,7 +95,7 @@ export default function WeightSelectionScreen() {
           <Button
             title="Continue →"
             onPress={handleContinue}
-            variant="secondary"
+            variant="primary"
             size="large"
             fullWidth
           />
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     textAlign: "center",
   },
 
@@ -186,14 +186,14 @@ const styles = StyleSheet.create({
   },
 
   weightDisplay: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontWeight: "bold",
     fontSize: screenWidth * 0.2,
     lineHeight: screenWidth * 0.22,
   },
 
   unitText: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontSize: screenWidth * 0.06,
     marginTop: 5,
   },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 18,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#000000",
+    borderTopColor: Colors.text.primary,
     zIndex: 2,
   },
 
@@ -243,10 +243,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     minHeight: 25,
+    minWidth: 40,
   },
 
   rulerMark: {
-    backgroundColor: "#000000",
+    backgroundColor: Colors.text.primary,
   },
 
   mainRulerMark: {
@@ -267,13 +268,13 @@ const styles = StyleSheet.create({
   },
 
   selectedWeightText: {
-    color: "#000000",
-    fontSize: screenWidth * 0.055,
+    color: Colors.text.primary,
+    fontSize: screenWidth * 0.065,
     fontWeight: "bold",
   },
 
   unselectedWeightText: {
-    color: "#666666",
+    color: "#ffffff",
     fontSize: screenWidth * 0.04,
   },
 });

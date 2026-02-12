@@ -57,7 +57,7 @@ export default function AgeSelectionScreen() {
         <Button
           title="Continue →"
           onPress={handleContinue}
-          variant="secondary"
+          variant="primary"
           size="large"
           fullWidth
         />
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     textAlign: "center",
   },
 
@@ -155,14 +155,14 @@ const styles = StyleSheet.create({
   },
 
   ageDisplay: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontWeight: "bold",
     fontSize: screenWidth * 0.2,
     lineHeight: screenWidth * 0.22,
   },
 
   unitText: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontSize: screenWidth * 0.06,
     marginTop: 5,
   },
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     height: screenHeight * 0.1 - 10,
     backgroundColor: "transparent",
     borderWidth: 3,
-    borderColor: Colors.secondary[500], // Secondary colored border
+    borderColor: Colors.text.primary, // Secondary colored border
     borderRadius: 12,
     zIndex: 1,
     pointerEvents: "none", // Allow touch events to pass through
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 15,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#000000",
+    borderTopColor: Colors.text.primary,
     zIndex: 2,
     pointerEvents: "none", // Allow touch events to pass through
   },
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   flatList: {
     width: "100%",
     borderRadius: 15,
-    backgroundColor: Colors.primary[500], // Yellow background for whole container
+    backgroundColor: Colors.primary[500],
   },
 
   flatListContent: {
@@ -222,17 +222,17 @@ const styles = StyleSheet.create({
     fontSize: screenWidth * 0.06,
     fontWeight: "500",
     textAlign: "center",
-    color: "#000000", // Ensure visibility on yellow background
+    color: Colors.text.primary, // Ensure visibility on yellow background
   },
 
   selectedAgeText: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontSize: screenWidth * 0.07,
     fontWeight: "bold",
   },
 
   unselectedAgeText: {
-    color: "#444444", // Darker for better contrast on yellow
+    color: "#FFFFFF", // Darker for better contrast on yellow
     fontSize: screenWidth * 0.05,
   },
 

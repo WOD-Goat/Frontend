@@ -72,7 +72,7 @@ export default function Page({
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <Ionicons name="arrow-back" size={24} color="#000000" />
+              <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
             </TouchableOpacity>
           )}
 
@@ -177,11 +177,11 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    marginLeft: -8, // Align with content padding
-  },
+    marginLeft: -8,
+   },
   headerTitle: {
     flex: 1,
-    color: "#000000",
+    color: Colors.text.primary,
     marginLeft: 8,
   },
   headerRightContainer: {
@@ -195,11 +195,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     marginBottom: 8,
   },
   subtitle: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
 
   // Content styles

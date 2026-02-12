@@ -1,5 +1,5 @@
 import { Button, Input, Page } from "@/components";
-import { Typography } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -98,7 +98,7 @@ export default function LoginScreen() {
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
-          Welcome to WODGoat 💛
+          Welcome to WODGoat 🐐
         </Text>
         <Text style={[styles.welcomeSubtitle, Typography.bodyMedium]}>
           Enter your account details to continue
@@ -143,7 +143,7 @@ export default function LoginScreen() {
           <Button
             title={loading ? "Logging in..." : "Login"}
             onPress={handleLogin}
-            variant="secondary"
+            variant="primary"
             size="large"
             disabled={loading || !isEmailValid || !isPasswordValid}
           />
@@ -179,10 +179,11 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   welcomeTitle: {
+    color: Colors.text.primary,
     marginBottom: 4,
   },
   welcomeSubtitle: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
 
   // Form Section
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   label: {
-    color: "#000000",
+    color: Colors.text.primary,
     marginBottom: 8,
   },
 
@@ -208,7 +209,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   forgotPasswordText: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
 
   // Register Section
@@ -218,16 +219,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   registerText: {
-    color: "#666666",
+    color: Colors.text.primary,
   },
   registerLink: {
-    color: "#FFD700",
+    color: Colors.primary[500],
     fontWeight: "bold",
   },
   
   // Error Text
   errorText: {
-    color: "#FF4444",
+    color: Colors.error[500],
     fontSize: 12,
     marginTop: 4,
   },

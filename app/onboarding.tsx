@@ -1,5 +1,5 @@
 import { Button } from "@/components";
-import { Typography } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -13,8 +13,7 @@ export default function OnboardingScreen() {
   const {set: setStorage} = useStorage();
 
   const handleGetStarted = async () => {
-    await setStorage('isOnboardingComplete', true);
-    router.replace("/auth/login");
+    router.push("/auth/login");
   };
 
   const handleScroll = (event: any) => {
@@ -101,7 +100,7 @@ export default function OnboardingScreen() {
       {/* Section 3: Fixed Footer Button */}
       <View style={styles.footerSection}>
         <Button
-          variant="secondary"
+          variant="primary"
           size="large"
           onPress={handleGetStarted}
           title="Get Started →"
@@ -114,7 +113,7 @@ export default function OnboardingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: Colors.background.primary,
     justifyContent: "center",
   },
 
@@ -148,7 +147,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: screenWidth * 0.8,
     height: screenWidth * 0.8,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#242426",
     borderRadius: screenWidth * 0.25,
     justifyContent: "center",
     alignItems: "center",
@@ -169,12 +168,12 @@ const styles = StyleSheet.create({
 
   // Text
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     textAlign: "center",
     marginBottom: 16,
   },
   subtitle: {
-    color: "#666666",
+    color: Colors.text.primary,
     textAlign: "center",
     paddingHorizontal: 16,
   },
@@ -193,11 +192,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: "#FFD700",
+    backgroundColor: Colors.primary[500],
     width: 24,
   },
   inactiveDot: {
-    backgroundColor: "#E0E0E0",
+    backgroundColor: "#A6A6A6",
   },
 
   // Section 3: Fixed Footer
@@ -208,7 +207,7 @@ const styles = StyleSheet.create({
   },
   button: {
     width: "100%",
-    backgroundColor: "#1E1E1E",
+    backgroundColor: Colors.primary[500],
     paddingVertical: 18,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -223,7 +222,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: Colors.text.primary,
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",

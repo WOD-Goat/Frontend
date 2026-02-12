@@ -14,5 +14,4 @@ export interface StorageMap {
   locale: Locale;
   isLoggedIn: boolean;
   user: User | null;
-  isOnboardingComplete: boolean;
 }

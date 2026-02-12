@@ -136,7 +136,7 @@ export default function HeightSelectionScreen() {
           <Button
             title={isLoading ? "Registering..." : "Register →"}
             onPress={handleRegister}
-            variant="secondary"
+            variant="primary"
             size="large"
             fullWidth
             disabled={
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   title: {
-    color: "#000000",
+    color: Colors.text.primary,
     textAlign: "center",
   },
 
@@ -239,14 +239,14 @@ const styles = StyleSheet.create({
   },
 
   heightDisplay: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontWeight: "bold",
     fontSize: screenWidth * 0.2, // Responsive font size
     lineHeight: screenWidth * 0.22,
   },
 
   unitText: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontSize: screenWidth * 0.06,
     marginTop: 5,
   },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 18,
     borderTopColor: "transparent",
     borderBottomColor: "transparent",
-    borderLeftColor: "#000000",
+    borderLeftColor: Colors.text.primary,
     zIndex: 2,
   },
 
@@ -290,17 +290,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
   },
 
   heightTextContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    minHeight: 25,
+    minWidth: 40,
   },
 
   rulerMark: {
-    backgroundColor: "#000000",
+    backgroundColor: Colors.text.primary,
   },
 
   mainRulerMark: {
@@ -320,13 +322,13 @@ const styles = StyleSheet.create({
   },
 
   selectedHeightText: {
-    color: "#000000",
-    fontSize: screenWidth * 0.055,
+    color: Colors.text.primary,
+    fontSize: screenWidth * 0.065,
     fontWeight: "bold",
   },
 
   unselectedHeightText: {
-    color: "#666666",
+    color: "#ffffff",
     fontSize: screenWidth * 0.04,
   },
 });
