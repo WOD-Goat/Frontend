@@ -1,6 +1,6 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
-import { useSignupContext } from "@/hooks";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
@@ -10,7 +10,8 @@ const ITEM_WIDTH = 25;
 const ITEM_HEIGHT = 100;
 
 export default function WeightSelectionScreen() {
-  const { signupData, updateSignupData } = useSignupContext();
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
   const [selectedWeight, setSelectedWeight] = useState(signupData.weight || 80);
   const flatListRef = useRef<FlatList>(null);
 
@@ -32,7 +33,7 @@ export default function WeightSelectionScreen() {
   const mainWeights = Array.from({ length: 111 }, (_, i) => i + 40);
 
   const handleContinue = () => {
-    updateSignupData({ weight: selectedWeight });
+    setInGlobalState("signupData", { ...signupData, weight: selectedWeight });
     console.log("Selected weight:", selectedWeight);
     router.push("./height");
   };
@@ -113,18 +114,18 @@ export default function WeightSelectionScreen() {
 
         <View style={styles.contentContainer}>
           {/* Weight Picker */}
-            <View style={styles.weightDisplayContainer}>
-              <Text style={[styles.weightDisplay, Typography.displayLarge]}>
-                {selectedWeight}
-                <Text style={[styles.unitText, Typography.headingMedium]}>
-                  {' '}kg
-                </Text>
+          <View style={styles.weightDisplayContainer}>
+            <Text style={[styles.weightDisplay, Typography.displayLarge]}>
+              {selectedWeight}
+              <Text style={[styles.unitText, Typography.headingMedium]}>
+                {" "}
+                kg
               </Text>
-            </View>
-            {/* Triangle pointer */}
-            <View style={styles.trianglePointer} />
+            </Text>
+          </View>
+          {/* Triangle pointer */}
+          <View style={styles.trianglePointer} />
           <View style={styles.pickerContainer}>
-
             <FlatList
               ref={flatListRef}
               data={weightData}

@@ -1,6 +1,6 @@
 import { Button } from "@/components";
 import { Typography } from "@/constants";
-import { useAppContext } from "@/hooks";
+import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -16,10 +16,10 @@ const CARD_WIDTH = screenWidth * 0.9;
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { completeOnboarding } = useAppContext();
+  const {set: setStorage} = useStorage();
 
-  const handleGetStarted = () => {
-    completeOnboarding();
+  const handleGetStarted = async () => {
+    await setStorage('isOnboardingComplete', true);
     router.replace("/auth/login");
   };
 

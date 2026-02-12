@@ -1,6 +1,6 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
-import { useSignupContext } from "@/hooks";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
@@ -9,7 +9,8 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_WIDTH = 60;
 
 export default function AgeSelectionScreen() {
-  const { signupData, updateSignupData } = useSignupContext();
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
   const [selectedAge, setSelectedAge] = useState(signupData.age || 22);
   const flatListRef = useRef<FlatList>(null);
 
@@ -17,7 +18,7 @@ export default function AgeSelectionScreen() {
   const ages = Array.from({ length: 65 }, (_, i) => i + 16);
 
   const handleContinue = () => {
-    updateSignupData({ age: selectedAge });
+    setInGlobalState("signupData", { ...signupData, age: selectedAge });
     console.log("Selected age:", selectedAge);
     router.push("./weight");
   };

@@ -1,12 +1,13 @@
 import { Button, Input, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Typography } from "@/constants";
-import { useSignupContext } from "@/hooks";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function SignupScreen() {
-  const { signupData, updateSignupData } = useSignupContext();
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
   const [formData, setFormData] = useState({
     fullName: signupData.fullName || "",
     nickname: signupData.nickname || "",
@@ -33,9 +34,12 @@ export default function SignupScreen() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    
+
     // Only validate if field has been touched or has content
-    if (touchedFields[field as keyof typeof touchedFields] || value.length > 0) {
+    if (
+      touchedFields[field as keyof typeof touchedFields] ||
+      value.length > 0
+    ) {
       let fieldError = "";
       switch (field) {
         case "fullName":
@@ -57,7 +61,7 @@ export default function SignupScreen() {
           }
           break;
       }
-      
+
       // Update the specific field's error
       setErrors((prev) => ({ ...prev, [field]: fieldError }));
     }
@@ -65,7 +69,7 @@ export default function SignupScreen() {
 
   const handleFieldBlur = (field: string) => {
     setTouchedFields((prev) => ({ ...prev, [field]: true }));
-    
+
     // Validate on blur
     const value = formData[field as keyof typeof formData];
     let fieldError = "";
@@ -86,7 +90,7 @@ export default function SignupScreen() {
         fieldError = validatePassword(value);
         break;
     }
-    
+
     setErrors((prev) => ({ ...prev, [field]: fieldError }));
   };
 
@@ -100,18 +104,21 @@ export default function SignupScreen() {
 
   const validateEgyptianPhone = (phone: string): string => {
     if (!phone.trim()) return "Phone number is required";
-    
+
     // Remove any spaces, dashes, or parentheses
     const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
-    
+
     // Check if it starts with +20 followed by 10 digits
     const egyptianPhoneRegex = /^\+20[0-9]{10}$/;
-    
+
     // Also allow format without +20 prefix (must be 11 digits starting with 01)
     const localPhoneRegex = /^01[0-9]{9}$/;
-    
-    if (!egyptianPhoneRegex.test(cleanPhone) && !localPhoneRegex.test(cleanPhone)) {
-      return "Please enter a valid Egyptian phone number (e.g., +201234567890 or 01234567890)";
+
+    if (
+      !egyptianPhoneRegex.test(cleanPhone) &&
+      !localPhoneRegex.test(cleanPhone)
+    ) {
+      return "Please enter a valid Egyptian phone number";
     }
     return "";
   };
@@ -123,11 +130,14 @@ export default function SignupScreen() {
 
   const validatePassword = (password: string): string => {
     if (!password.trim()) return "Password is required";
-    if (password.length < 8) return "Password must be at least 8 characters long";
-    if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
-    if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter";
-    if (!/[0-9]/.test(password)) return "Password must contain at least one number";
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return "Password must contain at least one special character";
+    if (password.length < 8)
+      return "Password must be at least 8 characters long";
+    if (!/[A-Z]/.test(password))
+      return "Password must contain at least one uppercase letter";
+    if (!/[a-z]/.test(password))
+      return "Password must contain at least one lowercase letter";
+    if (!/[0-9]/.test(password))
+      return "Password must contain at least one number";
     return "";
   };
 
@@ -143,7 +153,7 @@ export default function SignupScreen() {
     setErrors(newErrors);
 
     // Check if there are any errors
-    return !Object.values(newErrors).some(error => error !== "");
+    return !Object.values(newErrors).some((error) => error !== "");
   };
 
   const handleContinue = () => {
@@ -164,10 +174,10 @@ export default function SignupScreen() {
     };
 
     // Update context with current form data
-    updateSignupData(formattedData);
+    setInGlobalState("signupData", formattedData);
     console.log("Updated signup data:", formattedData);
     // Navigate to gender selection
-    router.push("./gender");
+    router.push("/auth/signup/gender");
   };
 
   const handleLogin = () => {
@@ -175,8 +185,10 @@ export default function SignupScreen() {
   };
 
   const renderFooter = () => {
-    const hasErrors = Object.values(errors).some(error => error !== "");
-    const hasEmptyFields = Object.values(formData).some(value => !value.trim());
+    const hasErrors = Object.values(errors).some((error) => error !== "");
+    const hasEmptyFields = Object.values(formData).some(
+      (value) => !value.trim(),
+    );
     const isDisabled = hasErrors || hasEmptyFields;
 
     return (
@@ -209,7 +221,7 @@ export default function SignupScreen() {
         <View style={styles.inputGroup}>
           <Text style={[styles.label, Typography.labelMedium]}>Full Name</Text>
           <Input
-            placeholder="Your full name"
+            placeholder="Your Fullname"
             value={formData.fullName}
             onChangeText={(value) => handleInputChange("fullName", value)}
             onBlur={() => handleFieldBlur("fullName")}
@@ -225,7 +237,7 @@ export default function SignupScreen() {
         <View style={styles.inputGroup}>
           <Text style={[styles.label, Typography.labelMedium]}>Nickname</Text>
           <Input
-            placeholder="Your nickname"
+            placeholder="Your Nickname"
             value={formData.nickname}
             onChangeText={(value) => handleInputChange("nickname", value)}
             onBlur={() => handleFieldBlur("nickname")}
@@ -242,7 +254,7 @@ export default function SignupScreen() {
             Email Address
           </Text>
           <Input
-            placeholder="Your email address"
+            placeholder="Your Email Address"
             value={formData.email}
             onChangeText={(value) => handleInputChange("email", value)}
             onBlur={() => handleFieldBlur("email")}
@@ -261,7 +273,7 @@ export default function SignupScreen() {
             Mobile Number
           </Text>
           <Input
-            placeholder="+201234567890 or 01234567890"
+            placeholder="01234567890"
             value={formData.mobileNumber}
             onChangeText={(value) => handleInputChange("mobileNumber", value)}
             onBlur={() => handleFieldBlur("mobileNumber")}
@@ -277,7 +289,7 @@ export default function SignupScreen() {
         <View style={styles.inputGroup}>
           <Text style={[styles.label, Typography.labelMedium]}>Password</Text>
           <Input
-            placeholder="Min 8 chars, uppercase, lowercase, number, special char"
+            placeholder="Password"
             value={formData.password}
             onChangeText={(value) => handleInputChange("password", value)}
             onBlur={() => handleFieldBlur("password")}

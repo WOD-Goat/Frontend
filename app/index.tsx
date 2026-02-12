@@ -1,14 +1,28 @@
 import { apiClient } from "@/api/client";
 import { authService } from "@/api/services/auth";
 import { LoadingScreen } from "@/components";
-import { useAppContext } from "@/hooks";
+import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 
 export default function Index() {
-  const { isOnboardingComplete } = useAppContext();
+  const { get: getFromStorage } = useStorage();
+  const [isOnboardingComplete, setIsOnboardingComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const loadOnboardingStatus = async () => {
+      try {
+        const status = await getFromStorage('isOnboardingComplete');
+        setIsOnboardingComplete(status === true);
+      } catch (error) {
+        console.error('Failed to load onboarding status:', error);
+      }
+    };
+
+    loadOnboardingStatus();
+  }, [getFromStorage]);
 
   useEffect(() => {
     const initializeApp = async () => {

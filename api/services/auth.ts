@@ -11,8 +11,6 @@ export const authService = {
    * Register a new user
    */
   register: async (userData: RegisterUserData) => {
-    console.log('🔐 AuthService: Register attempt with data:', userData);
-    
     try {
       const response = await apiClient.post<RegisterUserData>(
         API_ENDPOINTS.AUTH.REGISTER, 

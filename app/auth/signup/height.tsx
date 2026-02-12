@@ -1,16 +1,16 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
-import { useAuth, useSignupContext } from "@/hooks";
-import { RegisterUserData, User } from "@/types";
+import { useAuth } from "@/hooks";
+import { RegisterUserData } from "@/types";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  Alert,
   Dimensions,
   FlatList,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -18,7 +18,8 @@ const ITEM_HEIGHT = 20;
 const ITEM_WIDTH = 100;
 
 export default function HeightSelectionScreen() {
-  const { signupData, updateSignupData } = useSignupContext();
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
   const { register } = useAuth();
   const [selectedHeight, setSelectedHeight] = useState(
     signupData.height || 180,
@@ -47,7 +48,7 @@ export default function HeightSelectionScreen() {
     try {
       setIsLoading(true);
       // Update signup data with final height
-      updateSignupData({ height: selectedHeight });
+      setInGlobalState("signupData", { ...signupData, height: selectedHeight });
 
       // Get complete signup data
       const completeSignupData = { ...signupData, height: selectedHeight };
