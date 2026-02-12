@@ -25,19 +25,19 @@ export default function OnboardingScreen() {
   const onboardingData = [
     {
       image: "🚴‍♂️👨‍💼",
-      title: "Welcome To WODGoat",
+      title: "Meet WODGoat",
       subtitle:
-        "Start Your Journey Towards A More Active Lifestyle With Professional Coaches",
+        "Your personal AI gym buddy, here to track every WOD, PR, and push you to your best.",
     },
     {
       image: "🏋️‍♂️",
-      title: "Reach Your Goals",
-      subtitle: "Reaching Your Goals Have Never Been Easier",
+      title: "Smart WOD Tracking",
+      subtitle: "WODGoat remembers your PRs, guides your workouts, and adapts to your progress.",
     },
     {
       image: "🏆👥📜",
-      title: "Where Power Meets Friendship",
-      subtitle: "A Community For You, Challenge Yourself",
+      title: "AI Guidance Anytime",
+      subtitle: "Record PRs with your voice, ask questions, and get AI tips — your personal crossfit companion is always ready.",
     },
   ];
 

@@ -78,7 +78,7 @@ export default function SignupScreen() {
             placeholder="Your nickname"
             value={formData.nickname}
             onChangeText={(value) => handleInputChange("nickname", value)}
-            autoCapitalize="none"
+            autoCapitalize="words"
           />
         </View>
 
@@ -119,7 +119,7 @@ export default function SignupScreen() {
             value={formData.password}
             onChangeText={(value) => handleInputChange("password", value)}
             secureTextEntry
-            autoComplete="password-new"
+            autoComplete="password"
           />
         </View>
 
