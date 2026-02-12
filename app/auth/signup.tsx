@@ -50,7 +50,7 @@ export default function SignupScreen() {
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
-          Join 90 Box Family 💛
+          Join WODGoat Family 💛
         </Text>
         <Text style={[styles.welcomeSubtitle, Typography.bodyMedium]}>
           Enter your account details to continue

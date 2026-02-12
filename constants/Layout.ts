@@ -1,4 +1,4 @@
-// Spacing and Layout constants for 90 Box Fitness App
+// Spacing and Layout constants for WODGoat Fitness App
 
 export const Spacing = {
   xs: 4,

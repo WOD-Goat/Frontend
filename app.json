@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "90 Box",
-    "slug": "90Box",
+    "name": "WODGoat",
+    "slug": "WODGoat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
-    "scheme": "90box",
+    "scheme": "wodgoat",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

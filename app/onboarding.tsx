@@ -31,7 +31,7 @@ export default function OnboardingScreen() {
   const onboardingData = [
     {
       image: "🚴‍♂️👨‍💼",
-      title: "Welcome To 90 Box",
+      title: "Welcome To WODGoat",
       subtitle:
         "Start Your Journey Towards A More Active Lifestyle With Professional Coaches",
     },

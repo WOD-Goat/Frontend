@@ -61,7 +61,7 @@ export default function ServicesSection() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>90 Box Services</Text>
+      <Text style={styles.title}>WODGoat Services</Text>
 
       <ScrollView
         horizontal

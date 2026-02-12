@@ -1,4 +1,4 @@
-// Color Palette for 90 Box Fitness App
+// Color Palette for WODGoat Fitness App
 export const Colors = {
   // Primary Colors (Yellow/Gold)
   primary: {

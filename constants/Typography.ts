@@ -1,4 +1,4 @@
-// Typography system for 90 Box Fitness App
+// Typography system for WODGoat Fitness App
 import { Dimensions, TextStyle } from 'react-native';
 
 // Get screen dimensions for responsive sizing
