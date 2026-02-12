@@ -1,56 +1,101 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { tabIcons } from "@/assets/images";
+import { Colors, responsiveSize } from "@/constants";
+import { Tabs } from "expo-router";
+import { Image, View } from "react-native";
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarActiveTintColor: Colors.primary[500],
+        tabBarInactiveTintColor: "#B0B0B0",
         headerShown: false,
-      }}>
+        tabBarStyle: {
+          backgroundColor: Colors.secondary[500],
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          paddingBottom: 10,
+          paddingTop: 10,
+          height: responsiveSize(90),
+          position: "absolute",
+        },
+        tabBarLabelStyle: {
+          display: "none", // Hide labels to match design
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
+          title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+            <Image
+              source={focused ? tabIcons.homeSelected : tabIcons.home}
+              style={{ width: responsiveSize(32), height: responsiveSize(32) }}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="workouts"
         options={{
-          title: 'Workouts',
+          title: "Workouts",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'fitness' : 'fitness-outline'} size={24} color={color} />
+            <Image
+              source={focused ? tabIcons.workoutSelected : tabIcons.workout}
+              style={{ width: responsiveSize(32), height: responsiveSize(32) }}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="timer"
         options={{
-          title: 'Timer',
+          title: "Timer",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'timer' : 'timer-outline'} size={24} color={color} />
+            <View
+              style={{
+                width: responsiveSize(64),
+                height: responsiveSize(64),
+                borderRadius: 36,
+                backgroundColor: Colors.primary[500],
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: responsiveSize(-55),
+              }}
+            >
+              <Image
+                source={tabIcons.stopwatch}
+                style={{
+                  width: responsiveSize(32),
+                  height: responsiveSize(32),
+                }}
+              />
+            </View>
           ),
         }}
       />
       <Tabs.Screen
         name="prs"
         options={{
-          title: 'PRs',
+          title: "Personal Records",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={24} color={color} />
+            <Image
+              source={focused ? tabIcons.prSelected : tabIcons.pr}
+              style={{ width: responsiveSize(32), height: responsiveSize(32) }}
+            />
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+            <Image
+              source={focused ? tabIcons.profileSelected : tabIcons.profile}
+              style={{ width: responsiveSize(32), height: responsiveSize(32) }}
+            />
           ),
         }}
       />

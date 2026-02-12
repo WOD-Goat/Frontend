@@ -3,13 +3,7 @@ import { Typography } from "@/constants";
 import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
 const CARD_WIDTH = screenWidth * 0.9;
@@ -27,26 +21,26 @@ export default function OnboardingScreen() {
     const contentOffset = event.nativeEvent.contentOffset;
     const pageIndex = Math.round(contentOffset.x / CARD_WIDTH);
     setCurrentIndex(
-      Math.max(0, Math.min(pageIndex, onboardingData.length - 1))
+      Math.max(0, Math.min(pageIndex, onboardingData.length - 1)),
     );
   };
 
   const onboardingData = [
     {
       image: "🚴‍♂️👨‍💼",
-      title: "Welcome To 90 Box",
+      title: "Meet WODGoat",
       subtitle:
-        "Start Your Journey Towards A More Active Lifestyle With Professional Coaches",
+        "Your personal AI gym buddy, here to track every WOD, PR, and push you to your best.",
     },
     {
       image: "🏋️‍♂️",
-      title: "Reach Your Goals",
-      subtitle: "Reaching Your Goals Have Never Been Easier",
+      title: "Smart WOD Tracking",
+      subtitle: "WODGoat remembers your PRs, guides your workouts, and adapts to your progress.",
     },
     {
       image: "🏆👥📜",
-      title: "Where Power Meets Friendship",
-      subtitle: "A Community For You, Challenge Yourself",
+      title: "AI Guidance Anytime",
+      subtitle: "Record PRs with your voice, ask questions, and get AI tips — your personal crossfit companion is always ready.",
     },
   ];
 
@@ -90,8 +84,12 @@ export default function OnboardingScreen() {
               </View>
 
               {/* Text and Subtitle */}
-              <Text style={[styles.title, Typography.headingLarge]}>{item.title}</Text>
-              <Text style={[styles.subtitle, Typography.bodyMedium]}>{item.subtitle}</Text>
+              <Text style={[styles.title, Typography.headingLarge]}>
+                {item.title}
+              </Text>
+              <Text style={[styles.subtitle, Typography.bodyMedium]}>
+                {item.subtitle}
+              </Text>
             </View>
           ))}
         </ScrollView>
@@ -128,7 +126,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexGrow: 0,
-    height: '80%',
+    height: "80%",
   },
   scrollContent: {
     paddingHorizontal: (screenWidth - CARD_WIDTH) / 2,
@@ -143,7 +141,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    backgroundColor: 'transparent'
+    backgroundColor: "transparent",
   },
 
   // Image Section

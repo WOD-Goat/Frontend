@@ -117,7 +117,7 @@ export default function LoginScreen() {
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
-          Welcome to 90 Box 💛
+          Welcome to WODGoat 💛
         </Text>
         <Text style={[styles.welcomeSubtitle, Typography.bodyMedium]}>
           Enter your account details to continue
