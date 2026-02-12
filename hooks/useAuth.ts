@@ -26,7 +26,6 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
     try {
       const response: AuthResponse = await authService.login(email, password);
-
       if (response.success && response.user) {
         setUser(response.user);
         return true;

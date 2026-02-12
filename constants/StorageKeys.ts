@@ -4,6 +4,8 @@
  */
 export const STORAGE_KEYS = {
   TOKEN: "token",
+  ACCESS_TOKEN: "access_token",
+  REFRESH_TOKEN: "refresh_token",
   LOCALE: "locale",
   IS_LOGGED_IN: "isLoggedIn",
   USER: "user",
