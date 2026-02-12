@@ -1,4 +1,5 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
@@ -8,13 +9,16 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_WIDTH = 60;
 
 export default function AgeSelectionScreen() {
-  const [selectedAge, setSelectedAge] = useState(22);
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
+  const [selectedAge, setSelectedAge] = useState(signupData.age || 22);
   const flatListRef = useRef<FlatList>(null);
 
   // Generate ages from 16 to 80 (no intermediate marks needed)
   const ages = Array.from({ length: 65 }, (_, i) => i + 16);
 
   const handleContinue = () => {
+    setInGlobalState("signupData", { ...signupData, age: selectedAge });
     console.log("Selected age:", selectedAge);
     router.push("./weight");
   };

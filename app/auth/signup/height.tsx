@@ -1,15 +1,30 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
+import { useAuth } from "@/hooks";
+import { RegisterUserData } from "@/types";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_HEIGHT = 20;
 const ITEM_WIDTH = 100;
 
 export default function HeightSelectionScreen() {
-  const [selectedHeight, setSelectedHeight] = useState(180);
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
+  const { register } = useAuth();
+  const [selectedHeight, setSelectedHeight] = useState(
+    signupData.height || 180,
+  );
+  const [isLoading, setIsLoading] = useState(false);
   const flatListRef = useRef<FlatList>(null);
 
   // Generate heights from 140 to 220 cm with intermediate marks
@@ -29,11 +44,41 @@ export default function HeightSelectionScreen() {
   const heightData = generateHeightData();
   const mainHeights = Array.from({ length: 81 }, (_, i) => i + 140);
 
-  const handleRegister = () => {
-    console.log("Selected height:", selectedHeight);
-    // Complete registration flow
-    console.log("Registration completed!");
-    router.replace("/(tabs)");
+  const handleRegister = async () => {
+    try {
+      setIsLoading(true);
+      // Update signup data with final height
+      setInGlobalState("signupData", { ...signupData, height: selectedHeight });
+
+      // Get complete signup data
+      const completeSignupData = { ...signupData, height: selectedHeight };
+      console.log("Complete signup data:", completeSignupData);
+
+      // Create User object with all required fields
+      const userData: RegisterUserData = {
+        email: completeSignupData.email!,
+        password: completeSignupData.password!,
+        fullName: completeSignupData.fullName!,
+        nickname: completeSignupData.nickname!,
+        mobileNumber: completeSignupData.mobileNumber!,
+        gender: completeSignupData.gender!,
+        age: completeSignupData.age!,
+        weight: completeSignupData.weight!,
+        height: completeSignupData.height!,
+      };
+
+      // Call register function
+      const success = await register(userData);
+
+      if (success) {
+        console.log("Registration completed successfully!");
+        router.replace("/(tabs)");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderHeightItem = ({
@@ -89,11 +134,23 @@ export default function HeightSelectionScreen() {
       footer={
         <View>
           <Button
-            title="Register →"
+            title={isLoading ? "Registering..." : "Register →"}
             onPress={handleRegister}
             variant="secondary"
             size="large"
             fullWidth
+            disabled={
+              isLoading ||
+              !signupData.email ||
+              !signupData.password ||
+              !signupData.fullName ||
+              !signupData.nickname ||
+              !signupData.mobileNumber ||
+              !signupData.gender ||
+              !signupData.age ||
+              !signupData.weight ||
+              !selectedHeight
+            }
           />
         </View>
       }

@@ -1,5 +1,7 @@
 import { Button, Page } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
+import { Gender } from "@/types";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -12,21 +14,25 @@ import {
 
 const { width: screenWidth } = Dimensions.get("window");
 
-type Gender = "male" | "female" | null;
 export default function GenderSelectionScreen() {
-  const [selectedGender, setSelectedGender] = useState<Gender>(null);
+  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
+  const signupData = getFromGlobalState("signupData") || {};
+  const [selectedGender, setSelectedGender] = useState<Gender | null>(
+    signupData.gender || null,
+  );
 
   const handleContinue = () => {
     if (selectedGender) {
+      setInGlobalState("signupData", { ...signupData, gender: selectedGender });
       console.log("Selected gender:", selectedGender);
       router.push("./age");
     }
   };
 
   const renderGenderOption = (
-    gender: "male" | "female",
+    gender: Gender,
     symbol: string,
-    label: string
+    label: string,
   ) => {
     const isSelected = selectedGender === gender;
 
@@ -77,8 +83,8 @@ export default function GenderSelectionScreen() {
 
         {/* Gender Options */}
         <View style={styles.optionsContainer}>
-          {renderGenderOption("male", "♂", "Male")}
-          {renderGenderOption("female", "♀", "Female")}
+          {renderGenderOption(Gender.MALE, "♂", "Male")}
+          {renderGenderOption(Gender.FEMALE, "♀", "Female")}
         </View>
       </View>
     </Page>

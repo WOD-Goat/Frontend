@@ -1,5 +1,6 @@
 import { Button } from "@/components";
 import { Typography } from "@/constants";
+import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -9,9 +10,11 @@ const CARD_WIDTH = screenWidth * 0.9;
 
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const {set: setStorage} = useStorage();
 
-  const handleGetStarted = () => {
-    router.push("/auth/login");
+  const handleGetStarted = async () => {
+    await setStorage('isOnboardingComplete', true);
+    router.replace("/auth/login");
   };
 
   const handleScroll = (event: any) => {

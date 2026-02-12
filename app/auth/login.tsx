@@ -1,17 +1,105 @@
 import { Button, Input, Page } from "@/components";
 import { Typography } from "@/constants";
+import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
+  
+  const { login, loading, error } = useAuth();
 
-  const handleLogin = () => {
-    // Handle login logic here
-    console.log("Login pressed", { email, password });
-    router.replace("/(tabs)");
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError("Email is required");
+      setIsEmailValid(false);
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError("Please enter a valid email address");
+      setIsEmailValid(false);
+      return false;
+    }
+    setEmailError("");
+    setIsEmailValid(true);
+    return true;
+  };
+
+  const validatePassword = (password: string): boolean => {
+    if (!password) {
+      setPasswordError("Password is required");
+      setIsPasswordValid(false);
+      return false;
+    }
+    if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters long");
+      setIsPasswordValid(false);
+      return false;
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      setPasswordError("Password must contain at least one lowercase letter");
+      setIsPasswordValid(false);
+      return false;
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      setPasswordError("Password must contain at least one uppercase letter");
+      setIsPasswordValid(false);
+      return false;
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      setPasswordError("Password must contain at least one number");
+      setIsPasswordValid(false);
+      return false;
+    }
+    if (!/(?=.*[@$!%*?&])/.test(password)) {
+      setPasswordError("Password must contain at least one special character (@$!%*?&)");
+      setIsPasswordValid(false);
+      return false;
+    }
+    setPasswordError("");
+    setIsPasswordValid(true);
+    return true;
+  };
+
+  const handleEmailChange = (text: string) => {
+    setEmail(text);
+    validateEmail(text);
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    validatePassword(text);
+  };
+
+  const handleLogin = async () => {
+    console.log('📱 LoginScreen: handleLogin called');
+    console.log('📱 LoginScreen: Email valid:', isEmailValid, 'Password valid:', isPasswordValid);
+    
+    // Only proceed if both fields are already valid
+    if (!isEmailValid || !isPasswordValid) {
+      console.log('📱 LoginScreen: Validation failed, not proceeding with login');
+      return;
+    }
+
+    console.log('📱 LoginScreen: Calling login with:', { email, password: '***' });
+    const success = await login(email, password);
+    
+    console.log('📱 LoginScreen: Login result:', success);
+
+    if (success) {
+      console.log('📱 LoginScreen: Login successful, navigating to tabs');
+      router.replace("/(tabs)");
+    } else {
+      console.log('📱 LoginScreen: Login failed, error:', error);
+      Alert.alert("Login Failed", error || "Please check your credentials and try again");
+    }
   };
 
   const handleForgotPassword = () => {
@@ -21,7 +109,7 @@ export default function LoginScreen() {
 
   const handleRegister = () => {
     // Navigate to register screen
-    router.push("/auth/signup");
+    router.push("/auth/aa");
   };
 
   return (
@@ -44,11 +132,14 @@ export default function LoginScreen() {
             label="Email Address"
             placeholder="Your email address"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleEmailChange}
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
           />
+          {emailError ? (
+            <Text style={styles.errorText}>{emailError}</Text>
+          ) : null}
         </View>
 
         {/* Password Field */}
@@ -57,20 +148,23 @@ export default function LoginScreen() {
             label="Password"
             placeholder="Your password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             secureTextEntry
             autoComplete="password"
           />
+          {passwordError ? (
+            <Text style={styles.errorText}>{passwordError}</Text>
+          ) : null}
         </View>
 
         {/* Login Button */}
         <View style={styles.buttonSection}>
           <Button
-            title="Login"
+            title={loading ? "Logging in..." : "Login"}
             onPress={handleLogin}
             variant="secondary"
             size="large"
-            disabled={!email || !password}
+            disabled={loading || !isEmailValid || !isPasswordValid}
           />
 
           {/* Forgot Password Link */}
@@ -86,7 +180,7 @@ export default function LoginScreen() {
       </View>
       <View style={styles.registerTextContainer}>
         <Text style={[styles.registerText, Typography.bodyMedium]}>
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
         </Text>
         <TouchableOpacity onPress={handleRegister}>
           <Text style={[styles.registerLink, Typography.bodyMedium]}>
@@ -148,5 +242,12 @@ const styles = StyleSheet.create({
   registerLink: {
     color: "#FFD700",
     fontWeight: "bold",
+  },
+  
+  // Error Text
+  errorText: {
+    color: "#FF4444",
+    fontSize: 12,
+    marginTop: 4,
   },
 });
