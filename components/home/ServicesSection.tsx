@@ -1,13 +1,13 @@
 import { serviceIcons } from "@/assets/images";
 import { useRouter } from "expo-router";
 import {
-  Image,
-  ImageSourcePropType,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Image,
+    ImageSourcePropType,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Colors } from "../../constants/Colors";
 import { Typography } from "../../constants/Typography";
@@ -77,7 +77,10 @@ export default function ServicesSection() {
             activeOpacity={0.7}
           >
             <View style={styles.circleContainer}>
-              <Image source={service.icon as ImageSourcePropType} style={styles.serviceIcon} />
+              <Image
+                source={service.icon as ImageSourcePropType}
+                style={styles.serviceIcon}
+              />
             </View>
             <Text style={styles.serviceTitle}>{service.title}</Text>
           </TouchableOpacity>

@@ -1,8 +1,8 @@
 // Typography system for WODGoat Fitness App
-import { Dimensions, TextStyle } from 'react-native';
+import { Dimensions, TextStyle } from "react-native";
 
 // Get screen dimensions for responsive sizing
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Base dimensions (iPhone 12/13 as reference: 390x844)
 const baseWidth = 390;
@@ -21,26 +21,26 @@ export const responsiveSize = (size: number): number => {
 // Font families
 export const FontFamilies = {
   // League Spartan for headings and display text
-  spartanThin: 'LeagueSpartan-Thin',
-  spartanExtraLight: 'LeagueSpartan-ExtraLight',
-  spartanLight: 'LeagueSpartan-Light',
-  spartanRegular: 'LeagueSpartan-Regular',
-  spartanMedium: 'LeagueSpartan-Medium',
-  spartanSemiBold: 'LeagueSpartan-SemiBold',
-  spartanBold: 'LeagueSpartan-Bold',
-  spartanExtraBold: 'LeagueSpartan-ExtraBold',
-  spartanBlack: 'LeagueSpartan-Black',
-  
+  spartanThin: "LeagueSpartan-Thin",
+  spartanExtraLight: "LeagueSpartan-ExtraLight",
+  spartanLight: "LeagueSpartan-Light",
+  spartanRegular: "LeagueSpartan-Regular",
+  spartanMedium: "LeagueSpartan-Medium",
+  spartanSemiBold: "LeagueSpartan-SemiBold",
+  spartanBold: "LeagueSpartan-Bold",
+  spartanExtraBold: "LeagueSpartan-ExtraBold",
+  spartanBlack: "LeagueSpartan-Black",
+
   // Poppins for body text and labels
-  poppinsThin: 'Poppins-Thin',
-  poppinsExtraLight: 'Poppins-ExtraLight',
-  poppinsLight: 'Poppins-Light',
-  poppinsRegular: 'Poppins-Regular',
-  poppinsMedium: 'Poppins-Medium',
-  poppinsSemiBold: 'Poppins-SemiBold',
-  poppinsBold: 'Poppins-Bold',
-  poppinsExtraBold: 'Poppins-ExtraBold',
-  poppinsBlack: 'Poppins-Black',
+  poppinsThin: "Poppins-Thin",
+  poppinsExtraLight: "Poppins-ExtraLight",
+  poppinsLight: "Poppins-Light",
+  poppinsRegular: "Poppins-Regular",
+  poppinsMedium: "Poppins-Medium",
+  poppinsSemiBold: "Poppins-SemiBold",
+  poppinsBold: "Poppins-Bold",
+  poppinsExtraBold: "Poppins-ExtraBold",
+  poppinsBlack: "Poppins-Black",
 } as const;
 
 export const FontSizes = {
@@ -48,7 +48,7 @@ export const FontSizes = {
   displayXL: responsiveSize(40),
   displayLG: responsiveSize(36),
   displayMD: responsiveSize(30),
-  
+
   // Heading sizes
   heading2XL: responsiveSize(24),
   headingXL: responsiveSize(20),
@@ -56,14 +56,14 @@ export const FontSizes = {
   headingMD: responsiveSize(16),
   headingSM: responsiveSize(14),
   headingXS: responsiveSize(12),
-  
+
   // Body text sizes
   bodyXL: responsiveSize(20),
   bodyLG: responsiveSize(18),
   bodyMD: responsiveSize(16),
   bodySM: responsiveSize(14),
   bodyXS: responsiveSize(12),
-  
+
   // Label sizes
   labelLG: responsiveSize(18),
   labelMD: responsiveSize(16),
@@ -72,15 +72,15 @@ export const FontSizes = {
 } as const;
 
 export const FontWeights = {
-  thin: '100',
-  extraLight: '200',
-  light: '300',
-  normal: '400',
-  medium: '500',
-  semiBold: '600',
-  bold: '700',
-  extraBold: '800',
-  black: '900',
+  thin: "100",
+  extraLight: "200",
+  light: "300",
+  normal: "400",
+  medium: "500",
+  semiBold: "600",
+  bold: "700",
+  extraBold: "800",
+  black: "900",
 } as const;
 
 export const LineHeights = {
@@ -181,7 +181,7 @@ export const Typography = {
     fontFamily: FontFamilies.spartanSemiBold,
     lineHeight: FontSizes.labelXS * LineHeights.normal,
     letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
   } as TextStyle,
 
   // Button text (interactive elements) - League Spartan
@@ -202,5 +202,4 @@ export const Typography = {
     fontFamily: FontFamilies.spartanSemiBold,
     lineHeight: FontSizes.labelSM * LineHeights.none,
   } as TextStyle,
-
 } as const;
