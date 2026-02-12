@@ -1,5 +1,6 @@
 import { apiClient } from '@/api/client';
 import { API_ENDPOINTS } from '@/api/endpoints';
+import { useStorage } from '@/components/lib';
 import type {
   AuthResponse,
   LogoutResponse,
@@ -30,6 +31,7 @@ export const authService = {
    * Login user
    */
   login: async (email: string, password: string): Promise<AuthResponse> => {
+    const {set: setStorage} = useStorage();
     console.log('🔐 AuthService: Login attempt with:', { email, password: '***' });
     
     try {
@@ -47,6 +49,7 @@ export const authService = {
       if (authResponse.success && authResponse.accessToken && authResponse.refreshToken) {
         console.log('🔐 AuthService: Setting tokens from login');
         await apiClient.setTokens(authResponse.accessToken, authResponse.refreshToken);
+        await setStorage('user', authResponse.user); // Store user name in storage for later use
       } else {
         console.log('🔐 AuthService: No tokens in response or login failed');
       }

@@ -3,7 +3,7 @@ import type { RefreshTokenResponse } from "@/types/auth";
 import type { ApiResponse } from "@/types/common";
 import { API_ENDPOINTS } from "./endpoints";
 
-const API_BASE_URL = "https://backend-s3j0.onrender.com";
+const API_BASE_URL = "https://wodgoat.vercel.app";
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 
