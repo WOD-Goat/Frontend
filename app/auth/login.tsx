@@ -109,7 +109,7 @@ export default function LoginScreen() {
 
   const handleRegister = () => {
     // Navigate to register screen
-    router.push("/auth/signup");
+    router.push("/auth/aa");
   };
 
   return (

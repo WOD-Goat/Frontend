@@ -204,11 +204,11 @@ export default function SignupScreen() {
   };
 
   return (
-    <Page title="Sign Up" footer={renderFooter()}>
+    <Page footer={renderFooter()}>
       {/* Welcome Section */}
       <View style={styles.welcomeSection}>
         <Text style={[styles.welcomeTitle, Typography.displaySmall]}>
-          Join 90 Box Family 💛
+          Join WODGoat Family 💛
         </Text>
         <Text style={[styles.welcomeSubtitle, Typography.bodyMedium]}>
           Enter your account details to continue
@@ -331,6 +331,7 @@ const styles = StyleSheet.create({
   formSection: {
     flex: 1,
     justifyContent: "flex-start",
+    marginBottom: 24,
   },
   inputGroup: {
     marginBottom: 10,
