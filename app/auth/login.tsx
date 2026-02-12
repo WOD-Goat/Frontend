@@ -43,26 +43,7 @@ export default function LoginScreen() {
       setIsPasswordValid(false);
       return false;
     }
-    if (!/(?=.*[a-z])/.test(password)) {
-      setPasswordError("Password must contain at least one lowercase letter");
-      setIsPasswordValid(false);
-      return false;
-    }
-    if (!/(?=.*[A-Z])/.test(password)) {
-      setPasswordError("Password must contain at least one uppercase letter");
-      setIsPasswordValid(false);
-      return false;
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      setPasswordError("Password must contain at least one number");
-      setIsPasswordValid(false);
-      return false;
-    }
-    if (!/(?=.*[@$!%*?&])/.test(password)) {
-      setPasswordError("Password must contain at least one special character (@$!%*?&)");
-      setIsPasswordValid(false);
-      return false;
-    }
+    
     setPasswordError("");
     setIsPasswordValid(true);
     return true;
@@ -109,7 +90,7 @@ export default function LoginScreen() {
 
   const handleRegister = () => {
     // Navigate to register screen
-    router.push("/auth/aa");
+    router.push("/auth/signup");
   };
 
   return (

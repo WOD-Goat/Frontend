@@ -55,10 +55,8 @@ export default function SignupScreen() {
           fieldError = validateEgyptianPhone(value);
           break;
         case "password":
-          // Only show password errors if user has typed at least 3 characters
-          if (value.length >= 3 || touchedFields.password) {
-            fieldError = validatePassword(value);
-          }
+          fieldError = validatePassword(value);
+
           break;
       }
 
