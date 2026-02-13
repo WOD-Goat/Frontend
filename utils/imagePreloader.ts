@@ -1,17 +1,15 @@
 import { Asset } from 'expo-asset';
 import { Image } from 'expo-image';
-import { appIcons, banners, serviceIcons, tabIcons } from '../assets/images';
+import { appIcons, mascotAssets, tabIcons } from '../assets/images';
 
 // Collect all image sources
 const imageAssets = [
   // Tab icons
   ...Object.values(tabIcons),
-  // Service icons
-  ...Object.values(serviceIcons),
   // App icons
   ...Object.values(appIcons),
-  // Banners
-  ...Object.values(banners),
+  // Mascot assets
+  ...Object.values(mascotAssets),
 ];
 
 /**

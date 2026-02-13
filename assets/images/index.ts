@@ -11,28 +11,30 @@ export const tabIcons = {
   stopwatch: require("./stopwatch.png"),
 };
 
-// Service Icons
-export const serviceIcons = {
-  crossfit: require("./crossfit.png"),
-  gym: require("./gym.png"),
-  performance: require("./performance.png"),
-  mobility: require("./mobility.png"),
-  fitmax: require("./fitmax.png"),
-};
-
 // App Icons
 export const appIcons = {
   logo: require("./logo.png"),
 };
 
-export const banners = {
-  banner: require("./banner.png"),
+export const mascotAssets = {
+  backsquat: require("./backsquat.png"),
+  bike: require("./bike.png"),
+  doctor: require("./doctor.png"),
+  goatai: require("./goatai.png"),
+  premium: require("./premium.png"),
+  pushup: require("./pushup.png"),
+  sledpush: require("./sledpush.png"),
+  snatch: require("./snatch.png"),
+  standard: require("./standard.png"),
+  upcoming: require("./upcoming.png"),
+  whistle: require("./whistle.png"),
 };
 
 // Export all images as a single object for convenience
 export const images = {
   ...tabIcons,
   ...appIcons,
+  ...mascotAssets,
 };
 
 // Default export for easier importing

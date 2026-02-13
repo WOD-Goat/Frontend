@@ -1,4 +1,3 @@
-import { serviceIcons } from "@/assets/images";
 import { useRouter } from "expo-router";
 import {
     Image,
@@ -23,31 +22,31 @@ const services: Service[] = [
   {
     id: "crossfit",
     title: "Crossfit",
-    icon: serviceIcons.crossfit,
+    icon: "",
     route: "/services/crossfit",
   },
   {
     id: "gym",
     title: "Gym",
-    icon: serviceIcons.gym,
+    icon: "",
     route: "/services/gym",
   },
   {
     id: "performance",
     title: "Performance",
-    icon: serviceIcons.performance,
+    icon: "",
     route: "/services/performance",
   },
   {
     id: "mobility",
     title: "Mobility",
-    icon: serviceIcons.mobility,
+    icon: "",
     route: "/services/mobility",
   },
   {
     id: "fitmax",
     title: "Fit Max",
-    icon: serviceIcons.fitmax,
+    icon: "",
     route: "/services/fitmax",
   },
 ];
