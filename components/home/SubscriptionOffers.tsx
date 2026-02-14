@@ -1,4 +1,3 @@
-import { banners } from "@/assets/images";
 import { Colors, responsiveSize, Typography } from "@/constants";
 import { router } from "expo-router";
 import {
@@ -17,15 +16,15 @@ const { width } = Dimensions.get("window");
 const subscriptionOffers = [
   {
     id: "premium-monthly",
-    backgroundImage: banners.banner,
+    backgroundImage: '',
   },
   {
     id: "premium-yearly",
-    backgroundImage: banners.banner,
+    backgroundImage: '',
   },
   {
     id: "basic-monthly",
-    backgroundImage: banners.banner,
+    backgroundImage: '',
   },
 ];
 

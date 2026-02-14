@@ -4,6 +4,8 @@ import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { mascotAssets } from "@/assets/images";
+import { Image } from "expo-image";
 
 const { width: screenWidth } = Dimensions.get("window");
 const CARD_WIDTH = screenWidth * 0.9;
@@ -26,20 +28,20 @@ export default function OnboardingScreen() {
 
   const onboardingData = [
     {
-      image: "🚴‍♂️👨‍💼",
+      image: mascotAssets.coach,
       title: "Meet WODGoat",
       subtitle:
         "Your personal AI gym buddy, here to track every WOD, PR, and push you to your best.",
     },
     {
-      image: "🏋️‍♂️",
+      image: mascotAssets.track,
       title: "Smart WOD Tracking",
       subtitle: "WODGoat remembers your PRs, guides your workouts, and adapts to your progress.",
     },
     {
-      image: "🏆👥📜",
+      image: mascotAssets.help,
       title: "AI Guidance Anytime",
-      subtitle: "Record PRs with your voice, ask questions, and get AI tips — your personal crossfit companion is always ready.",
+      subtitle: "Record PRs with your voice, ask questions, and get AI tips with WODGoat A",
     },
   ];
 
@@ -79,7 +81,7 @@ export default function OnboardingScreen() {
             <View key={index} style={styles.card}>
               {/* Image */}
               <View style={styles.imageContainer}>
-                <Text style={styles.imageEmoji}>{item.image}</Text>
+                <Image source={item.image} style={{ width: "100%", height: "100%", resizeMode: "contain" }} />
               </View>
 
               {/* Text and Subtitle */}
@@ -160,10 +162,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-  },
-  imageEmoji: {
-    fontSize: screenWidth * 0.2,
-    textAlign: "center",
+    padding:24
   },
 
   // Text

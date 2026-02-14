@@ -8,7 +8,7 @@ export const tabIcons = {
   prSelected: require("./pr-selected.png"),
   profile: require("./profile.png"),
   profileSelected: require("./profile-selected.png"),
-  stopwatch: require("./stopwatch.png"),
+  ai: require("./ai.png"),
 };
 
 // App Icons
@@ -28,6 +28,9 @@ export const mascotAssets = {
   standard: require("./standard.png"),
   upcoming: require("./upcoming.png"),
   whistle: require("./whistle.png"),
+  help: require("./help.png"),
+  coach: require("./coach.png"),
+  track: require("./track.png"),
 };
 
 // Export all images as a single object for convenience

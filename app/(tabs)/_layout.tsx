@@ -7,17 +7,16 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary[500],
-        tabBarInactiveTintColor: "#B0B0B0",
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.secondary[500],
+          backgroundColor: Colors.secondary[600],
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
           paddingBottom: 10,
           paddingTop: 10,
           height: responsiveSize(90),
           position: "absolute",
+          borderColor: Colors.secondary[600],
         },
         tabBarLabelStyle: {
           display: "none", // Hide labels to match design
@@ -49,9 +48,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="timer"
+        name="ai"
         options={{
-          title: "Timer",
+          title: "AI",
           tabBarIcon: ({ color, focused }) => (
             <View
               style={{
@@ -65,10 +64,10 @@ export default function TabLayout() {
               }}
             >
               <Image
-                source={tabIcons.stopwatch}
+                source={tabIcons.ai}
                 style={{
-                  width: responsiveSize(32),
-                  height: responsiveSize(32),
+                  width: '100%',
+                  height: '100%',
                 }}
               />
             </View>

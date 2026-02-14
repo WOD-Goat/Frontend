@@ -1,4 +1,3 @@
-import { banners } from '@/assets/images';
 import { Colors } from '@/constants';
 import React, { useState } from 'react';
 import {
@@ -29,17 +28,18 @@ interface BannerCarouselProps {
 const defaultBanners: Banner[] = [
   {
     id: '1',
-    image: banners.banner,
+    image: '',
     title: 'Summer Challenge',
   },
   {
     id: '2',
-    image: banners.banner,
+    image: '',
+
     title: 'New Classes',
   },
   {
     id: '3',
-    image: banners.banner,
+    image: '',
     title: 'Member Offers',
   },
 ];
