@@ -1,53 +1,68 @@
-import { ReactNode } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextStyle, TouchableOpacity, ViewStyle } from 'react-native';
-import { Theme, Typography } from '../../constants';
+import { ReactNode } from "react";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
+} from "react-native";
+import { Theme, Typography } from "../../constants";
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
-  size?: 'small' | 'medium' | 'large';
+  variant?: "primary" | "secondary" | "outline" | "danger";
+  size?: "small" | "medium" | "large";
   disabled?: boolean;
   loading?: boolean;
   icon?: ReactNode;
   fullWidth?: boolean;
+  rounded?: boolean;
 }
 
 export default function Button({
   title,
   onPress,
-  variant = 'primary',
-  size = 'medium',
+  variant = "primary",
+  size = "medium",
   disabled = false,
   loading = false,
   icon,
   fullWidth = false,
+  rounded = false,
 }: ButtonProps) {
   const getButtonStyle = (): ViewStyle[] => {
     const baseStyle: ViewStyle[] = [styles.button, styles[size] as ViewStyle];
-    
+
     if (fullWidth) {
       baseStyle.push(styles.fullWidth as ViewStyle);
     }
-    
+    if (rounded) {
+      baseStyle.push({ borderRadius: 50 } as ViewStyle);
+    }
+
     if (disabled || loading) {
       baseStyle.push(styles.disabled as ViewStyle);
     } else {
       baseStyle.push(styles[variant] as ViewStyle);
     }
-    
+
     return baseStyle;
   };
 
   const getTextStyle = (): TextStyle[] => {
-    const baseStyle: TextStyle[] = [styles.text, styles[`${size}Text`] as TextStyle];
-    
+    const baseStyle: TextStyle[] = [
+      styles.text,
+      styles[`${size}Text`] as TextStyle,
+    ];
+
     if (disabled || loading) {
       baseStyle.push(styles.disabledText as TextStyle);
     } else {
       baseStyle.push(styles[`${variant}Text`] as TextStyle);
     }
-    
+
     return baseStyle;
   };
 
@@ -59,9 +74,13 @@ export default function Button({
       activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? Theme.colors.text.inverse : Theme.common.primary} 
+        <ActivityIndicator
+          size="small"
+          color={
+            variant === "primary"
+              ? Theme.colors.text.inverse
+              : Theme.common.primary
+          }
         />
       ) : (
         <>
@@ -75,13 +94,13 @@ export default function Button({
 
 const styles = StyleSheet.create({
   button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: Theme.borderRadius.md,
     gap: Theme.spacing.sm,
   },
-  
+
   // Sizes
   small: {
     height: Theme.layout.buttonHeight.small,
@@ -93,9 +112,9 @@ const styles = StyleSheet.create({
   },
   large: {
     height: Theme.layout.buttonHeight.large,
-    paddingHorizontal: Theme.spacing['2xl'],
+    paddingHorizontal: Theme.spacing["2xl"],
   },
-  
+
   // Variants
   primary: {
     backgroundColor: Theme.common.primary,
@@ -106,7 +125,7 @@ const styles = StyleSheet.create({
     ...Theme.shadows.small,
   },
   outline: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     borderWidth: 2,
     borderColor: Theme.common.primary,
   },
@@ -114,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.common.error,
     ...Theme.shadows.small,
   },
-  
+
   // States
   disabled: {
     backgroundColor: Theme.colors.neutral[200],
@@ -122,12 +141,12 @@ const styles = StyleSheet.create({
     ...Theme.shadows.none,
   },
   fullWidth: {
-    width: '100%',
+    width: "100%",
   },
-  
+
   // Text styles
   text: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   smallText: {
     ...Typography.buttonSmall,
@@ -138,7 +157,7 @@ const styles = StyleSheet.create({
   largeText: {
     ...Typography.buttonLarge,
   },
-  
+
   // Text variants
   primaryText: {
     color: Theme.colors.text.inverse,

@@ -48,7 +48,7 @@ export default function Page({
   scrollable = true,
   keyboardAvoiding = true,
   backgroundColor = Colors.background.primary,
-  contentPadding = 24,
+  contentPadding = 16,
   footer,
   contentStyle,
   headerStyle,
@@ -208,9 +208,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 56,
   },
   content: {
-    flex: 1,
+    paddingBottom: 42,
   },
 
   // Footer styles

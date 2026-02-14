@@ -31,6 +31,16 @@ export const mascotAssets = {
   help: require("./help.png"),
   coach: require("./coach.png"),
   track: require("./track.png"),
+  "hands-free": require("./hands-free.png"),
+  rest: require("./rest.png"),
+};
+
+export const icons = {
+  "active-streak": require("./active-streak.png"),
+  "inactive-streak": require("./inactive-streak.png"),
+  dumbell: require("./dumbell.png"),
+  star: require("./star.png"),
+  trophy: require("./trophy.png"),
 };
 
 // Export all images as a single object for convenience
@@ -38,6 +48,7 @@ export const images = {
   ...tabIcons,
   ...appIcons,
   ...mascotAssets,
+  ...icons,
 };
 
 // Default export for easier importing

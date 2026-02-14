@@ -1,12 +1,13 @@
 import { useStorage } from "@/components/lib";
+import { useEffect, useState } from "react";
 import {
   BannerCarousel,
+  Gap,
   HeaderSection,
   Page,
-  ServicesSection,
-  SubscriptionOffers,
+  StatsCard,
+  WODCard
 } from "../../components";
-import { useEffect, useState } from "react";
 
 export default function HomeScreen() {
   const { get: getStorage } = useStorage();
@@ -23,7 +24,18 @@ export default function HomeScreen() {
       <HeaderSection
         userName={userName.charAt(0).toUpperCase() + userName.slice(1)}
       />
-      
+      <Gap size={26} />
+      <WODCard
+        coach="Yahia"
+        workoutCount={4}
+        title="Today's WOD"
+        workoutType="Strength Day"
+        onPress={() => {}}
+      />
+      <Gap size={26} />
+      <BannerCarousel />
+      <Gap size={26} />
+      <StatsCard />
     </Page>
   );
 }

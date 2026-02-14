@@ -1,4 +1,4 @@
-import { Colors, Typography } from '@/constants';
+import { Colors, FontFamilies, FontSizes, Typography } from '@/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -31,17 +31,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
     marginBottom: 4,
-    ...Typography.headingLarge,
   },
   subtitle: {
-    fontSize: 14,
+    fontFamily: FontFamilies.spartanMedium,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
     lineHeight: 20,
-    ...Typography.bodyMedium,
   },
   notificationIcon: {
     marginTop: 2,
