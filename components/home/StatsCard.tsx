@@ -74,8 +74,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 120,
-    borderRightWidth: 1,
-    borderBottomWidth: 1,
     borderColor: Colors.primary[500],
   },
   leftBorder: {

@@ -1,9 +1,13 @@
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { apiClient } from "../api/client";
+import { authService } from "../api/services/auth";
+import { useGlobalState } from "../components/lib/global-state";
+import { useStorage } from "../components/lib/storage";
 import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
@@ -11,6 +15,11 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { get: getStorage } = useStorage();
+  const globalState = useGlobalState();
+
   const [loaded, error] = useFonts({
     // League Spartan fonts
     "LeagueSpartan-Thin": require("../assets/fonts/League_Spartan/static/LeagueSpartan-Thin.ttf"),
@@ -44,13 +53,78 @@ export default function RootLayout() {
     loadImages();
   }, []);
 
+  // Check authentication when component mounts
   useEffect(() => {
-    if ((loaded || error) && imagesLoaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded, error, imagesLoaded]);
+    const checkAuth = async () => {
+      try {
+        // Wait for auth service to initialize and load tokens
+        await apiClient.waitForInitialization();
 
-  if ((!loaded && !error) || !imagesLoaded) {
+        // Check if tokens exist in storage
+        const hasTokens = authService.isAuthenticated();
+
+        if (!hasTokens) {
+          console.log("🔐 Layout: No tokens found");
+          setIsAuthenticated(false);
+          setAuthChecked(true);
+          return;
+        }
+
+        console.log("🔐 Layout: Tokens found, validating refresh token...");
+
+        // Try to refresh the access token to validate refresh token
+        try {
+          const refreshed = await apiClient.refreshAccessToken();
+
+          if (refreshed) {
+            console.log(
+              "✅ Layout: Refresh token valid, access token refreshed",
+            );
+
+            // Load user data from storage and set in global state
+            const userData = await getStorage("user");
+            if (userData) {
+              console.log("👤 Layout: User data loaded from storage");
+              globalState.set("user", userData);
+            }
+
+            setIsAuthenticated(true);
+          } else {
+            console.log("⚠️ Layout: Refresh token invalid, clearing storage");
+            await apiClient.clearTokens();
+            setIsAuthenticated(false);
+          }
+        } catch {
+          console.log("⚠️ Layout: Session expired, please log in again");
+          await apiClient.clearTokens();
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error("❌ Layout auth check error:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Hide splash screen and navigate when everything is ready
+  useEffect(() => {
+    if ((loaded || error) && imagesLoaded && authChecked) {
+      SplashScreen.hideAsync();
+
+      // Navigate to appropriate screen
+      if (isAuthenticated) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/onboarding");
+      }
+    }
+  }, [loaded, error, imagesLoaded, authChecked, isAuthenticated]);
+
+  if ((!loaded && !error) || !imagesLoaded || !authChecked) {
     return null;
   }
 

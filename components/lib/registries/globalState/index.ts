@@ -8,6 +8,7 @@ export type GlobalStateRegistry = GlobalState;
 
 export const defaultState: GlobalStateRegistry = {
   signupData: null,
+  user: null,
 };
 
 export { GlobalStateProvider, useGlobalState } from "../../global-state";

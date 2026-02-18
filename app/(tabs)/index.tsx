@@ -1,29 +1,25 @@
-import { useStorage } from "@/components/lib";
-import { useEffect, useState } from "react";
+import { useGlobalState } from "@/components/lib";
 import {
   BannerCarousel,
   Gap,
   HeaderSection,
   Page,
   StatsCard,
-  WODCard
+  WODCard,
 } from "../../components";
 
 export default function HomeScreen() {
-  const { get: getStorage } = useStorage();
-  const [userName, setUserName] = useState("User");
+  const globalState = useGlobalState();
+  const user = globalState.get("user");
+  const rawUserName = user?.nickname ?? "User";
+  const userName = rawUserName.charAt(0).toUpperCase() + rawUserName.slice(1);
 
-  useEffect(() => {
-    getStorage("user").then((user) => {
-      setUserName(user?.nickname ?? "User");
-    });
-  }, [getStorage]);
+  // TODO: Fetch streak from API and store in global state
+  const streakDays = 0; // Placeholder - will be loaded from user stats
 
   return (
     <Page showBackButton={false}>
-      <HeaderSection
-        userName={userName.charAt(0).toUpperCase() + userName.slice(1)}
-      />
+      <HeaderSection userName={userName} streakDays={streakDays} />
       <Gap size={26} />
       <WODCard
         coach="Yahia"
@@ -33,7 +29,7 @@ export default function HomeScreen() {
         onPress={() => {}}
       />
       <Gap size={26} />
-      <BannerCarousel />
+      <BannerCarousel onBannerPress={() => {}} />
       <Gap size={26} />
       <StatsCard />
     </Page>
