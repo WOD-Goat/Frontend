@@ -21,14 +21,3 @@ export function GlobalStateProvider({
     </GlobalStateContext.Provider>
   );
 }
-
-// Custom hook to access the global state from any component
-export function useGlobalStateContext(): GlobalStateControls {
-  const context = useContext(GlobalStateContext);
-  if (context === undefined) {
-    throw new Error(
-      "useGlobalStateContext must be used within a GlobalStateProvider"
-    );
-  }
-  return context;
-}

@@ -4,10 +4,7 @@
  */
 
 // Global State Management
-export {
-    GlobalStateProvider, useGlobalState,
-    useGlobalStateContext
-} from "./global-state";
+export { GlobalStateProvider, useGlobalState } from "./global-state";
 export type { GlobalStateControls } from "./global-state";
 
 // Persistent Storage
@@ -16,4 +13,3 @@ export type { StorageControls } from "./storage";
 
 // Registries (type definitions)
 export * from "./registries";
-
