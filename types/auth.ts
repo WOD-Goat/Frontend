@@ -1,17 +1,34 @@
-
 // User Types
 
 export enum Gender {
-  MALE = 'male',
-  FEMALE = 'female'
+  MALE = "male",
+  FEMALE = "female",
 }
 
 export interface User {
-  uid: string;
-  email: string;
-  fullName: string;
+  uid: string | null;
+  name: string;
   nickname: string;
-  isTrainer: boolean;
+  email: string;
+  mobileNumber: string;
+  dateOfBirth: Date;
+  gender: string;
+  height: number;
+  weight: number;
+  profilePictureUrl: string;
+  statsSummary: {
+    totalWorkouts: number;
+    currentStreak: number;
+    longestStreak: number;
+    lastWorkoutDate: Date | null;
+    latestPR: {
+      exerciseId: string | null;
+      exerciseName: string | null;
+      estimated1RM: number;
+    };
+  };
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface RegisterUserData {
