@@ -1,4 +1,5 @@
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { router } from "expo-router";
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WorkoutCard from "./WorkoutCard";
@@ -15,11 +16,13 @@ interface WorkoutDateSectionProps {
   date: string;
   status: WorkoutStatus;
   workouts: Workout[];
+  workoutType?: string;
 }
 
 export default function WorkoutDateSection({
   date,
   status,
+  workoutType = "Workout",
   workouts,
 }: WorkoutDateSectionProps) {
   const statusConfig = {
@@ -38,9 +41,20 @@ export default function WorkoutDateSection({
       <View style={styles.header}>
         <View>
           <Text style={styles.date}>{date}</Text>
-          <Text style={styles.statusText}>Status: {statusLabel}</Text>
+          <Text style={styles.statusText}>{statusLabel}</Text>
         </View>
-        <Pressable onPress={() => console.log("View workout pressed")}>
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/workout/[id]" as any,
+              params: {
+                id: date.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+                date: date,
+                workoutType: workoutType,
+              },
+            })
+          }
+        >
           <Text style={styles.viewWorkoutLink}>View Workout</Text>
         </Pressable>
       </View>

@@ -1,3 +1,4 @@
+import { appIcons, mascotAssets } from "@/assets/images";
 import { Button, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
@@ -6,6 +7,7 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   Dimensions,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,7 +20,7 @@ export default function GenderSelectionScreen() {
   const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
   const signupData = getFromGlobalState("signupData") || {};
   const [selectedGender, setSelectedGender] = useState<Gender | null>(
-    signupData.gender || null,
+    (signupData.gender as Gender) || null,
   );
 
   const handleContinue = () => {
@@ -29,11 +31,7 @@ export default function GenderSelectionScreen() {
     }
   };
 
-  const renderGenderOption = (
-    gender: Gender,
-    symbol: string,
-    label: string,
-  ) => {
+  const renderGenderOption = (gender: Gender, icon: any, label: string) => {
     const isSelected = selectedGender === gender;
 
     return (
@@ -46,14 +44,7 @@ export default function GenderSelectionScreen() {
         onPress={() => setSelectedGender(gender)}
       >
         <View style={styles.genderIconContainer}>
-          <Text
-            style={[
-              styles.genderSymbol,
-              isSelected ? styles.selectedSymbol : styles.unselectedSymbol,
-            ]}
-          >
-            {symbol}
-          </Text>
+          <Image source={icon} style={styles.genderIcon} resizeMode="contain" />
         </View>
       </TouchableOpacity>
     );
@@ -83,8 +74,8 @@ export default function GenderSelectionScreen() {
 
         {/* Gender Options */}
         <View style={styles.optionsContainer}>
-          {renderGenderOption(Gender.MALE, "♂", "Male")}
-          {renderGenderOption(Gender.FEMALE, "♀", "Female")}
+          {renderGenderOption(Gender.MALE, appIcons.logo, "Male")}
+          {renderGenderOption(Gender.FEMALE, mascotAssets.female, "Female")}
         </View>
       </View>
     </Page>
@@ -95,13 +86,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "space-between",
-    paddingVertical: 20,
   },
 
   // Title Section
   titleSection: {
     alignItems: "center",
-    paddingVertical: 20,
+    paddingTop: 40,
   },
   title: {
     color: Colors.text.primary,
@@ -147,17 +137,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  genderSymbol: {
-    fontSize: screenWidth * 0.15,
-    fontWeight: "bold",
-  },
-
-  selectedSymbol: {
-    color: "#000000",
-  },
-
-  unselectedSymbol: {
-    color: "#000000",
+  genderIcon: {
+    width: screenWidth * 0.25,
+    height: screenWidth * 0.25,
   },
 
   // Button Section

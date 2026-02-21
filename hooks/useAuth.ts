@@ -50,14 +50,26 @@ export const useAuth = (): UseAuthReturn => {
     setError(null);
 
     try {
-      const response = await authService.register(userData);
+      // First, register the user
+      const registerResponse = await authService.register(userData);
 
-      if (response.success) {
-        // Registration successful, but we don't get user data back
-        // User needs to login after registration
-        return true;
+      if (registerResponse.success) {
+        console.log("👤 useAuth: Registration successful, now logging in...");
+
+        // After successful registration, login to get tokens and user data
+        const loginSuccess = await login(userData.email, userData.password);
+
+        if (loginSuccess) {
+          console.log("👤 useAuth: Auto-login after registration successful");
+          return true;
+        } else {
+          setError(
+            "Registration successful but login failed. Please try logging in.",
+          );
+          return false;
+        }
       } else {
-        setError("Registration failed");
+        setError(registerResponse.message || "Registration failed");
         return false;
       }
     } catch (error) {

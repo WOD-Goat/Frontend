@@ -3,13 +3,13 @@
  * Represents all in-memory state managed by Zustand
  */
 
-import { RegisterUserData, User } from "./auth";
+import { SignupFormData, User } from "./auth";
 import { Group } from "./group";
 import { PersonalRecord } from "./personalRecord";
 import { AssignedWorkout } from "./workout";
 
 export interface GlobalState {
-  signupData: Partial<RegisterUserData> | null;
+  signupData: Partial<SignupFormData> | null;
   user: User | null;
   workouts: AssignedWorkout[] | null;
   groups: Group[] | null;

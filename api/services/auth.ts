@@ -2,25 +2,34 @@ import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import { useStorage } from "@/components/lib";
 import type {
-    AuthResponse,
-    LogoutResponse,
-    RegisterUserData,
+  AuthResponse,
+  LogoutResponse,
+  RegisterResponse,
+  RegisterUserData,
 } from "@/types/auth";
 
 export const authService = {
   /**
    * Register a new user
    */
-  register: async (userData: RegisterUserData) => {
+  register: async (userData: RegisterUserData): Promise<RegisterResponse> => {
+    console.log("🔐 AuthService: Register attempt with:", {
+      ...userData,
+      password: "***",
+    });
+
     try {
-      const response = await apiClient.post<RegisterUserData>(
+      const response = await apiClient.post<RegisterResponse>(
         API_ENDPOINTS.AUTH.REGISTER,
         userData,
       );
 
       console.log("🔐 AuthService: Register response:", response);
 
-      return response;
+      // The response is a simple success/message response, not wrapped
+      const registerResponse = response as unknown as RegisterResponse;
+
+      return registerResponse;
     } catch (error) {
       console.error("🔐 AuthService: Register error:", error);
       throw error;

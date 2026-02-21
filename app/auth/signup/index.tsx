@@ -9,7 +9,7 @@ export default function SignupScreen() {
   const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
   const signupData = getFromGlobalState("signupData") || {};
   const [formData, setFormData] = useState({
-    fullName: signupData.fullName || "",
+    name: signupData.name || "",
     nickname: signupData.nickname || "",
     email: signupData.email || "",
     mobileNumber: signupData.mobileNumber || "",
@@ -17,7 +17,7 @@ export default function SignupScreen() {
   });
 
   const [errors, setErrors] = useState({
-    fullName: "",
+    name: "",
     nickname: "",
     email: "",
     mobileNumber: "",
@@ -25,7 +25,7 @@ export default function SignupScreen() {
   });
 
   const [touchedFields, setTouchedFields] = useState({
-    fullName: false,
+    name: false,
     nickname: false,
     email: false,
     mobileNumber: false,
@@ -42,7 +42,7 @@ export default function SignupScreen() {
     ) {
       let fieldError = "";
       switch (field) {
-        case "fullName":
+        case "name":
           fieldError = validateRequired(value, "Full Name");
           break;
         case "nickname":
@@ -141,7 +141,7 @@ export default function SignupScreen() {
 
   const validateForm = (): boolean => {
     const newErrors = {
-      fullName: validateRequired(formData.fullName, "Full Name"),
+      name: validateRequired(formData.name, "Full Name"),
       nickname: validateRequired(formData.nickname, "Nickname"),
       email: validateEmail(formData.email),
       mobileNumber: validateEgyptianPhone(formData.mobileNumber),
@@ -220,14 +220,14 @@ export default function SignupScreen() {
           <Text style={[styles.label, Typography.labelMedium]}>Full Name</Text>
           <Input
             placeholder="Your Fullname"
-            value={formData.fullName}
-            onChangeText={(value) => handleInputChange("fullName", value)}
-            onBlur={() => handleFieldBlur("fullName")}
+            value={formData.name}
+            onChangeText={(value) => handleInputChange("name", value)}
+            onBlur={() => handleFieldBlur("name")}
             autoCapitalize="words"
             autoComplete="name"
           />
-          {errors.fullName ? (
-            <Text style={styles.errorText}>{errors.fullName}</Text>
+          {errors.name ? (
+            <Text style={styles.errorText}>{errors.name}</Text>
           ) : null}
         </View>
 

@@ -5,13 +5,7 @@ import { useAuth } from "@/hooks";
 import { RegisterUserData } from "@/types";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import {
-  Dimensions,
-  FlatList,
-  StyleSheet,
-  Text,
-  View
-} from "react-native";
+import { Dimensions, FlatList, StyleSheet, Text, View } from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 const ITEM_HEIGHT = 20;
@@ -55,16 +49,21 @@ export default function HeightSelectionScreen() {
       console.log("Complete signup data:", completeSignupData);
 
       // Create User object with all required fields
+      // Convert age to birth year
+      const currentYear = new Date().getFullYear();
+      const birthYear = currentYear - completeSignupData.age!;
+
       const userData: RegisterUserData = {
         email: completeSignupData.email!,
         password: completeSignupData.password!,
-        fullName: completeSignupData.fullName!,
+        name: completeSignupData.name!,
         nickname: completeSignupData.nickname!,
         mobileNumber: completeSignupData.mobileNumber!,
         gender: completeSignupData.gender!,
-        age: completeSignupData.age!,
+        birthYear: birthYear,
         weight: completeSignupData.weight!,
         height: completeSignupData.height!,
+        profilePictureUrl: "",
       };
 
       // Call register function
@@ -72,6 +71,8 @@ export default function HeightSelectionScreen() {
 
       if (success) {
         console.log("Registration completed successfully!");
+        // Clear signup data from global state after successful registration
+        setInGlobalState("signupData", null);
         router.replace("/(tabs)");
       }
     } catch (error) {
@@ -143,7 +144,7 @@ export default function HeightSelectionScreen() {
               isLoading ||
               !signupData.email ||
               !signupData.password ||
-              !signupData.fullName ||
+              !signupData.name ||
               !signupData.nickname ||
               !signupData.mobileNumber ||
               !signupData.gender ||
@@ -214,7 +215,7 @@ const styles = StyleSheet.create({
   // Title Section
   titleSection: {
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 40,
     gap: 10,
   },
   title: {

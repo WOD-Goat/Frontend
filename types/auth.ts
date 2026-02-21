@@ -11,7 +11,7 @@ export interface User {
   nickname: string;
   email: string;
   mobileNumber: string;
-  dateOfBirth: Date;
+  birthYear: number;
   gender: string;
   height: number;
   weight: number;
@@ -32,15 +32,21 @@ export interface User {
 }
 
 export interface RegisterUserData {
+  name: string;
+  nickname: string;
   email: string;
   password: string;
-  fullName: string;
-  nickname: string;
   mobileNumber: string;
-  gender: Gender;
-  weight: number;
-  age: number;
+  birthYear: number;
+  gender: string;
   height: number;
+  weight: number;
+  profilePictureUrl: string;
+}
+
+// Signup form data - used during the signup flow (uses age instead of birthYear for better UX)
+export interface SignupFormData extends Omit<RegisterUserData, "birthYear"> {
+  age: number;
 }
 
 // Auth specific response types
@@ -60,6 +66,11 @@ export interface RefreshTokenResponse {
 }
 
 export interface LogoutResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface RegisterResponse {
   success: boolean;
   message: string;
 }

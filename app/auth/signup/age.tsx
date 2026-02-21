@@ -130,7 +130,8 @@ const styles = StyleSheet.create({
   // Title Section
   titleSection: {
     alignItems: "center",
-    paddingVertical: 40,
+    paddingVertical: 20,
+    paddingTop: 40,
     gap: 10,
   },
   title: {

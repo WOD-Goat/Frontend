@@ -9,6 +9,9 @@ export type GlobalStateRegistry = GlobalState;
 export const defaultState: GlobalStateRegistry = {
   signupData: null,
   user: null,
+  workouts: null,
+  groups: null,
+  personalRecords: null,
 };
 
 export { GlobalStateProvider, useGlobalState } from "../../global-state";

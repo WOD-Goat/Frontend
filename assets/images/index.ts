@@ -33,6 +33,7 @@ export const mascotAssets = {
   track: require("./track.png"),
   "hands-free": require("./hands-free.png"),
   rest: require("./rest.png"),
+  female: require("./female.png"),
 };
 
 export const icons = {
