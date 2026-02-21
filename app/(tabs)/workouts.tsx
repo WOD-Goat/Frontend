@@ -5,6 +5,7 @@ const workoutData = [
   {
     date: "Today",
     status: "in-progress" as const,
+    workoutType: "Strength Day",
     workouts: [
       {
         id: "today-wod1",
@@ -38,6 +39,7 @@ const workoutData = [
   {
     date: "Yesterday, Feb 17",
     status: "completed" as const,
+    workoutType: "CrossFit",
     workouts: [
       {
         id: "yesterday-wod1",
@@ -55,6 +57,7 @@ const workoutData = [
   {
     date: "Monday, Feb 16",
     status: "completed" as const,
+    workoutType: "Endurance Day",
     workouts: [
       {
         id: "monday-wod1",
@@ -82,6 +85,7 @@ const workoutData = [
   {
     date: "Sunday, Feb 15",
     status: "completed" as const,
+    workoutType: "Metcon",
     workouts: [
       {
         id: "sunday-wod1",
@@ -119,6 +123,7 @@ export default function WorkoutsScreen() {
           date={section.date}
           status={section.status}
           workouts={section.workouts}
+          workoutType={section.workoutType}
         />
       ))}
     </Page>
