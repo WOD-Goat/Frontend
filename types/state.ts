@@ -6,12 +6,12 @@
 import { SignupFormData, User } from "./auth";
 import { Group } from "./group";
 import { PersonalRecord } from "./personalRecord";
-import { AssignedWorkout } from "./workout";
+import { AssignedWorkoutData } from "./workout";
 
 export interface GlobalState {
   signupData: Partial<SignupFormData> | null;
   user: User | null;
-  workouts: AssignedWorkout[] | null;
+  workouts: AssignedWorkoutData[] | null;
   groups: Group[] | null;
   personalRecords: PersonalRecord[] | null;
   // Add more user-related data as needed

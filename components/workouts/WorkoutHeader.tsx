@@ -1,25 +1,43 @@
+import { Button } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-interface WorkoutHeaderProps {
-  subtitle?: string;
-}
+export default function WorkoutHeader() {
+  const handleAddWorkout = () => {
+    router.push("/workout/create");
+  };
 
-export default function WorkoutHeader({
-  subtitle = "It's your turn, show me what you can do",
-}: WorkoutHeaderProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Workouts</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <View style={styles.subcontainer}>
+        <Text style={styles.title}>Workouts</Text>
+        <Text style={styles.subtitle}>
+          It's your turn, show me what you can do
+        </Text>
+      </View>
+      <View>
+        <Button
+          title="+"
+          onPress={handleAddWorkout}
+          variant="primary"
+          size="small"
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  subcontainer: {
     paddingVertical: 16,
     paddingRight: 16,
+    flex: 1,
   },
   title: {
     fontFamily: FontFamilies.poppinsBold,

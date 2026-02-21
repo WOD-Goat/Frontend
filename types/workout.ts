@@ -1,84 +1,71 @@
 // Workout Types
 
-export type WorkoutType = "for_time" | "amrap" | "emom" | "strength" | "custom";
-
 export type TrackingType =
   | "weight_reps"
   | "reps"
-  | "time"
-  | "distance"
+  | "time_distance"
   | "calories";
 
 export interface ExerciseData {
-  exerciseId: string;
-  exerciseName: string;
-  sets?: number;
-  reps?: number | string; // Can be a number or "AMRAP"
-  weight?: number;
-  duration?: number; // in seconds
-  distance?: number; // in meters
-  restTime?: number; // in seconds
-  notes?: string;
-  order?: number; // For ordering exercises in a workout
+  name: string;
+  description: string; // instructions, weights, reps, timing, etc.
+  trackingType: TrackingType;
+}
+
+export interface WODData {
+  name: string; // WOD name (e.g., "Metcon", "Strength Work")
+  exercises: ExerciseData[]; // Exercises within this WOD
 }
 
 export interface ResultData {
-  exerciseId: string;
-  exerciseName: string;
-  completedAt: Date;
-  weight?: number;
-  reps?: number;
-  timeInSeconds?: number;
-  distance?: number;
-  calories?: number;
-  notes?: string;
+  wodIndex: number; // links to wods array
+  exerciseIndex: number; // links to exercises array within WOD
+  reps: number | null;
+  weight: number | null;
+  timeInSeconds: number | null;
+  distanceMeters: number | null;
 }
 
-export interface AssignedWorkout {
+export interface AssignedWorkoutData {
   id?: string;
-  assignedBy: string;
-  groupId: string | null;
-  title: string;
-  type: WorkoutType;
+  assignedBy: string; // userId of creator (self/friend)
+  groupId: string | null; // optional if assigned to a group
   assignedAt: Date;
-  scheduledFor: Date;
+  scheduledFor: Date; // day user is expected to do it
   completed: boolean;
   completedAt: Date | null;
   notes: string | null;
-  exercises: ExerciseData[];
+  wods: WODData[]; // Today's session contains multiple WODs
   results: ResultData[];
 }
 
 // Workout response types for API
 export interface WorkoutResponse {
   success: boolean;
-  data: AssignedWorkout;
+  data: AssignedWorkoutData;
   message?: string;
 }
 
 export interface WorkoutsResponse {
   success: boolean;
-  data: AssignedWorkout[];
+  data: AssignedWorkoutData[];
   message?: string;
 }
 
 // Workout creation/update types
 export interface CreateWorkoutData {
-  title: string;
-  type: WorkoutType;
-  scheduledFor: Date;
   groupId?: string | null;
+  scheduledFor: Date;
   notes?: string | null;
-  exercises: ExerciseData[];
+  wods: WODData[];
 }
 
 export interface UpdateWorkoutData {
-  title?: string;
-  type?: WorkoutType;
+  groupId?: string | null;
   scheduledFor?: Date;
-  notes?: string | null;
-  exercises?: ExerciseData[];
   completed?: boolean;
   completedAt?: Date | null;
+  notes?: string | null;
+  wods?: WODData[];
   results?: ResultData[];
 }

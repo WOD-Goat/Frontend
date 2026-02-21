@@ -1,131 +1,218 @@
-import { Gap, Page, WorkoutDateSection, WorkoutHeader } from "@/components";
+import { workoutsService } from "@/api/services";
+import { Gap, Page, WorkoutHeader, WorkoutSection } from "@/components";
+import { Colors } from "@/constants";
+import type { AssignedWorkoutData } from "@/types";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-// Sample workout data matching the design
-const workoutData = [
-  {
-    date: "Today",
-    status: "in-progress" as const,
-    workoutType: "Strength Day",
-    workouts: [
-      {
-        id: "today-wod1",
-        title: "WOD 1",
-        exercises: [
-          "3 Rounds:",
-          "10 Front Squat",
-          "10 KB Swings",
-          "10 Sec Clean Hold",
-          "3 Min Row",
-        ],
-      },
-      {
-        id: "today-wod2",
-        title: "WOD 2",
-        exercises: [
-          "3 Rounds:",
-          "10 Front Squat",
-          "10 KB Swings",
-          "10 Sec Clean Hold",
-          "3 Min Row",
-        ],
-      },
-      {
-        id: "today-wod3",
-        title: "WOD 3",
-        exercises: ["Up to 70%:", "1 Power Clean"],
-      },
-    ],
-  },
-  {
-    date: "Yesterday, Feb 17",
-    status: "completed" as const,
-    workoutType: "CrossFit",
-    workouts: [
-      {
-        id: "yesterday-wod1",
-        title: "WOD 1",
-        exercises: [
-          "3 Rounds:",
-          "10 Front Squat",
-          "10 KB Swings",
-          "10 Sec Clean Hold",
-          "3 Min Row",
-        ],
-      },
-    ],
-  },
-  {
-    date: "Monday, Feb 16",
-    status: "completed" as const,
-    workoutType: "Endurance Day",
-    workouts: [
-      {
-        id: "monday-wod1",
-        title: "WOD 1",
-        exercises: [
-          "3 Rounds:",
-          "10 Front Squat",
-          "10 KB Swings",
-          "10 Sec Clean Hold",
-          "3 Min Row",
-        ],
-      },
-      {
-        id: "monday-wod2",
-        title: "WOD 2",
-        exercises: ["Up to 70%:", "1 Power Clean"],
-      },
-      {
-        id: "monday-wod3",
-        title: "WOD 3",
-        exercises: ["Up to 70%:", "1 Power Clean"],
-      },
-    ],
-  },
-  {
-    date: "Sunday, Feb 15",
-    status: "completed" as const,
-    workoutType: "Metcon",
-    workouts: [
-      {
-        id: "sunday-wod1",
-        title: "WOD 1",
-        exercises: [
-          "3 Rounds:",
-          "10 Front Squat",
-          "10 KB Swings",
-          "10 Sec Clean Hold",
-        ],
-      },
-      {
-        id: "sunday-wod2",
-        title: "WOD 2",
-        exercises: ["Up to 70%:", "1 Power Clean"],
-      },
-      {
-        id: "sunday-wod3",
-        title: "WOD 3",
-        exercises: ["Up to 70%:", "1 Power Clean"],
-      },
-    ],
-  },
-];
+interface WorkoutSection {
+  date: string;
+  status: "not-started-yet" | "completed";
+  workoutId: string; // Single workout session ID
+  wods: {
+    // WODs within this workout session
+    id: string;
+    title: string;
+    exercises: string[];
+  }[];
+  workoutType: string;
+}
 
 export default function WorkoutsScreen() {
+  const [workoutSections, setWorkoutSections] = useState<WorkoutSection[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadWorkouts();
+  }, []);
+
+  const loadWorkouts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await workoutsService.getAllWorkouts();
+
+      if (response.success && response.data) {
+        const sections = transformWorkoutsToSections(response.data);
+        setWorkoutSections(sections);
+      } else {
+        setError(response.message || "Failed to load workouts");
+      }
+    } catch (err: any) {
+      console.error("Error loading workouts:", err);
+      setError(err.message || "Failed to load workouts");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const parseFirebaseDate = (timestamp: any): Date => {
+    // Firebase Timestamp with toDate() method
+    if (timestamp?.toDate && typeof timestamp.toDate === "function") {
+      return timestamp.toDate();
+    }
+    // Firebase Timestamp object format
+    if (timestamp?._seconds !== undefined) {
+      return new Date(
+        timestamp._seconds * 1000 + (timestamp._nanoseconds || 0) / 1000000,
+      );
+    }
+    // Already a Date object
+    if (timestamp instanceof Date) {
+      return timestamp;
+    }
+    // String format
+    return new Date(timestamp);
+  };
+
+  const isToday = (date: Date): boolean => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  const isYesterday = (date: Date): boolean => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return (
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear()
+    );
+  };
+
+  const formatDate = (date: Date): string => {
+    const monthDay = date.toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+    });
+
+    if (isToday(date)) {
+      return `Today, ${monthDay}`;
+    } else if (isYesterday(date)) {
+      return `Yesterday, ${monthDay}`;
+    } else {
+      return date.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+    }
+  };
+
+  const transformWorkoutsToSections = (
+    workouts: AssignedWorkoutData[],
+  ): WorkoutSection[] => {
+    // Create one section per workout (no grouping by date)
+    return workouts.map((workout) => {
+      const dateObj = parseFirebaseDate(workout.scheduledFor);
+      const date = formatDate(dateObj);
+
+      return {
+        date,
+        status: workout.completed ? "completed" : "not-started-yet",
+        workoutType: workout.wods[0]?.name || "Workout",
+        workoutId: workout.id || "",
+        // Map WODs within this workout session
+        wods: workout.wods.map((wod, wodIndex) => ({
+          id: `${workout.id || ""}-wod-${wodIndex}`,
+          title: wod.name || "Untitled WOD",
+          exercises: wod.exercises.map((ex) => ex.name),
+        })),
+      };
+    });
+  };
+
+  if (loading) {
+    return (
+      <Page showBackButton={false}>
+        <WorkoutHeader />
+        <Gap size={26} />
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
+          <Text style={styles.loadingText}>Loading workouts...</Text>
+        </View>
+      </Page>
+    );
+  }
+
+  if (error) {
+    return (
+      <Page showBackButton={false}>
+        <WorkoutHeader />
+        <Gap size={26} />
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      </Page>
+    );
+  }
+
+  if (workoutSections.length === 0) {
+    return (
+      <Page showBackButton={false}>
+        <WorkoutHeader />
+        <Gap size={26} />
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyText}>No workouts found</Text>
+          <Text style={styles.emptySubtext}>
+            Create your first workout to get started!
+          </Text>
+        </View>
+      </Page>
+    );
+  }
+
   return (
     <Page showBackButton={false}>
       <WorkoutHeader />
       <Gap size={26} />
 
-      {workoutData.map((section, index) => (
-        <WorkoutDateSection
+      {workoutSections.map((section, index) => (
+        <WorkoutSection
           key={index}
           date={section.date}
           status={section.status}
-          workouts={section.workouts}
+          wods={section.wods}
           workoutType={section.workoutType}
+          workoutId={section.workoutId}
         />
       ))}
     </Page>
   );
 }
+
+const styles = StyleSheet.create({
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: Colors.text.secondary,
+    fontSize: 14,
+  },
+  errorText: {
+    color: Colors.error[500],
+    fontSize: 16,
+    textAlign: "center",
+  },
+  emptyText: {
+    color: Colors.text.primary,
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  emptySubtext: {
+    marginTop: 8,
+    color: Colors.text.secondary,
+    fontSize: 14,
+    textAlign: "center",
+  },
+});

@@ -1,9 +1,12 @@
+import { workoutsService } from "@/api/services";
 import { Button, Page } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import type { AssignedWorkoutData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  ActivityIndicator,
   Animated,
   LayoutAnimation,
   Platform,
@@ -37,41 +40,12 @@ interface WOD {
 
 export default function WorkoutDetailScreen() {
   const params = useLocalSearchParams();
-  const { date, workoutType } = params;
+  const { id } = params;
 
-  // Sample data - in a real app, this would come from an API or global state
-  const [wods, setWods] = useState<WOD[]>([
-    {
-      id: "wod1",
-      title: "WOD1",
-      exercises: [
-        { name: "Chest Press" },
-        { name: "Strict Press" },
-        { name: "Lateral Raises" },
-        { name: "Triceps Pushdowns" },
-      ],
-      completed: true,
-    },
-    {
-      id: "wod2",
-      title: "WOD2",
-      exercises: [
-        { name: "Squat Cleans" },
-        {
-          name: "Cleans Complex",
-          details: [
-            "4 Rounds:",
-            "3 Deadlifts",
-            "1 Squat Cleans",
-            "2 Hang Cleans",
-            "1 Jerk",
-            "Weight: Up to 85%",
-          ],
-        },
-      ],
-      completed: false,
-    },
-  ]);
+  const [workout, setWorkout] = useState<AssignedWorkoutData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [wods, setWods] = useState<WOD[]>([]);
 
   const [expandedExercises, setExpandedExercises] = useState<{
     [key: string]: boolean;
@@ -79,6 +53,45 @@ export default function WorkoutDetailScreen() {
 
   // Animated values for completion button transitions
   const animatedValues = useRef<{ [key: string]: Animated.Value }>({});
+
+  // Fetch workout data
+  useEffect(() => {
+    if (id && typeof id === "string") {
+      loadWorkout(id);
+    }
+  }, [id]);
+
+  const loadWorkout = async (workoutId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await workoutsService.getWorkoutById(workoutId);
+
+      if (response.success && response.data) {
+        setWorkout(response.data);
+
+        // Transform workout data to WOD format for the UI
+        const transformedWods: WOD[] = response.data.wods.map((wod, index) => ({
+          id: `wod-${index}`,
+          title: wod.name,
+          exercises: wod.exercises.map((ex) => ({
+            name: ex.name,
+            details: ex.description ? [ex.description] : undefined,
+          })),
+          completed: false, // You can track this separately or add to backend
+        }));
+
+        setWods(transformedWods);
+      } else {
+        setError(response.message || "Failed to load workout");
+      }
+    } catch (err: any) {
+      console.error("Error loading workout:", err);
+      setError(err.message || "Failed to load workout");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Initialize animated values for each WOD
   wods.forEach((wod) => {
@@ -116,6 +129,43 @@ export default function WorkoutDetailScreen() {
       ),
     );
   };
+
+  if (loading) {
+    return (
+      <Page title="Workout Details">
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
+          <Text style={styles.loadingText}>Loading workout...</Text>
+        </View>
+      </Page>
+    );
+  }
+
+  if (error) {
+    return (
+      <Page title="Workout Details">
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <View style={{ marginTop: 16 }}>
+            <Button title="Go Back" onPress={() => router.back()} />
+          </View>
+        </View>
+      </Page>
+    );
+  }
+
+  if (!workout || wods.length === 0) {
+    return (
+      <Page title="Workout Details">
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>Workout not found</Text>
+          <View style={{ marginTop: 16 }}>
+            <Button title="Go Back" onPress={() => router.back()} />
+          </View>
+        </View>
+      </Page>
+    );
+  }
 
   return (
     <Page
@@ -312,5 +362,21 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
     lineHeight: 20,
     marginBottom: 4,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    color: Colors.text.secondary,
+    fontSize: 14,
+  },
+  errorText: {
+    color: Colors.error[500],
+    fontSize: 16,
+    textAlign: "center",
   },
 });

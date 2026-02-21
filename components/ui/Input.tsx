@@ -34,6 +34,7 @@ export default function Input({
         styles[variant],
         isFocused && styles.focused,
         error && styles.error,
+        props.multiline && { height: responsiveSize(120), paddingVertical: 12 },
       ]}>
 
         <TextInput
@@ -98,7 +99,7 @@ const styles = StyleSheet.create({
   
   // States
   focused: {
-    borderColor: Colors.secondary[500],
+    borderColor: Colors.primary[300],
     borderWidth: 2,
   },
   error: {

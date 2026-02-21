@@ -4,30 +4,32 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WorkoutCard from "./WorkoutCard";
 
-export type WorkoutStatus = "in-progress" | "completed";
+export type WorkoutStatus = "not-started-yet" | "completed";
 
-interface Workout {
+interface WOD {
   id: string;
   title: string;
   exercises: string[];
 }
 
-interface WorkoutDateSectionProps {
+interface WorkoutSectionProps {
   date: string;
   status: WorkoutStatus;
-  workouts: Workout[];
+  wods: WOD[];
   workoutType?: string;
+  workoutId: string;
 }
 
-export default function WorkoutDateSection({
+export default function WorkoutSection({
   date,
   status,
   workoutType = "Workout",
-  workouts,
-}: WorkoutDateSectionProps) {
+  wods,
+  workoutId,
+}: WorkoutSectionProps) {
   const statusConfig = {
-    "in-progress": {
-      label: "In Progress ⌛",
+    "not-started-yet": {
+      label: "Not Started Yet ⏳",
     },
     completed: {
       label: "Completed ✅",
@@ -35,7 +37,6 @@ export default function WorkoutDateSection({
   };
 
   const statusLabel = statusConfig[status].label;
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -44,16 +45,10 @@ export default function WorkoutDateSection({
           <Text style={styles.statusText}>{statusLabel}</Text>
         </View>
         <Pressable
-          onPress={() =>
-            router.push({
-              pathname: "/workout/[id]" as any,
-              params: {
-                id: date.toLowerCase().replace(/[^a-z0-9]/g, "-"),
-                date: date,
-                workoutType: workoutType,
-              },
-            })
-          }
+          onPress={() => {
+            console.log("Navigating to workout with ID:", workoutId);
+            router.push(`/workout/${workoutId}`);
+          }}
         >
           <Text style={styles.viewWorkoutLink}>View Workout</Text>
         </Pressable>
@@ -62,16 +57,13 @@ export default function WorkoutDateSection({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          scrollEnabled={workouts.length > 1}
-          contentContainerStyle={styles.workoutsContainer}
+          scrollEnabled={wods.length > 1}
+          contentContainerStyle={styles.wodsContainer}
         >
-          {workouts.map((workout, index) => (
-            <React.Fragment key={workout.id}>
-              <WorkoutCard
-                title={workout.title}
-                exercises={workout.exercises}
-              />
-              {index < workouts.length - 1 && <View style={styles.divider} />}
+          {wods.map((wod, index) => (
+            <React.Fragment key={wod.id}>
+              <WorkoutCard title={wod.title} exercises={wod.exercises} />
+              {index < wods.length - 1 && <View style={styles.divider} />}
             </React.Fragment>
           ))}
         </ScrollView>
@@ -112,7 +104,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     alignItems: "center",
   },
-  workoutsContainer: {
+  wodsContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
