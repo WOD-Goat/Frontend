@@ -2,17 +2,19 @@ import { workoutsService } from "@/api/services";
 import { Button, Input, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
 import type { TrackingType } from "@/types";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-    Alert,
-    Animated,
-    StyleSheet,
-    Text,
-    TextStyle,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Alert,
+  Animated,
+  Platform,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 
 interface Exercise {
@@ -187,9 +189,8 @@ export default function CreateWorkoutScreen() {
       ],
     },
   ]);
-  const [scheduledFor, setScheduledFor] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
+  const [scheduledFor, setScheduledFor] = useState<Date>(new Date());
+  const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -331,7 +332,7 @@ export default function CreateWorkoutScreen() {
     try {
       setLoading(true);
       const response = await workoutsService.createWorkout({
-        scheduledFor: new Date(scheduledFor),
+        scheduledFor: scheduledFor,
         notes: notes.trim() || null,
         wods: finalWods,
         groupId: null,
@@ -383,11 +384,46 @@ export default function CreateWorkoutScreen() {
             <Text style={[styles.label, Typography.bodyMedium]}>
               Scheduled Date
             </Text>
-            <Input
-              placeholder="YYYY-MM-DD"
-              value={scheduledFor}
-              onChangeText={setScheduledFor}
-            />
+            <TouchableOpacity
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={styles.dateText}>
+                {scheduledFor.toLocaleDateString("en-US", {
+                  weekday: "short",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </Text>
+            </TouchableOpacity>
+            {showDatePicker && (
+              <>
+                <DateTimePicker
+                  value={scheduledFor}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(event, selectedDate) => {
+                    // On Android, hide immediately after selection
+                    if (Platform.OS === "android") {
+                      setShowDatePicker(false);
+                    }
+                    if (selectedDate) {
+                      setScheduledFor(selectedDate);
+                    }
+                  }}
+                />
+                {/* Done button for iOS */}
+                {Platform.OS === "ios" && (
+                  <TouchableOpacity
+                    style={styles.doneButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.doneButtonText}>Done</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
           </View>
 
           <View style={styles.section}>
@@ -713,5 +749,30 @@ const styles = StyleSheet.create({
   } as TextStyle,
   trackingTypeTextActive: {
     color: "#000000",
+  } as TextStyle,
+  dateButton: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.text.tertiary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  } as ViewStyle,
+  dateText: {
+    color: Colors.text.primary,
+    fontSize: 16,
+  } as TextStyle,
+  doneButton: {
+    backgroundColor: Colors.primary[500],
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    marginTop: 8,
+  } as ViewStyle,
+  doneButtonText: {
+    color: Colors.text.primary,
+    fontSize: 16,
+    fontWeight: "600",
   } as TextStyle,
 });
