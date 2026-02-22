@@ -1,11 +1,11 @@
 import { useGlobalState } from "@/components/lib";
 import {
-  BannerCarousel,
-  Gap,
-  HeaderSection,
-  Page,
-  StatsCard,
-  WODCard,
+    BannerCarousel,
+    Gap,
+    HeaderSection,
+    Page,
+    StatsCard,
+    WODCard,
 } from "../../components";
 
 export default function HomeScreen() {

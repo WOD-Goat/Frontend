@@ -132,7 +132,11 @@ export default function WorkoutDetailScreen() {
 
   if (loading) {
     return (
-      <Page title="Workout Details">
+      <Page
+        title="Workout Details"
+        scrollable={false}
+        contentStyle={{ flex: 1 }}
+      >
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
           <Text style={styles.loadingText}>Loading workout...</Text>
@@ -143,7 +147,11 @@ export default function WorkoutDetailScreen() {
 
   if (error) {
     return (
-      <Page title="Workout Details">
+      <Page
+        title="Workout Details"
+        scrollable={false}
+        contentStyle={{ flex: 1 }}
+      >
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <View style={{ marginTop: 16 }}>
@@ -156,7 +164,11 @@ export default function WorkoutDetailScreen() {
 
   if (!workout || wods.length === 0) {
     return (
-      <Page title="Workout Details">
+      <Page
+        title="Workout Details"
+        scrollable={false}
+        contentStyle={{ flex: 1 }}
+      >
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>Workout not found</Text>
           <View style={{ marginTop: 16 }}>
@@ -176,8 +188,13 @@ export default function WorkoutDetailScreen() {
           size="large"
           disabled={wods.some((wod) => !wod.completed)}
           onPress={() => {
-            //Mark workout as completed - this would involve updating state and possibly making an API call in a real app
-            router.back();
+            // Pass workout data through router params
+            router.push({
+              pathname: `/workout/results`,
+              params: {
+                workoutData: JSON.stringify(workout),
+              },
+            });
           }}
         />
       }

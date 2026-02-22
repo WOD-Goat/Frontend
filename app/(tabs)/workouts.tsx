@@ -129,7 +129,11 @@ export default function WorkoutsScreen() {
 
   if (loading) {
     return (
-      <Page showBackButton={false}>
+      <Page
+        showBackButton={false}
+        contentStyle={{ flex: 1 }}
+        scrollable={false}
+      >
         <WorkoutHeader />
         <Gap size={26} />
         <View style={styles.centerContainer}>
@@ -142,7 +146,7 @@ export default function WorkoutsScreen() {
 
   if (error) {
     return (
-      <Page showBackButton={false}>
+      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={false}>
         <WorkoutHeader />
         <Gap size={26} />
         <View style={styles.centerContainer}>
@@ -154,7 +158,7 @@ export default function WorkoutsScreen() {
 
   if (workoutSections.length === 0) {
     return (
-      <Page showBackButton={false}>
+      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={false}>
         <WorkoutHeader />
         <Gap size={26} />
         <View style={styles.centerContainer}>

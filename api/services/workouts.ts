@@ -1,10 +1,13 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import type {
-    CreateWorkoutData,
-    WorkoutResponse,
-    WorkoutsResponse,
+  CreateWorkoutData,
+  ResultData,
+  UpdateWorkoutData,
+  WorkoutResponse,
+  WorkoutsResponse,
 } from "@/types";
+import type { ApiResponse } from "@/types/common";
 
 export const workoutsService = {
   /**
@@ -66,7 +69,7 @@ export const workoutsService = {
 
     try {
       const response = await apiClient.get<WorkoutResponse>(
-        API_ENDPOINTS.WORKOUTS.GET_BY_ID(workoutId)
+        API_ENDPOINTS.WORKOUTS.GET_BY_ID(workoutId),
       );
 
       console.log("🏋️ WorkoutsService: Get workout by ID response:", response);
@@ -76,6 +79,85 @@ export const workoutsService = {
       return workoutResponse;
     } catch (error) {
       console.error("🏋️ WorkoutsService: Get workout by ID error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mark a workout as completed
+   * @param workoutId - The ID of the workout to complete
+   * @param results - Array of exercise results
+   */
+  completeWorkout: async (
+    workoutId: string,
+    results: ResultData[],
+  ): Promise<ApiResponse> => {
+    console.log("🏋️ WorkoutsService: Completing workout", {
+      workoutId,
+      results,
+    });
+
+    try {
+      const response = await apiClient.post<ApiResponse>(
+        API_ENDPOINTS.WORKOUTS.MARK_AS_COMPLETED(workoutId),
+        { results },
+      );
+
+      console.log("🏋️ WorkoutsService: Complete workout response:", response);
+
+      return response as unknown as ApiResponse;
+    } catch (error) {
+      console.error("🏋️ WorkoutsService: Complete workout error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update a workout
+   * @param workoutId - The ID of the workout to update
+   * @param updateData - Data to update
+   */
+  updateWorkout: async (
+    workoutId: string,
+    updateData: UpdateWorkoutData,
+  ): Promise<ApiResponse> => {
+    console.log("🏋️ WorkoutsService: Updating workout", {
+      workoutId,
+      updateData,
+    });
+
+    try {
+      const response = await apiClient.put<ApiResponse>(
+        API_ENDPOINTS.WORKOUTS.UPDATE(workoutId),
+        updateData,
+      );
+
+      console.log("🏋️ WorkoutsService: Update workout response:", response);
+
+      return response as unknown as ApiResponse;
+    } catch (error) {
+      console.error("🏋️ WorkoutsService: Update workout error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a workout
+   * @param workoutId - The ID of the workout to delete
+   */
+  deleteWorkout: async (workoutId: string): Promise<ApiResponse> => {
+    console.log("🏋️ WorkoutsService: Deleting workout", { workoutId });
+
+    try {
+      const response = await apiClient.delete<ApiResponse>(
+        API_ENDPOINTS.WORKOUTS.DELETE(workoutId),
+      );
+
+      console.log("🏋️ WorkoutsService: Delete workout response:", response);
+
+      return response as unknown as ApiResponse;
+    } catch (error) {
+      console.error("🏋️ WorkoutsService: Delete workout error:", error);
       throw error;
     }
   },

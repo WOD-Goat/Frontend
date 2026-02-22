@@ -339,7 +339,8 @@ export default function CreateWorkoutScreen() {
       });
 
       if (response.success) {
-        router.back();
+        router.dismissAll();
+        router.replace("/(tabs)/workouts");
       } else {
         Alert.alert("Error", response.message || "Failed to create workout");
       }
