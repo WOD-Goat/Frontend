@@ -7,6 +7,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   LayoutAnimation,
   Platform,
@@ -130,6 +131,46 @@ export default function WorkoutDetailScreen() {
     );
   };
 
+  const handleDeleteWorkout = () => {
+    Alert.alert(
+      "Delete Workout",
+      "Are you sure you want to delete this workout? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await workoutsService.deleteWorkout(
+                id as string,
+              );
+
+              if (response.success) {
+                router.dismissAll();
+                router.replace("/(tabs)/workouts");
+              } else {
+                Alert.alert(
+                  "Error",
+                  response.message || "Failed to delete workout",
+                );
+              }
+            } catch (err: any) {
+              console.error("Error deleting workout:", err);
+              Alert.alert("Error", err.message || "Failed to delete workout");
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (loading) {
     return (
       <Page
@@ -182,6 +223,11 @@ export default function WorkoutDetailScreen() {
   return (
     <Page
       title="Workout Details"
+      headerRight={
+        <TouchableOpacity onPress={handleDeleteWorkout}>
+          <Ionicons name="trash-outline" size={24} color={Colors.error[500]} />
+        </TouchableOpacity>
+      }
       footer={
         <Button
           title="Complete Workout"
