@@ -69,10 +69,7 @@ export function BottomSheetSelect<T = any>({
           options.map((option, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.optionItem,
-                option.value === value && styles.optionItemSelected,
-              ]}
+              style={[styles.optionItem]}
               onPress={() => handleSelect(option.value)}
             >
               <View style={styles.optionContent}>
@@ -84,11 +81,6 @@ export function BottomSheetSelect<T = any>({
                 >
                   {option.label}
                 </Text>
-                {option.description && (
-                  <Text style={styles.optionDescription}>
-                    {option.description}
-                  </Text>
-                )}
               </View>
               {option.value === value && (
                 <Ionicons
@@ -149,13 +141,10 @@ const styles = StyleSheet.create({
   optionItem: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.background.primary,
+    borderBottomColor: Colors.neutral[700],
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  optionItemSelected: {
-    backgroundColor: "rgba(191, 255, 0, 0.1)",
   },
   optionContent: {
     flex: 1,
@@ -169,12 +158,6 @@ const styles = StyleSheet.create({
   optionLabelSelected: {
     fontFamily: FontFamilies.poppinsSemiBold,
     color: Colors.primary[500],
-  },
-  optionDescription: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.secondary,
-    marginTop: 4,
   },
   emptyState: {
     padding: 40,

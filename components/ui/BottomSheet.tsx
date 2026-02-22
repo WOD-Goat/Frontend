@@ -2,12 +2,12 @@ import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    type DimensionValue
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type DimensionValue,
 } from "react-native";
 import { BottomSheet as RNBottomSheet } from "react-native-btr";
 
@@ -33,18 +33,17 @@ export function BottomSheet({
       onBackdropPress={onClose}
     >
       <View style={[styles.bottomSheetContainer, { maxHeight }]}>
-        {/* Handle bar */}
-        <View style={styles.bottomSheetHandle} />
-
         {/* Header */}
         {title && (
           <View style={styles.bottomSheetHeader}>
+            <View style={styles.headerSpacer} />
             <Text style={styles.bottomSheetTitle}>{title}</Text>
             <TouchableOpacity
               onPress={onClose}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.closeButton}
             >
-              <Ionicons name="close" size={24} color={Colors.text.secondary} />
+              <Ionicons name="close" size={24} color={Colors.text.primary} />
             </TouchableOpacity>
           </View>
         )}
@@ -63,15 +62,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingBottom: 20,
   },
-  bottomSheetHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.text.tertiary,
-    borderRadius: 2,
-    alignSelf: "center",
-    marginTop: 12,
-    marginBottom: 8,
-  },
   bottomSheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -79,14 +69,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.background.primary,
+    borderBottomColor: Colors.neutral[700],
+  },
+  headerSpacer: {
+    width: 24,
   },
   bottomSheetTitle: {
+    flex: 1,
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyLG,
     color: Colors.text.primary,
+    textAlign: "center",
+  },
+  closeButton: {
+    width: 24,
+    alignItems: "center",
   },
   bottomSheetContent: {
     maxHeight: 400,
+    paddingBottom: 20,
   },
 });

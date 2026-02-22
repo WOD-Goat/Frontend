@@ -45,6 +45,7 @@ export default function WorkoutSection({
           <Text style={styles.statusText}>{statusLabel}</Text>
         </View>
         <Pressable
+        hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
           onPress={() => {
             console.log("Navigating to workout with ID:", workoutId);
             router.push(`/workout/${workoutId}`);
