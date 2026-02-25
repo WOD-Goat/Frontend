@@ -1,18 +1,19 @@
-import { Input } from "@/components";
+import { ExerciseSearchInput, Input } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import type { StandardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import {
-    Animated,
-    Pressable,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 interface Exercise {
   name: string;
-  details?: string[];
+  instructions?: string[];
 }
 
 interface WOD {
@@ -33,7 +34,7 @@ interface WorkoutViewProps {
   onUpdateExercise: (
     wodId: string,
     exerciseIndex: number,
-    field: "name" | "details",
+    field: "name" | "instructions",
     value: string,
   ) => void;
   onAddWod: () => void;
@@ -56,79 +57,146 @@ export default function WorkoutView({
   onAddExercise,
   onRemoveExercise,
 }: WorkoutViewProps) {
+  // Render editing mode
+  if (isEditingWorkout) {
+    return (
+      <>
+        {wods.map((wod, wodIndex) => (
+          <View key={wod.id} style={styles.wodContainer}>
+            {/* WOD Header - Inside card in edit mode */}
+            <View style={styles.wodHeader}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={styles.editLabel}>WOD {wodIndex + 1}</Text>
+                <Input
+                  value={wod.title}
+                  onChangeText={(text) => onUpdateWodTitle(wod.id, text)}
+                  placeholder="WOD name"
+                />
+              </View>
+              {wods.length > 1 && (
+                <TouchableOpacity
+                  onPress={() => onRemoveWod(wod.id)}
+                  style={styles.removeWodButton}
+                >
+                  <Text style={styles.removeWodButtonText}>Remove</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Exercise List */}
+            <View style={styles.exercisesContainer}>
+              {wod.exercises.map((exercise, index) => (
+                <View key={index} style={styles.editExerciseContainer}>
+                  <View style={styles.editExerciseHeader}>
+                    <Text style={styles.editExerciseLabel}>
+                      Exercise {index + 1}
+                    </Text>
+                    {wod.exercises.length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => onRemoveExercise(wod.id, index)}
+                        style={styles.removeExerciseButton}
+                      >
+                        <Text style={styles.removeExerciseText}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Name</Text>
+                    <ExerciseSearchInput
+                      value={exercise.name}
+                      onSelectExercise={(selectedExercise: StandardExercise) =>
+                        onUpdateExercise(wod.id, index, "name", selectedExercise.name)
+                      }
+                      placeholder="Search for an exercise"
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Instructions</Text>
+                    <Input
+                      value={exercise.instructions?.[0] || ""}
+                      onChangeText={(text) =>
+                        onUpdateExercise(wod.id, index, "instructions", text)
+                      }
+                      placeholder="Exercise instructions (e.g., 21-15-9 reps)"
+                      multiline
+                      numberOfLines={2}
+                    />
+                  </View>
+                </View>
+              ))}
+
+              {/* Add Exercise Button */}
+              <TouchableOpacity
+                style={styles.addExerciseButton}
+                onPress={() => onAddExercise(wod.id)}
+              >
+                <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+
+        {/* Add WOD Button */}
+        <TouchableOpacity style={styles.addWodButton} onPress={onAddWod}>
+          <Text style={styles.addWodButtonText}>+ Add WOD</Text>
+        </TouchableOpacity>
+      </>
+    );
+  }
+
+  // Render viewing mode
   return (
     <>
       {wods.map((wod, wodIndex) => (
-        <View key={wod.id} style={styles.wodContainer}>
-          {/* WOD Header */}
-          <View style={styles.wodHeader}>
-            {isEditingWorkout ? (
-              <>
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.editLabel}>WOD {wodIndex + 1}</Text>
-                  <Input
-                    value={wod.title}
-                    onChangeText={(text) => onUpdateWodTitle(wod.id, text)}
-                    placeholder="WOD name"
-                  />
-                </View>
-                {wods.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => onRemoveWod(wod.id)}
-                    style={styles.removeWodButton}
-                  >
-                    <Text style={styles.removeWodButtonText}>Remove</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            ) : (
-              <Text style={styles.wodTitle}>{wod.title}</Text>
-            )}
-            {!isEditingWorkout && (
-              <TouchableOpacity
+        <View key={wod.id} style={styles.wodWrapper}>
+          {/* WOD Header - Outside card in view mode */}
+          <View style={styles.wodHeaderView}>
+            <Text style={styles.wodTitle}>{wod.title}</Text>
+            <TouchableOpacity
+              style={[
+                styles.completionButton,
+                wod.completed && styles.completionButtonActive,
+              ]}
+              onPress={() => onToggleWODCompletion(wod.id)}
+            >
+              <Animated.View
                 style={[
-                  styles.completionButton,
-                  wod.completed && styles.completionButtonActive,
+                  styles.buttonContent,
+                  {
+                    opacity: animatedValues[wod.id].interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [1, 0, 1],
+                    }),
+                    transform: [
+                      {
+                        scale: animatedValues[wod.id].interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 0.8, 1],
+                        }),
+                      },
+                    ],
+                  },
                 ]}
-                onPress={() => onToggleWODCompletion(wod.id)}
               >
-                <Animated.View
-                  style={[
-                    styles.buttonContent,
-                    {
-                      opacity: animatedValues[wod.id].interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [1, 0, 1],
-                      }),
-                      transform: [
-                        {
-                          scale: animatedValues[wod.id].interpolate({
-                            inputRange: [0, 0.5, 1],
-                            outputRange: [1, 0.8, 1],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  {wod.completed ? (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={Colors.text.inverse}
-                    />
-                  ) : (
-                    <Text style={styles.completionButtonText}>
-                      Mark as Completed
-                    </Text>
-                  )}
-                </Animated.View>
-              </TouchableOpacity>
-            )}
+                {wod.completed ? (
+                  <Ionicons
+                    name="checkmark"
+                    size={20}
+                    color={Colors.text.inverse}
+                  />
+                ) : (
+                  <Text style={styles.completionButtonText}>
+                    Mark as Completed
+                  </Text>
+                )}
+              </Animated.View>
+            </TouchableOpacity>
           </View>
 
-          {/* Exercise List */}
-          <View style={styles.exercisesContainer}>
+          {/* Exercise List Card */}
+          <View style={styles.exercisesCard}>
             {wod.exercises.map((exercise, index) => {
               const isExpanded =
                 expandedExercises[`${wod.id}-${index}`] || false;
@@ -136,78 +204,40 @@ export default function WorkoutView({
 
               return (
                 <View key={index}>
-                  {isEditingWorkout ? (
-                    <View style={styles.editExerciseContainer}>
-                      <View style={styles.editExerciseHeader}>
-                        <Text style={styles.editExerciseLabel}>
-                          Exercise {index + 1}
-                        </Text>
-                        {wod.exercises.length > 1 && (
-                          <TouchableOpacity
-                            onPress={() => onRemoveExercise(wod.id, index)}
-                            style={styles.removeExerciseButton}
-                          >
-                            <Text style={styles.removeExerciseText}>×</Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
+                  <Pressable
+                    style={styles.exerciseItem}
+                    onPress={() => onToggleExercise(wod.id, index)}
+                  >
+                    <Text style={styles.exerciseNumber}>{index + 1}-</Text>
+                    <Text style={styles.exerciseName}>{exercise.name}</Text>
+                    <Ionicons
+                      name={isExpanded ? "chevron-up" : "chevron-down"}
+                      size={24}
+                      color={Colors.primary[500]}
+                    />
+                  </Pressable>
 
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Name</Text>
-                        <Input
-                          value={exercise.name}
-                          onChangeText={(text) =>
-                            onUpdateExercise(wod.id, index, "name", text)
-                          }
-                          placeholder="Exercise name"
-                        />
-                      </View>
-
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Description</Text>
-                        <Input
-                          value={exercise.details?.[0] || ""}
-                          onChangeText={(text) =>
-                            onUpdateExercise(wod.id, index, "details", text)
-                          }
-                          placeholder="Exercise description"
-                          multiline
-                          numberOfLines={2}
-                        />
-                      </View>
-                    </View>
-                  ) : (
-                    <>
-                      <Pressable
-                        style={styles.exerciseItem}
-                        onPress={() => onToggleExercise(wod.id, index)}
-                      >
-                        <Text style={styles.exerciseNumber}>{index + 1}-</Text>
-                        <Text style={styles.exerciseName}>{exercise.name}</Text>
-                        <Ionicons
-                          name={isExpanded ? "chevron-up" : "chevron-down"}
-                          size={24}
-                          color={Colors.primary[500]}
-                        />
-                      </Pressable>
-
-                      {/* Exercise Details */}
-                      {isExpanded && (
-                        <View style={styles.exerciseDetails}>
-                          {exercise.details && exercise.details.length > 0 ? (
-                            exercise.details.map((detail, detailIndex) => (
-                              <Text key={detailIndex} style={styles.detailText}>
-                                {detail}
-                              </Text>
-                            ))
-                          ) : (
-                            <Text style={styles.detailText}>
-                              No additional details
+                  {/* Exercise Instructions */}
+                  {isExpanded && (
+                    <View style={styles.exerciseDetails}>
+                      {exercise.instructions &&
+                      exercise.instructions.length > 0 ? (
+                        exercise.instructions.map(
+                          (instruction, instructionIndex) => (
+                            <Text
+                              key={instructionIndex}
+                              style={styles.detailText}
+                            >
+                              {instruction}
                             </Text>
-                          )}
-                        </View>
+                          ),
+                        )
+                      ) : (
+                        <Text style={styles.detailText}>
+                          No additional instructions
+                        </Text>
                       )}
-                    </>
+                    </View>
                   )}
 
                   {/* Separator */}
@@ -217,31 +247,15 @@ export default function WorkoutView({
                 </View>
               );
             })}
-
-            {/* Add Exercise Button - only in edit mode */}
-            {isEditingWorkout && (
-              <TouchableOpacity
-                style={styles.addExerciseButton}
-                onPress={() => onAddExercise(wod.id)}
-              >
-                <Text style={styles.addExerciseButtonText}>+ Add Exercise</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       ))}
-
-      {/* Add WOD Button - only in edit mode */}
-      {isEditingWorkout && (
-        <TouchableOpacity style={styles.addWodButton} onPress={onAddWod}>
-          <Text style={styles.addWodButtonText}>+ Add WOD</Text>
-        </TouchableOpacity>
-      )}
     </>
   );
 }
 
 const styles = StyleSheet.create({
+  // Edit mode styles
   wodContainer: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 16,
@@ -255,19 +269,39 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     gap: 12,
   },
+  // View mode styles
+  wodWrapper: {
+    paddingTop: 24,
+    marginBottom: 24,
+  },
+  wodHeaderView: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+    gap: 12,
+
+  },
+  exercisesCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 16,
+    padding: 20,
+  },
+  // Shared styles
   wodTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.headingMD,
+    fontSize: FontSizes.headingLG,
     color: Colors.text.primary,
     flex: 1,
   },
   completionButton: {
-    backgroundColor: Colors.background.tertiary,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.primary[500],
+    maxHeight: 36,
+    justifyContent: "center",
   },
   completionButtonActive: {
     backgroundColor: Colors.primary[500],
@@ -289,36 +323,34 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 12,
-    gap: 12,
   },
   exerciseNumber: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
-    width: 30,
+    width: 24,
   },
   exerciseName: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
     flex: 1,
   },
   exerciseDetails: {
-    paddingLeft: 42,
+    paddingLeft: 24,
     paddingRight: 16,
-    paddingBottom: 12,
   },
   detailText: {
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
-    color: Colors.text.secondary,
+    color: Colors.text.tertiary,
     marginBottom: 4,
     lineHeight: 20,
   },
   separator: {
     height: 1,
-    backgroundColor: Colors.background.tertiary,
-    marginLeft: 42,
+    backgroundColor: Colors.text.secondary,
+    marginLeft: 24,
   },
   // Edit mode styles
   editLabel: {
@@ -398,11 +430,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
-    marginTop: 16,
   },
   addWodButtonText: {
-    color: "#000000",
-    fontFamily: FontFamilies.poppinsBold,
-    fontSize: FontSizes.bodyLG,
+    color: Colors.text.primary,
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
   },
 });

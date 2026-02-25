@@ -17,6 +17,8 @@ interface BottomSheetProps {
   title?: string;
   children: React.ReactNode;
   maxHeight?: DimensionValue;
+  minHeight?: DimensionValue;
+  height?: DimensionValue;
 }
 
 export function BottomSheet({
@@ -24,7 +26,9 @@ export function BottomSheet({
   onClose,
   title,
   children,
-  maxHeight = "70%",
+  maxHeight = "85%",
+  minHeight = "50%",
+  height,
 }: BottomSheetProps) {
   return (
     <RNBottomSheet
@@ -32,7 +36,7 @@ export function BottomSheet({
       onBackButtonPress={onClose}
       onBackdropPress={onClose}
     >
-      <View style={[styles.bottomSheetContainer, { maxHeight }]}>
+      <View style={[styles.bottomSheetContainer, { maxHeight, minHeight, height }]}>
         {/* Header */}
         {title && (
           <View style={styles.bottomSheetHeader}>
@@ -86,7 +90,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   bottomSheetContent: {
-    maxHeight: 400,
     paddingBottom: 20,
   },
 });

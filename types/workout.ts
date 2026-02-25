@@ -6,9 +6,19 @@ export type TrackingType =
   | "time_distance"
   | "calories";
 
-export interface ExerciseData {
+export interface StandardExercise {
+  id: string;
   name: string;
-  description: string; // instructions, weights, reps, timing, etc.
+  category: string;
+  trackingType: TrackingType;
+  description: string;
+  muscleGroups: string[];
+}
+
+export interface ExerciseData {
+  exerciseId: string;
+  name: string;
+  instructions: string;
   trackingType: TrackingType;
 }
 

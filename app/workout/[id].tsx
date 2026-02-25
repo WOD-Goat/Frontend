@@ -30,7 +30,7 @@ if (
 
 interface Exercise {
   name: string;
-  details?: string[];
+  instructions?: string[];
 }
 
 interface WOD {
@@ -86,7 +86,7 @@ export default function WorkoutDetailScreen() {
           title: wod.name,
           exercises: wod.exercises.map((ex) => ({
             name: ex.name,
-            details: ex.description ? [ex.description] : undefined,
+            instructions: ex.instructions ? [ex.instructions] : undefined,
           })),
           completed: false,
         }));
@@ -228,19 +228,22 @@ export default function WorkoutDetailScreen() {
       const updatedWods = editedWods.map((wod, wodIndex) => ({
         name: wod.title || "Untitled WOD",
         exercises: wod.exercises.map((ex, exIndex) => {
-          // Try to get tracking type from original data if exists
+          // Try to get original exercise data if it exists
           let trackingType = "reps";
+          let exerciseId = "";
           if (
             workout &&
             workout.wods[wodIndex] &&
             workout.wods[wodIndex].exercises[exIndex]
           ) {
-            trackingType =
-              workout.wods[wodIndex].exercises[exIndex].trackingType;
+            const originalEx = workout.wods[wodIndex].exercises[exIndex];
+            trackingType = originalEx.trackingType;
+            exerciseId = originalEx.exerciseId || "";
           }
           return {
+            exerciseId: exerciseId,
             name: ex.name || "Exercise",
-            description: ex.details?.[0] || "",
+            instructions: ex.instructions?.[0] || "",
             trackingType: trackingType as any,
           };
         }),
@@ -251,9 +254,8 @@ export default function WorkoutDetailScreen() {
       });
 
       if (response.success) {
-        await loadWorkout(id as string);
-        setIsEditingWorkout(false);
-        Alert.alert("Success", "Workout updated successfully!");
+        router.dismissAll();
+        router.replace("/(tabs)/workouts");
       } else {
         Alert.alert("Error", response.message || "Failed to update workout");
       }
@@ -274,7 +276,7 @@ export default function WorkoutDetailScreen() {
   const updateExercise = (
     wodId: string,
     exerciseIndex: number,
-    field: "name" | "details",
+    field: "name" | "instructions",
     value: string,
   ) => {
     setEditedWods((prev) =>
@@ -285,7 +287,7 @@ export default function WorkoutDetailScreen() {
               if (field === "name") {
                 return { ...ex, name: value };
               } else {
-                return { ...ex, details: [value] };
+                return { ...ex, instructions: [value] };
               }
             }
             return ex;
@@ -304,7 +306,7 @@ export default function WorkoutDetailScreen() {
       exercises: [
         {
           name: "",
-          details: [""],
+          instructions: [""],
         },
       ],
       completed: false,
@@ -330,7 +332,7 @@ export default function WorkoutDetailScreen() {
                 ...wod.exercises,
                 {
                   name: "",
-                  details: [""],
+                  instructions: [""],
                 },
               ],
             }

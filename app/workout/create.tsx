@@ -1,7 +1,7 @@
 import { workoutsService } from "@/api/services";
-import { Button, Input, Page } from "@/components";
+import { Button, ExerciseSearchInput, Input, Page } from "@/components";
 import { Colors, Typography } from "@/constants";
-import type { TrackingType } from "@/types";
+import type { StandardExercise, TrackingType } from "@/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -19,8 +19,9 @@ import {
 
 interface Exercise {
   id: string;
+  exerciseId: string;
   name: string;
-  description: string;
+  instructions: string;
   trackingType: TrackingType;
   removing?: boolean;
 }
@@ -182,8 +183,9 @@ export default function CreateWorkoutScreen() {
       exercises: [
         {
           id: "exercise-1",
+          exerciseId: "",
           name: "",
-          description: "",
+          instructions: "",
           trackingType: "reps",
         },
       ],
@@ -201,8 +203,9 @@ export default function CreateWorkoutScreen() {
       exercises: [
         {
           id: `exercise-${Date.now()}`,
+          exerciseId: "",
           name: "",
-          description: "",
+          instructions: "",
           trackingType: "reps",
         },
       ],
@@ -242,8 +245,9 @@ export default function CreateWorkoutScreen() {
                 ...wod.exercises,
                 {
                   id: `exercise-${Date.now()}`,
+                  exerciseId: "",
                   name: "",
-                  description: "",
+                  instructions: "",
                   trackingType: "reps",
                 },
               ],
@@ -295,7 +299,7 @@ export default function CreateWorkoutScreen() {
   const handleExerciseChange = (
     wodId: string,
     exerciseId: string,
-    field: "name" | "description" | "trackingType",
+    field: "name" | "instructions",
     value: string,
   ) => {
     setWods(
@@ -305,6 +309,33 @@ export default function CreateWorkoutScreen() {
               ...wod,
               exercises: wod.exercises.map((ex) =>
                 ex.id === exerciseId ? { ...ex, [field]: value } : ex,
+              ),
+            }
+          : wod,
+      ),
+    );
+  };
+
+  const handleExerciseSelect = (
+    wodId: string,
+    exerciseId: string,
+    exercise: StandardExercise,
+  ) => {
+    setWods(
+      wods.map((wod) =>
+        wod.id === wodId
+          ? {
+              ...wod,
+              exercises: wod.exercises.map((ex) =>
+                ex.id === exerciseId
+                  ? {
+                      ...ex,
+                      exerciseId: exercise.id,
+                      name: exercise.name,
+                      trackingType: exercise.trackingType,
+                      // Keep existing instructions, don't overwrite with description
+                    }
+                  : ex,
               ),
             }
           : wod,
@@ -322,9 +353,10 @@ export default function CreateWorkoutScreen() {
         name: wod.name || "Untitled WOD",
         exercises: wod.exercises
           .filter((ex) => !ex.removing)
-          .map(({ name, description, trackingType }) => ({
+          .map(({ exerciseId, name, instructions, trackingType }) => ({
+            exerciseId: exerciseId,
             name,
-            description,
+            instructions,
             trackingType,
           })),
       }));
@@ -426,18 +458,6 @@ export default function CreateWorkoutScreen() {
               </>
             )}
           </View>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, Typography.bodyMedium]}>
-              Notes (Optional)
-            </Text>
-            <Input
-              placeholder="Add any notes about this workout"
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-            />
-          </View>
         </View>
 
         {wods.map((wod, wodIndex) => (
@@ -510,31 +530,29 @@ export default function CreateWorkoutScreen() {
 
                       <View style={styles.inputGroup}>
                         <Text style={styles.inputLabel}>Name</Text>
-                        <Input
-                          placeholder="Exercise name"
+                        <ExerciseSearchInput
                           value={exercise.name}
-                          onChangeText={(text) =>
-                            handleExerciseChange(
+                          onSelectExercise={(selectedExercise) =>
+                            handleExerciseSelect(
                               wod.id,
                               exercise.id,
-                              "name",
-                              text,
+                              selectedExercise,
                             )
                           }
-                          autoCapitalize="words"
+                          placeholder="Search for an exercise"
                         />
                       </View>
 
                       <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Description</Text>
+                        <Text style={styles.inputLabel}>Instructions</Text>
                         <Input
-                          placeholder="Exercise description or instructions"
-                          value={exercise.description}
+                          placeholder="Exercise instructions (e.g., 21-15-9 reps)"
+                          value={exercise.instructions}
                           onChangeText={(text) =>
                             handleExerciseChange(
                               wod.id,
                               exercise.id,
-                              "description",
+                              "instructions",
                               text,
                             )
                           }
@@ -542,46 +560,16 @@ export default function CreateWorkoutScreen() {
                         />
                       </View>
 
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Tracking Type</Text>
-                        <View style={styles.trackingTypeContainer}>
-                          {(
-                            [
-                              "weight_reps",
-                              "reps",
-                              "time_distance",
-                              "calories",
-                            ] as TrackingType[]
-                          ).map((type) => (
-                            <TouchableOpacity
-                              key={type}
-                              style={[
-                                styles.trackingTypeButton,
-                                exercise.trackingType === type &&
-                                  styles.trackingTypeButtonActive,
-                              ]}
-                              onPress={() =>
-                                handleExerciseChange(
-                                  wod.id,
-                                  exercise.id,
-                                  "trackingType",
-                                  type,
-                                )
-                              }
-                            >
-                              <Text
-                                style={[
-                                  styles.trackingTypeText,
-                                  exercise.trackingType === type &&
-                                    styles.trackingTypeTextActive,
-                                ]}
-                              >
-                                {type.replace("_", " ")}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
+                      {exercise.exerciseId && (
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Tracking Type</Text>
+                          <View style={styles.trackingTypeDisplay}>
+                            <Text style={styles.trackingTypeDisplayText}>
+                              {exercise.trackingType.replace("_", " ")}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
+                      )}
                     </View>
                   </AnimatedExerciseSection>
                 ))}
@@ -750,6 +738,21 @@ const styles = StyleSheet.create({
   } as TextStyle,
   trackingTypeTextActive: {
     color: "#000000",
+  } as TextStyle,
+  trackingTypeDisplay: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.primary[500],
+    alignSelf: "flex-start",
+  } as ViewStyle,
+  trackingTypeDisplayText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.primary[500],
+    textTransform: "capitalize",
   } as TextStyle,
   dateButton: {
     backgroundColor: Colors.background.primary,
