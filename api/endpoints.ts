@@ -13,4 +13,13 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/workouts/${id}`,
     DELETE: (id: string) => `/api/workouts/${id}`,
   },
+  PERSONAL_RECORDS: {
+    CREATE: "/api/personal-records",
+    GET_ALL: "/api/personal-records",
+    GET_BY_ID: (id: string) => `/api/personal-records/${id}`,
+    GET_BY_EXERCISE: (exerciseId: string) =>
+      `/api/personal-records/exercise/${exerciseId}`,
+    UPDATE: (id: string) => `/api/personal-records/${id}`,
+    DELETE: (id: string) => `/api/personal-records/${id}`,
+  },
 } as const;

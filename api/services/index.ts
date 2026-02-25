@@ -1,2 +1,4 @@
-export * from './auth';
-export * from './workouts';
+export * from "./auth";
+export * from "./personalRecords";
+export * from "./workouts";
+
