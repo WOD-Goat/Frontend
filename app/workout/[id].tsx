@@ -1,7 +1,9 @@
 import { workoutsService } from "@/api/services";
 import { Button, Page } from "@/components";
+import ResultsView from "@/components/workouts/ResultsView";
+import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
-import type { AssignedWorkoutData } from "@/types";
+import type { AssignedWorkoutData, ResultData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -11,7 +13,6 @@ import {
   Animated,
   LayoutAnimation,
   Platform,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -52,6 +53,14 @@ export default function WorkoutDetailScreen() {
     [key: string]: boolean;
   }>({});
 
+  // Edit mode state for results
+  const [isEditingResults, setIsEditingResults] = useState(false);
+  const [editedResults, setEditedResults] = useState<ResultData[]>([]);
+
+  // Edit mode state for workout details
+  const [isEditingWorkout, setIsEditingWorkout] = useState(false);
+  const [editedWods, setEditedWods] = useState<WOD[]>([]);
+
   // Animated values for completion button transitions
   const animatedValues = useRef<{ [key: string]: Animated.Value }>({});
 
@@ -79,7 +88,7 @@ export default function WorkoutDetailScreen() {
             name: ex.name,
             details: ex.description ? [ex.description] : undefined,
           })),
-          completed: false, // You can track this separately or add to backend
+          completed: false,
         }));
 
         setWods(transformedWods);
@@ -171,6 +180,204 @@ export default function WorkoutDetailScreen() {
     );
   };
 
+  const handleEditWorkout = () => {
+    if (workout?.completed && workout.results) {
+      setEditedResults(JSON.parse(JSON.stringify(workout.results)));
+      setIsEditingResults(true);
+    } else if (workout) {
+      setEditedWods(JSON.parse(JSON.stringify(wods)));
+      setIsEditingWorkout(true);
+    }
+  };
+
+  const handleSaveResults = async () => {
+    try {
+      setLoading(true);
+      const response = await workoutsService.updateWorkout(id as string, {
+        results: editedResults,
+      });
+
+      if (response.success) {
+        setIsEditingResults(false);
+        router.dismissAll();
+        router.replace("/(tabs)/workouts");
+        Alert.alert("Success", "Results updated successfully!");
+      } else {
+        Alert.alert("Error", response.message || "Failed to update results");
+      }
+    } catch (err: any) {
+      console.error("Error updating results:", err);
+      Alert.alert("Error", err.message || "Failed to update results");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingResults(false);
+    setEditedResults([]);
+    setIsEditingWorkout(false);
+    setEditedWods([]);
+  };
+
+  const handleSaveWorkout = async () => {
+    try {
+      setLoading(true);
+
+      // Transform edited WODs back to WODData format
+      const updatedWods = editedWods.map((wod, wodIndex) => ({
+        name: wod.title || "Untitled WOD",
+        exercises: wod.exercises.map((ex, exIndex) => {
+          // Try to get tracking type from original data if exists
+          let trackingType = "reps";
+          if (
+            workout &&
+            workout.wods[wodIndex] &&
+            workout.wods[wodIndex].exercises[exIndex]
+          ) {
+            trackingType =
+              workout.wods[wodIndex].exercises[exIndex].trackingType;
+          }
+          return {
+            name: ex.name || "Exercise",
+            description: ex.details?.[0] || "",
+            trackingType: trackingType as any,
+          };
+        }),
+      }));
+
+      const response = await workoutsService.updateWorkout(id as string, {
+        wods: updatedWods,
+      });
+
+      if (response.success) {
+        await loadWorkout(id as string);
+        setIsEditingWorkout(false);
+        Alert.alert("Success", "Workout updated successfully!");
+      } else {
+        Alert.alert("Error", response.message || "Failed to update workout");
+      }
+    } catch (err: any) {
+      console.error("Error updating workout:", err);
+      Alert.alert("Error", err.message || "Failed to update workout");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateWodTitle = (wodId: string, title: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => (wod.id === wodId ? { ...wod, title } : wod)),
+    );
+  };
+
+  const updateExercise = (
+    wodId: string,
+    exerciseIndex: number,
+    field: "name" | "details",
+    value: string,
+  ) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => {
+        if (wod.id === wodId) {
+          const updatedExercises = wod.exercises.map((ex, idx) => {
+            if (idx === exerciseIndex) {
+              if (field === "name") {
+                return { ...ex, name: value };
+              } else {
+                return { ...ex, details: [value] };
+              }
+            }
+            return ex;
+          });
+          return { ...wod, exercises: updatedExercises };
+        }
+        return wod;
+      }),
+    );
+  };
+
+  const handleAddWod = () => {
+    const newWod: WOD = {
+      id: `wod-${Date.now()}`,
+      title: "",
+      exercises: [
+        {
+          name: "",
+          details: [""],
+        },
+      ],
+      completed: false,
+    };
+    setEditedWods([...editedWods, newWod]);
+  };
+
+  const handleRemoveWod = (wodId: string) => {
+    if (editedWods.length <= 1) {
+      Alert.alert("Cannot Remove", "You must have at least one WOD");
+      return;
+    }
+    setEditedWods(editedWods.filter((wod) => wod.id !== wodId));
+  };
+
+  const handleAddExercise = (wodId: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) =>
+        wod.id === wodId
+          ? {
+              ...wod,
+              exercises: [
+                ...wod.exercises,
+                {
+                  name: "",
+                  details: [""],
+                },
+              ],
+            }
+          : wod,
+      ),
+    );
+  };
+
+  const handleRemoveExercise = (wodId: string, exerciseIndex: number) => {
+    const wod = editedWods.find((w) => w.id === wodId);
+    if (!wod) return;
+
+    if (wod.exercises.length <= 1) {
+      Alert.alert("Cannot Remove", "Each WOD must have at least one exercise");
+      return;
+    }
+
+    setEditedWods((prev) =>
+      prev.map((w) =>
+        w.id === wodId
+          ? {
+              ...w,
+              exercises: w.exercises.filter((_, idx) => idx !== exerciseIndex),
+            }
+          : w,
+      ),
+    );
+  };
+
+  const updateEditedResult = (
+    index: number,
+    field: keyof ResultData,
+    value: string,
+  ) => {
+    const numValue =
+      value === ""
+        ? null
+        : field === "weight"
+          ? parseFloat(value)
+          : parseInt(value);
+    setEditedResults((prev) =>
+      prev.map((result, i) =>
+        i === index ? { ...result, [field]: numValue } : result,
+      ),
+    );
+  };
+
   if (loading) {
     return (
       <Page
@@ -220,226 +427,163 @@ export default function WorkoutDetailScreen() {
     );
   }
 
+  const wodsToDisplay = isEditingWorkout ? editedWods : wods;
+
+  // Render completed workout view
+  if (workout?.completed) {
+    return (
+      <Page
+        title="Workout Results"
+        headerRight={
+          !isEditingResults ? (
+            <TouchableOpacity onPress={handleEditWorkout}>
+              <Ionicons
+                name="create-outline"
+                size={24}
+                color={Colors.text.primary}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleCancelEdit}>
+              <Ionicons name="close" size={24} color={Colors.text.primary} />
+            </TouchableOpacity>
+          )
+        }
+        footer={
+          isEditingResults ? (
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Cancel"
+                  size="large"
+                  onPress={handleCancelEdit}
+                  variant="secondary"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Save Changes"
+                  size="large"
+                  onPress={handleSaveResults}
+                  disabled={loading}
+                />
+              </View>
+            </View>
+          ) : undefined
+        }
+      >
+        <ResultsView
+          workout={workout}
+          isEditingResults={isEditingResults}
+          editedResults={editedResults}
+          onUpdateResult={updateEditedResult}
+        />
+      </Page>
+    );
+  }
+
+  // Render active workout view
   return (
     <Page
       title="Workout Details"
       headerRight={
-        <TouchableOpacity onPress={handleDeleteWorkout}>
-          <Ionicons name="trash-outline" size={24} color={Colors.error[500]} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 16 }}>
+          {!isEditingWorkout ? (
+            <TouchableOpacity onPress={handleEditWorkout}>
+              <Ionicons
+                name="create-outline"
+                size={24}
+                color={Colors.text.primary}
+              />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={handleCancelEdit}>
+              <Ionicons name="close" size={24} color={Colors.text.primary} />
+            </TouchableOpacity>
+          )}
+          {!isEditingWorkout && (
+            <TouchableOpacity onPress={handleDeleteWorkout}>
+              <Ionicons
+                name="trash-outline"
+                size={24}
+                color={Colors.error[500]}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
       }
       footer={
-        <Button
-          title="Complete Workout"
-          size="large"
-          disabled={wods.some((wod) => !wod.completed)}
-          onPress={() => {
-            // Pass workout data through router params
-            router.push({
-              pathname: `/workout/results`,
-              params: {
-                workoutData: JSON.stringify(workout),
-              },
-            });
-          }}
-        />
+        isEditingWorkout ? (
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ flex: 1 }}>
+              <Button
+                title="Cancel"
+                size="large"
+                onPress={handleCancelEdit}
+                variant="secondary"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                title="Save Changes"
+                size="large"
+                onPress={handleSaveWorkout}
+                disabled={loading}
+              />
+            </View>
+          </View>
+        ) : (
+          <Button
+            title="Complete Workout"
+            size="large"
+            disabled={wods.some((wod) => !wod.completed)}
+            onPress={() => {
+              router.push({
+                pathname: `/workout/results`,
+                params: {
+                  workoutData: JSON.stringify(workout),
+                },
+              });
+            }}
+          />
+        )
       }
     >
-      {wods.map((wod) => (
-        <View key={wod.id} style={styles.wodContainer}>
-          {/* WOD Header */}
-          <View style={styles.wodHeader}>
-            <Text style={styles.wodTitle}>{wod.title}</Text>
-            <TouchableOpacity
-              style={[
-                styles.completionButton,
-                wod.completed && styles.completionButtonActive,
-              ]}
-              onPress={() => toggleWODCompletion(wod.id)}
-            >
-              <Animated.View
-                style={[
-                  styles.buttonContent,
-                  {
-                    opacity: animatedValues.current[wod.id].interpolate({
-                      inputRange: [0, 0.5, 1],
-                      outputRange: [1, 0, 1],
-                    }),
-                    transform: [
-                      {
-                        scale: animatedValues.current[wod.id].interpolate({
-                          inputRange: [0, 0.5, 1],
-                          outputRange: [1, 0.8, 1],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
-                {wod.completed ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={Colors.text.inverse}
-                  />
-                ) : (
-                  <Text style={styles.completionButtonText}>
-                    Mark as Completed
-                  </Text>
-                )}
-              </Animated.View>
-            </TouchableOpacity>
-          </View>
-
-          {/* Exercise List */}
-          <View style={styles.exercisesContainer}>
-            {wod.exercises.map((exercise, index) => {
-              const isExpanded =
-                expandedExercises[`${wod.id}-${index}`] || false;
-              const isLastExercise = index === wod.exercises.length - 1;
-
-              return (
-                <View key={index}>
-                  <Pressable
-                    style={styles.exerciseItem}
-                    onPress={() => toggleExercise(wod.id, index)}
-                  >
-                    <Text style={styles.exerciseNumber}>{index + 1}-</Text>
-                    <Text style={styles.exerciseName}>{exercise.name}</Text>
-                    <Ionicons
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
-                      size={24}
-                      color={Colors.primary[500]}
-                    />
-                  </Pressable>
-
-                  {/* Exercise Details */}
-                  {isExpanded && (
-                    <View style={styles.exerciseDetails}>
-                      {exercise.details && exercise.details.length > 0 ? (
-                        exercise.details.map((detail, detailIndex) => (
-                          <Text key={detailIndex} style={styles.detailText}>
-                            {detail}
-                          </Text>
-                        ))
-                      ) : (
-                        <Text style={styles.detailText}>
-                          No additional details
-                        </Text>
-                      )}
-                    </View>
-                  )}
-
-                  {/* Separator */}
-                  {!isLastExercise && !isExpanded && (
-                    <View style={styles.separator} />
-                  )}
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      ))}
+      <WorkoutView
+        wods={wodsToDisplay}
+        isEditingWorkout={isEditingWorkout}
+        expandedExercises={expandedExercises}
+        animatedValues={animatedValues.current}
+        onToggleExercise={toggleExercise}
+        onToggleWODCompletion={toggleWODCompletion}
+        onUpdateWodTitle={updateWodTitle}
+        onUpdateExercise={updateExercise}
+        onAddWod={handleAddWod}
+        onRemoveWod={handleRemoveWod}
+        onAddExercise={handleAddExercise}
+        onRemoveExercise={handleRemoveExercise}
+      />
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  wodContainer: {
-    marginTop: 24,
-    marginBottom: 24,
-  },
-  wodHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  wodTitle: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.headingXL,
-    color: Colors.text.primary,
-  },
-  completionButton: {
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: Colors.primary[500],
-    backgroundColor: "transparent",
-    minWidth: 160,
-    height: 36,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonContent: {
-    justifyContent: "center",
-    alignItems: "center",
-    height: "100%",
-  },
-  completionButtonActive: {
-    backgroundColor: Colors.primary[500],
-  },
-  completionButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyXS,
-    color: Colors.primary[500],
-    lineHeight: 20,
-  },
-  exercisesContainer: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 16,
-    padding: 16,
-  },
-  exerciseItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: "#3A3A3A",
-    marginVertical: 0,
-  },
-  exerciseNumber: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyLG,
-    color: Colors.text.primary,
-    marginRight: 8,
-  },
-  exerciseName: {
-    flex: 1,
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyLG,
-    color: Colors.text.primary,
-  },
-  exerciseDetails: {
-    backgroundColor: "#3A3A3A",
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  detailText: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.primary,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 20,
+    padding: 20,
   },
   loadingText: {
-    marginTop: 12,
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
-    fontSize: 14,
+    marginTop: 12,
   },
   errorText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyMD,
     color: Colors.error[500],
-    fontSize: 16,
     textAlign: "center",
   },
 });
