@@ -1,11 +1,11 @@
 import { personalRecordsService } from "@/api/services";
 import { Gap, Page, PRHeader } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
-import type { PersonalRecord } from "@/types";
-import { formatDate, parseFirebaseDate } from "@/utils";
+import standardExercises from "@/constants/standardExercises.json";
+import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   StyleSheet,
@@ -14,8 +14,22 @@ import {
   View,
 } from "react-native";
 
+const TRACKING_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
+  weight_reps: "barbell-outline",
+  reps: "repeat-sharp",
+  time_distance: "timer-outline",
+  calories: "flame-outline",
+};
+
+const TRACKING_COLORS: Record<string, string> = {
+  weight_reps: Colors.primary[500],
+  reps: Colors.fitness.strength,
+  time_distance: Colors.fitness.flexibility,
+  calories: Colors.fitness.cardio,
+};
+
 export default function PRsScreen() {
-  const [prs, setPrs] = useState<PersonalRecord[]>([]);
+  const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,13 +42,13 @@ export default function PRsScreen() {
       setLoading(true);
       setError(null);
       const response = await personalRecordsService.getAllPersonalRecords();
-
+      console.log("PRsScreen: Load PRs response:", response.data);
       if (response.success && response.data) {
-        // Sort by newest first (achievedAt date)
-        const sortedPRs = response.data.sort((a, b) => {
-          const dateA = new Date(a.achievedAt).getTime();
-          const dateB = new Date(b.achievedAt).getTime();
-          return dateB - dateA; // Newest first
+        const data = response.data as any[];
+        const sortedPRs = data.sort((a, b) => {
+          const dateA = a.date?._seconds || 0;
+          const dateB = b.date?._seconds || 0;
+          return dateB - dateA;
         });
         setPrs(sortedPRs);
       } else {
@@ -48,34 +62,62 @@ export default function PRsScreen() {
     }
   };
 
-  const formatPRValue = (
-    pr: PersonalRecord,
-  ): { value: string; unit: string } => {
-    switch (pr.trackingType) {
+  const getExerciseInfo = (exerciseId: string) => {
+    const exercise = standardExercises.find((e) => e.id === exerciseId);
+    const trackingType = exercise?.trackingType || "weight_reps";
+    let unit = "KG";
+    switch (trackingType) {
       case "weight_reps":
-        return { value: `${pr.bestWeight || 0}`, unit: "KG" };
+        unit = "KG";
+        break;
       case "reps":
-        return { value: `${pr.bestReps || 0}`, unit: "REPS" };
-      case "time":
-        return { value: formatTime(pr.bestTimeInSeconds || 0), unit: "S" };
-      case "distance":
-        return { value: `${pr.bestTimeInSeconds || 0}`, unit: "M" };
+        unit = "REPS";
+        break;
+      case "time_distance":
+        unit = "SEC";
+        break;
       case "calories":
-        return { value: `${pr.bestReps || 0}`, unit: "CAL" };
-      default:
-        return { value: "N/A", unit: "" };
+        unit = "CAL";
+        break;
     }
+    return {
+      unit,
+      trackingType,
+      icon: TRACKING_ICONS[trackingType] || "barbell-outline",
+      color: TRACKING_COLORS[trackingType] || Colors.fitness.strength,
+    };
   };
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return mins > 0 ? `${mins}:${secs.toString().padStart(2, "0")}` : `${secs}`;
-  };
+  const handlePRPress = useCallback(
+    (exerciseId: string, exerciseName: string) => {
+      router.push({
+        pathname: `/pr/${exerciseId}`,
+        params: { name: exerciseName },
+      } as any);
+    },
+    [],
+  );
 
-  const handlePRPress = useCallback((prId: string) => {
-    router.push(`/pr/${prId}` as any);
-  }, []);
+  // Find the best/most recent PR for the hero card
+  const bestPR = useMemo(() => {
+    if (prs.length === 0) return null;
+    // Most recent PR (already sorted by date desc)
+    return prs[0];
+  }, [prs]);
+
+  const remainingPRs = useMemo(() => {
+    if (prs.length <= 1) return [];
+    return prs.slice(1);
+  }, [prs]);
+
+  // Summary stats
+  const stats = useMemo(() => {
+    const totalPRs = prs.length;
+    const withImprovement = prs.filter(
+      (pr) => pr.improvement !== null && pr.improvement > 0,
+    ).length;
+    return { totalPRs, withImprovement };
+  }, [prs]);
 
   if (loading) {
     return (
@@ -120,12 +162,14 @@ export default function PRsScreen() {
         <PRHeader />
         <Gap size={26} />
         <View style={styles.centerContainer}>
-          <Ionicons
-            name="trophy-outline"
-            size={64}
-            color={Colors.text.tertiary}
-          />
-          <Gap size={16} />
+          <View style={styles.emptyIconContainer}>
+            <Ionicons
+              name="trophy-outline"
+              size={56}
+              color={Colors.primary[500]}
+            />
+          </View>
+          <Gap size={20} />
           <Text style={styles.emptyTitle}>No Personal Records Yet</Text>
           <Text style={styles.emptyText}>
             Complete workouts to start tracking your PRs!
@@ -138,58 +182,249 @@ export default function PRsScreen() {
   return (
     <Page showBackButton={false}>
       <PRHeader />
-      <Gap size={26} />
-      {prs.map((pr, index) => (
-        <View key={pr.id || pr.exerciseId}>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => handlePRPress(pr.id || "")}
+      <Gap size={16} />
+
+      {/* Stats Row */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <View
+            style={[
+              styles.statIconBg,
+              { backgroundColor: Colors.primary[500] + "20" },
+            ]}
           >
-            <View style={styles.prCard}>
-              <View style={styles.cardContent}>
-                <View style={styles.leftContent}>
-                  <View style={styles.topLeft}>
-                    <Text style={styles.exerciseName}>{pr.exerciseName}</Text>
-                    <Text style={styles.date}>
-                      {formatDate(parseFirebaseDate(pr.achievedAt))}
-                    </Text>
-                  </View>
-                  <View style={styles.bottomLeft}>
-                    {/* Empty section for future use */}
-                  </View>
-                </View>
-                <View style={styles.rightContent}>
-                  <View style={styles.topRight}>
-                    <Text style={styles.improvement}>+5KG</Text>
-                  </View>
-                  <View style={styles.bottomRight}>
-                    <Text style={styles.prValue}>
-                      {formatPRValue(pr).value}
-                      <Text style={styles.prUnit}>
-                        {formatPRValue(pr).unit}
+            <Ionicons name="trophy" size={18} color={Colors.primary[500]} />
+          </View>
+          <Text style={styles.statValue}>{stats.totalPRs}</Text>
+          <Text style={styles.statLabel}>Total PRs</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View
+            style={[
+              styles.statIconBg,
+              { backgroundColor: Colors.success[500] + "20" },
+            ]}
+          >
+            <Ionicons
+              name="trending-up"
+              size={18}
+              color={Colors.success[500]}
+            />
+          </View>
+          <Text style={styles.statValue}>{stats.withImprovement}</Text>
+          <Text style={styles.statLabel}>Improved</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View
+            style={[
+              styles.statIconBg,
+              { backgroundColor: Colors.fitness.flexibility + "20" },
+            ]}
+          >
+            <Ionicons
+              name="flame"
+              size={18}
+              color={Colors.fitness.flexibility}
+            />
+          </View>
+          <Text style={styles.statValue}>
+            {prs.length > 0
+              ? formatShortDate(new Date(prs[0].date?._seconds * 1000))
+              : "-"}
+          </Text>
+          <Text style={styles.statLabel}>Latest</Text>
+        </View>
+      </View>
+
+      <Gap size={20} />
+
+      {/* Hero Card — Latest PR */}
+      {bestPR && (
+        <>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Ionicons name="star" size={18} color={Colors.primary[500]} />
+            <Text style={styles.sectionTitle}>Latest Record</Text>
+          </View>
+          <Gap size={10} />
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() =>
+              handlePRPress(bestPR.exerciseId, bestPR.exerciseName)
+            }
+          >
+            <View style={styles.heroCard}>
+              <View style={styles.heroAccent} />
+              <View style={styles.heroBody}>
+                <View style={styles.heroTop}>
+                  <View style={styles.heroInfo}>
+                    <View style={styles.heroNameRow}>
+                      <View
+                        style={[
+                          styles.heroTypeBadge,
+                          {
+                            backgroundColor:
+                              getExerciseInfo(bestPR.exerciseId).color + "25",
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={
+                            getExerciseInfo(bestPR.exerciseId)
+                              .icon as keyof typeof Ionicons.glyphMap
+                          }
+                          size={14}
+                          color={getExerciseInfo(bestPR.exerciseId).color}
+                        />
+                      </View>
+                      <Text style={styles.heroName} numberOfLines={1}>
+                        {bestPR.exerciseName}
                       </Text>
+                    </View>
+                    <View style={styles.heroDateRow}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={12}
+                        color={Colors.text.secondary}
+                      />
+                      <Text style={styles.heroDate}>
+                        {formatShortDate(
+                          new Date(bestPR.date?._seconds * 1000),
+                        )}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.heroValueContainer}>
+                    <Text style={styles.heroValue}>{bestPR.actualPR}</Text>
+                    <Text style={styles.heroUnit}>
+                      {getExerciseInfo(bestPR.exerciseId).unit}
                     </Text>
                   </View>
                 </View>
-                <View style={styles.chevronContainer}>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={24}
-                    color={Colors.primary[500]}
-                  />
-                </View>
+                {bestPR.improvement !== null && bestPR.improvement > 0 && (
+                  <View style={styles.heroImprovementRow}>
+                    <View style={styles.heroImprovementPill}>
+                      <Ionicons
+                        name="arrow-up"
+                        size={12}
+                        color={Colors.success[500]}
+                      />
+                      <Text style={styles.heroImprovementText}>
+                        +{bestPR.improvement}{" "}
+                        {getExerciseInfo(bestPR.exerciseId).unit}
+                      </Text>
+                    </View>
+                    <Text style={styles.heroImprovementLabel}>
+                      from previous best
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.heroChevron}>
+                <Ionicons
+                  name="chevron-forward"
+                  size={20}
+                  color={Colors.primary[400]}
+                />
               </View>
             </View>
           </TouchableOpacity>
-          {index < prs.length - 1 && <Gap size={12} />}
-        </View>
-      ))}
+          <Gap size={24} />
+        </>
+      )}
+
+      {/* All PRs List */}
+      {remainingPRs.length > 0 && (
+        <>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Ionicons name="list" size={16} color={Colors.text.secondary} />
+            <Text style={styles.sectionTitle}>All Records</Text>
+          </View>
+          <Gap size={10} />
+          {remainingPRs.map((pr, index) => {
+            const info = getExerciseInfo(pr.exerciseId);
+            return (
+              <View key={pr.exerciseName + pr.date?._seconds}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => handlePRPress(pr.exerciseId, pr.exerciseName)}
+                >
+                  <View style={styles.prCard}>
+                    {/* Left accent */}
+                    <View
+                      style={[
+                        styles.cardAccent,
+                        { backgroundColor: info.color },
+                      ]}
+                    />
+                    {/* Icon */}
+                    <View
+                      style={[
+                        styles.cardIconContainer,
+                        { backgroundColor: info.color + "18" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={info.icon as keyof typeof Ionicons.glyphMap}
+                        size={20}
+                        color={info.color}
+                      />
+                    </View>
+                    {/* Content */}
+                    <View style={styles.cardBody}>
+                      <Text style={styles.cardName} numberOfLines={1}>
+                        {pr.exerciseName}
+                      </Text>
+                      <View style={styles.cardMeta}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={11}
+                          color={Colors.text.secondary}
+                        />
+                        <Text style={styles.cardDate}>
+                          {formatShortDate(new Date(pr.date?._seconds * 1000))}
+                        </Text>
+                        {pr.improvement !== null && pr.improvement > 0 && (
+                          <View style={styles.cardImprovementPill}>
+                            <Ionicons
+                              name="arrow-up"
+                              size={10}
+                              color={Colors.success[500]}
+                            />
+                            <Text style={styles.cardImprovementText}>
+                              +{pr.improvement}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    {/* Value */}
+                    <View style={styles.cardValueContainer}>
+                      <Text style={styles.cardValue}>{pr.actualPR}</Text>
+                      <Text style={styles.cardUnit}>{info.unit}</Text>
+                    </View>
+                    {/* Chevron */}
+                    <View style={styles.cardChevron}>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={18}
+                        color={Colors.neutral[600]}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+                {index < remainingPRs.length - 1 && <Gap size={10} />}
+              </View>
+            );
+          })}
+        </>
+      )}
       <Gap size={24} />
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
+  // ── Loading / Error / Empty ───────────────────────────
   centerContainer: {
     flex: 1,
     justifyContent: "center",
@@ -208,6 +443,16 @@ const styles = StyleSheet.create({
     color: Colors.error[500],
     textAlign: "center",
   },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: Colors.primary[500] + "15",
+    borderWidth: 2,
+    borderColor: Colors.primary[500] + "30",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   emptyTitle: {
     fontSize: FontSizes.headingXL,
     fontFamily: FontFamilies.spartanBold,
@@ -221,78 +466,221 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     textAlign: "center",
   },
-  prCard: {
-    backgroundColor: Colors.secondary[500],
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: Colors.primary[500],
-    padding: 20,
-  },
-  cardContent: {
+
+  // ── Stats Row ─────────────────────────────────────────
+  statsRow: {
     flexDirection: "row",
-    alignItems: "stretch",
+    gap: 10,
+  },
+  statCard: {
     flex: 1,
-  },
-  leftContent: {
-    flex: 1.8,
-    paddingRight: 16,
-    flexDirection: "column",
-  },
-  rightContent: {
-    flex: 1.2,
-    flexDirection: "column",
-  },
-  topLeft: {
-    flex: 1,
-    justifyContent: "flex-start",
-  },
-  bottomLeft: {
-    flex: 1,
-    minHeight: 20,
-  },
-  topRight: {
-    flexDirection: "column",
-    flex: 0.3,
-    justifyContent: "center",
-    alignItems: "flex-end",
-  },
-  bottomRight: {
-    flex: 0.7,
-    justifyContent: "center",
-    alignItems: "flex-end",
-  },
-  chevronContainer: {
-    paddingLeft: 16,
-    borderLeftWidth: 1,
-    borderLeftColor: Colors.neutral[700],
-    justifyContent: "center",
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 14,
+    padding: 14,
     alignItems: "center",
-    marginLeft: 16,
+    gap: 6,
   },
-  exerciseName: {
-    fontSize: FontSizes.heading2XL,
-    fontFamily: FontFamilies.poppinsBold,
-    color: Colors.text.inverse,
-    marginBottom: 4,
+  statIconBg: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  date: {
+  statValue: {
     fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.spartanSemiBold,
+    color: Colors.text.inverse,
+  },
+  statLabel: {
+    fontSize: FontSizes.bodyXS,
     fontFamily: FontFamilies.poppinsRegular,
     color: Colors.text.secondary,
   },
-  improvement: {
-    fontSize: FontSizes.headingMD,
+
+  // ── Section Header ────────────────────────────────────
+  sectionTitle: {
+    fontSize: FontSizes.headingLG,
+    fontFamily: FontFamilies.poppinsSemiBold,
+    color: Colors.text.primary,
+    letterSpacing: 0.5,
+  },
+
+  // ── Hero Card (Latest PR) ────────────────────────────
+  heroCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.secondary[500],
+    borderRadius: 18,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+  },
+  heroAccent: {
+    width: 5,
+    alignSelf: "stretch",
+    backgroundColor: Colors.primary[500],
+  },
+  heroBody: {
+    flex: 1,
+    padding: 18,
+    gap: 12,
+  },
+  heroTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  heroInfo: {
+    flex: 1,
+    gap: 6,
+    marginRight: 12,
+  },
+  heroNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  heroTypeBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  heroName: {
+    fontSize: FontSizes.headingXL,
+    fontFamily: FontFamilies.poppinsBold,
+    color: Colors.text.inverse,
+    flex: 1,
+  },
+  heroDateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginLeft: 36,
+  },
+  heroDate: {
+    fontSize: FontSizes.bodyXS,
+    fontFamily: FontFamilies.poppinsRegular,
+    color: Colors.text.secondary,
+  },
+  heroValueContainer: {
+    alignItems: "flex-end",
+  },
+  heroValue: {
+    fontSize: FontSizes.displayXL,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.primary[500],
+    lineHeight: FontSizes.displayXL * 1.05,
+  },
+  heroUnit: {
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsBold,
+    color: Colors.text.secondary,
+    marginTop: -2,
+  },
+  heroImprovementRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: 36,
+  },
+  heroImprovementPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: Colors.success[500] + "18",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  heroImprovementText: {
+    fontSize: FontSizes.bodyXS,
     fontFamily: FontFamilies.spartanBold,
     color: Colors.success[500],
   },
-  prValue: {
-    fontSize: FontSizes.display2XL,
+  heroImprovementLabel: {
+    fontSize: FontSizes.bodyXS,
+    fontFamily: FontFamilies.poppinsRegular,
+    color: Colors.text.secondary,
+  },
+  heroChevron: {
+    paddingRight: 14,
+  },
+
+  // ── PR Cards (All Records) ───────────────────────────
+  prCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  cardAccent: {
+    width: 4,
+    alignSelf: "stretch",
+  },
+  cardIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 14,
+  },
+  cardBody: {
+    flex: 1,
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    gap: 4,
+  },
+  cardName: {
+    fontSize: FontSizes.headingMD,
+    fontFamily: FontFamilies.poppinsSemiBold,
+    color: Colors.text.inverse,
+  },
+  cardMeta: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  cardDate: {
+    fontSize: FontSizes.bodyXS,
+    fontFamily: FontFamilies.poppinsRegular,
+    color: Colors.text.secondary,
+  },
+  cardImprovementPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: Colors.success[500] + "15",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 6,
+  },
+  cardImprovementText: {
+    fontSize: 10,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.success[500],
+  },
+  cardValueContainer: {
+    alignItems: "flex-end",
+    marginRight: 4,
+  },
+  cardValue: {
+    fontSize: FontSizes.heading2XL,
     fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
-  prUnit: {
-    fontSize: FontSizes.headingLG,
+  cardUnit: {
+    fontSize: FontSizes.bodyXS,
     fontFamily: FontFamilies.poppinsBold,
-    color: Colors.text.inverse,
+    color: Colors.text.secondary,
+    marginTop: -4,
+  },
+  cardChevron: {
+    paddingHorizontal: 10,
   },
 });
