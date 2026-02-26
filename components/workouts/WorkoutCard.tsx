@@ -19,11 +19,14 @@ export default function WorkoutCard({ title, exercises }: WorkoutCardProps) {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>{title}</Text>
-      <View style={styles.exercisesBox}>
+      <View style={styles.exercisesList}>
         {visibleExercises.map((exercise, index) => (
-          <Text key={index} style={styles.exercise}>
-            {exercise}
-          </Text>
+          <View key={index} style={styles.exerciseRow}>
+            <View style={styles.bullet} />
+            <Text style={styles.exerciseText} numberOfLines={1}>
+              {exercise}
+            </Text>
+          </View>
         ))}
         {hasMoreExercises && (
           <Text style={styles.moreText}>+{remainingCount} more</Text>
@@ -35,38 +38,39 @@ export default function WorkoutCard({ title, exercises }: WorkoutCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    width: screenWidth * 0.6,
-    alignItems: "center",
-    padding: 8,
+    width: screenWidth * 0.58,
+    padding: 14,
   },
   title: {
-    fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: FontSizes.headingLG,
-    color: Colors.text.primary,
-    marginBottom: 4,
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.headingMD,
+    color: Colors.text.inverse,
+    marginBottom: 10,
   },
-  exercisesBox: {
-    width: "100%",
-    minHeight: 100,
-    borderWidth: 1,
-    borderColor: Colors.primary[500],
-    borderRadius: 20,
-    padding: 12,
-    backgroundColor: "transparent",
-    gap: 6,
-    justifyContent: "center",
+  exercisesList: {
+    gap: 8,
+  },
+  exerciseRow: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
-  exercise: {
-    fontFamily: FontFamilies.spartanRegular,
-    fontSize: 18,
-    color: Colors.text.primary,
-    lineHeight: 18,
+  bullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary[500],
+  },
+  exerciseText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    flex: 1,
   },
   moreText: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: 12,
+    fontSize: FontSizes.bodyXS,
     color: Colors.primary[500],
+    marginLeft: 14,
   },
 });

@@ -1,7 +1,7 @@
-import { Button } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function WorkoutHeader() {
   const handleAddWorkout = () => {
@@ -10,20 +10,15 @@ export default function WorkoutHeader() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.subcontainer}>
+      <View style={styles.textContainer}>
         <Text style={styles.title}>Workouts</Text>
         <Text style={styles.subtitle}>
           It's your turn, show me what you can do
         </Text>
       </View>
-      <View>
-        <Button
-          title="+"
-          onPress={handleAddWorkout}
-          variant="primary"
-          size="small"
-        />
-      </View>
+      <Pressable onPress={handleAddWorkout} style={styles.addButton}>
+        <Ionicons name="add" size={22} color={Colors.text.inverse} />
+      </Pressable>
     </View>
   );
 }
@@ -33,22 +28,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-  subcontainer: {
     paddingVertical: 16,
-    paddingRight: 16,
+  },
+  textContainer: {
     flex: 1,
+    marginRight: 16,
   },
   title: {
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   subtitle: {
     fontFamily: FontFamilies.spartanMedium,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
-    lineHeight: 20,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+  },
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: Colors.primary[500],
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
