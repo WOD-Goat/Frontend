@@ -7,12 +7,12 @@ import { router } from "expo-router";
 import { useState } from "react";
 import {
   Dimensions,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { Image } from "expo-image";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -44,7 +44,7 @@ export default function GenderSelectionScreen() {
         onPress={() => setSelectedGender(gender)}
       >
         <View style={styles.genderIconContainer}>
-          <Image source={icon} style={styles.genderIcon} resizeMode="contain" />
+          <Image source={icon} style={styles.genderIcon} contentFit="contain" />
         </View>
       </TouchableOpacity>
     );
