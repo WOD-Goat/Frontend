@@ -1,10 +1,11 @@
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function PRHeader() {
   return (
     <View style={styles.container}>
-      <View style={styles.subcontainer}>
+      <View style={styles.textContainer}>
         <Text style={styles.title}>Personal Records</Text>
         <Text style={styles.subtitle}>
           Track your best lifts and achievements
@@ -17,12 +18,10 @@ export default function PRHeader() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-  },
-  subcontainer: {
     paddingVertical: 16,
-    paddingRight: 16,
+  },
+  textContainer: {
     flex: 1,
   },
   title: {

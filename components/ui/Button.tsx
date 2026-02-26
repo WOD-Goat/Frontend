@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
 
   // States
   disabled: {
-    backgroundColor: Theme.colors.neutral[200],
+    backgroundColor: Theme.colors.neutral[100],
     opacity: 0.6,
     ...Theme.shadows.none,
   },
@@ -172,6 +172,6 @@ const styles = StyleSheet.create({
     color: Theme.colors.text.inverse,
   },
   disabledText: {
-    color: Theme.colors.text.secondary,
+    color: Theme.colors.neutral[400],
   },
 });

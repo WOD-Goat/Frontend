@@ -1,3 +1,13 @@
+// New PR type for getAllPrs response
+export interface NewPersonalRecord {
+  actualPR: number;
+  date: {
+    _nanoseconds: number;
+    _seconds: number;
+  };
+  exerciseName: string;
+  improvement: number | null;
+}
 // Personal Record Types
 
 export type PRTrackingType =

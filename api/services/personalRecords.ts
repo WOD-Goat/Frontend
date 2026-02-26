@@ -29,34 +29,7 @@ export const personalRecordsService = {
       throw error;
     }
   },
-
-  /**
-   * Get a specific personal record by ID
-   */
-  getPersonalRecordById: async (
-    id: string,
-  ): Promise<PersonalRecordResponse> => {
-    console.log("💪 PersonalRecordsService: Fetching PR by ID:", id);
-
-    try {
-      const response = await apiClient.get<PersonalRecordResponse>(
-        API_ENDPOINTS.PERSONAL_RECORDS.GET_BY_ID(id),
-      );
-
-      console.log(
-        "💪 PersonalRecordsService: Get PR by ID response:",
-        response,
-      );
-
-      const prResponse = response as unknown as PersonalRecordResponse;
-
-      return prResponse;
-    } catch (error) {
-      console.error("💪 PersonalRecordsService: Get PR by ID error:", error);
-      throw error;
-    }
-  },
-
+  
   /**
    * Get personal records for a specific exercise
    */
