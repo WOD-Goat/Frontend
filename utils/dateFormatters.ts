@@ -54,3 +54,22 @@ export const formatDate = (date: Date): string => {
     });
   }
 };
+
+/**
+ * Compact date format for cards: "Feb 26" or "Dec 3, '25"
+ * Shows year suffix only if not the current year.
+ */
+export const formatShortDate = (date: Date): string => {
+  const now = new Date();
+  const sameYear = date.getFullYear() === now.getFullYear();
+
+  if (isToday(date)) return "Today";
+  if (isYesterday(date)) return "Yesterday";
+
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  const day = date.getDate();
+
+  if (sameYear) return `${month} ${day}`;
+  const yearSuffix = `'${String(date.getFullYear()).slice(-2)}`;
+  return `${month} ${day}, ${yearSuffix}`;
+};

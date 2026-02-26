@@ -1,7 +1,9 @@
 export {
     formatDate,
+    formatShortDate,
     isToday,
-    isYesterday, parseFirebaseDate
+    isYesterday,
+    parseFirebaseDate
 } from "./dateFormatters";
 export {
     cacheImagesWithExpoImage,

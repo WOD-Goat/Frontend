@@ -1,10 +1,13 @@
 import { icons } from "@/assets/images";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
 interface StatItem {
   icon: string;
+  ionIcon?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
   value: string;
   label: string;
 }
@@ -15,10 +18,34 @@ interface StatsCardProps {
 }
 
 const defaultStats: StatItem[] = [
-  { icon: icons["active-streak"], value: "3 Day", label: "Streak" },
-  { icon: icons.dumbell, value: "120KG", label: "Backsquat PR" },
-  { icon: icons.trophy, value: "4 PRs", label: "This month" },
-  { icon: icons.star, value: "Favorite", label: "Squat Cleans" },
+  {
+    icon: icons["active-streak"],
+    ionIcon: "flame",
+    iconColor: Colors.primary[500],
+    value: "3 Day",
+    label: "Streak",
+  },
+  {
+    icon: icons.dumbell,
+    ionIcon: "barbell",
+    iconColor: Colors.fitness.strength,
+    value: "120KG",
+    label: "Backsquat PR",
+  },
+  {
+    icon: icons.trophy,
+    ionIcon: "trophy",
+    iconColor: Colors.warning[500],
+    value: "4 PRs",
+    label: "This month",
+  },
+  {
+    icon: icons.star,
+    ionIcon: "heart",
+    iconColor: Colors.fitness.cardio,
+    value: "Favorite",
+    label: "Squat Cleans",
+  },
 ];
 
 export default function StatsCard({
@@ -27,21 +54,39 @@ export default function StatsCard({
 }: StatsCardProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.sectionHeader}>
+        <Ionicons name="stats-chart" size={18} color={Colors.primary[500]} />
+        <Text style={styles.sectionTitle}>{title}</Text>
+      </View>
 
-      <View style={styles.statsContainer}>
+      <View style={styles.statsGrid}>
         {stats.map((stat, index) => (
-          <View
-            key={index}
-            style={[
-              styles.statItem,
-              index % 2 === 0 && styles.leftBorder,
-              index < 2 && styles.topBorder,
-            ]}
-          >
-            <Image style={styles.icon} source={stat.icon} />
-            <Text style={styles.value}>{stat.value}</Text>
-            <Text style={styles.label}>{stat.label}</Text>
+          <View key={index} style={styles.statCard}>
+            <View
+              style={[
+                styles.iconBg,
+                {
+                  backgroundColor:
+                    (stat.iconColor || Colors.primary[500]) + "18",
+                },
+              ]}
+            >
+              {stat.ionIcon ? (
+                <Ionicons
+                  name={stat.ionIcon}
+                  size={20}
+                  color={stat.iconColor || Colors.primary[500]}
+                />
+              ) : (
+                <Image style={styles.icon} source={stat.icon} />
+              )}
+            </View>
+            <Text style={styles.value} numberOfLines={1}>
+              {stat.value}
+            </Text>
+            <Text style={styles.label} numberOfLines={1}>
+              {stat.label}
+            </Text>
           </View>
         ))}
       </View>
@@ -53,52 +98,54 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
   },
-  title: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.headingXL,
-    color: "#FFFFFF",
-    marginBottom: 16,
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
   },
-  statsContainer: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: Colors.primary[500],
+  sectionTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.primary,
+    letterSpacing: 0.5,
+  },
+  statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    overflow: "hidden",
+    gap: 10,
   },
-  statItem: {
-    width: "50%",
-    padding: 24,
+  statCard: {
+    width: "48%",
+    flexGrow: 1,
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 16,
+    padding: 18,
+    alignItems: "center",
+    gap: 8,
+  },
+  iconBg: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 120,
-    borderColor: Colors.primary[500],
-  },
-  leftBorder: {
-    borderRightWidth: 1,
-  },
-  topBorder: {
-    borderBottomWidth: 1,
   },
   icon: {
-    width: 32,
-    height: 32,
-    marginBottom: 8,
+    width: 22,
+    height: 22,
   },
   value: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: FontSizes.heading2XL,
-    color: "#FFFFFF",
-    marginBottom: 4,
+    fontSize: FontSizes.headingXL,
+    color: Colors.text.inverse,
     textAlign: "center",
   },
   label: {
     fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodySM,
-    color: "#FFFFFF",
-    opacity: 0.9,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
     textAlign: "center",
+    marginTop: -4,
   },
 });

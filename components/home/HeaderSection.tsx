@@ -8,6 +8,29 @@ interface HeaderSectionProps {
   streakDays?: number;
 }
 
+const getGreeting = (): string => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  return "Good Evening";
+};
+
+const getMotivation = (): string => {
+  const lines = [
+    "It's time to challenge your limits.",
+    "Push harder than yesterday.",
+    "Every rep counts. Let's go!",
+    "Your only limit is you.",
+    "Make today count.",
+  ];
+  // Pick one based on day-of-year so it changes daily but stays stable
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
+      86400000,
+  );
+  return lines[dayOfYear % lines.length];
+};
+
 export default function HeaderSection({
   userName,
   streakDays = 0,
@@ -15,21 +38,35 @@ export default function HeaderSection({
   return (
     <View style={styles.container}>
       <View style={styles.greetingSection}>
-        <Text style={styles.greeting}>Hi, {userName} 👋</Text>
-        <Text style={styles.subtitle}>It's time to challenge your limits.</Text>
+        <Text style={styles.greetingLabel}>{getGreeting()}</Text>
+        <Text style={styles.userName}>{userName}</Text>
+        <Text style={styles.motivation}>{getMotivation()}</Text>
       </View>
-      <View style={styles.streakContainer}>
+
+      {/* Streak Badge */}
+      <View
+        style={[
+          styles.streakCard,
+          streakDays > 0 ? styles.streakActive : styles.streakInactive,
+        ]}
+      >
         <Image
           source={
             streakDays > 0 ? images["active-streak"] : images["inactive-streak"]
           }
           style={styles.streakIcon}
         />
-        {streakDays > 0 && (
-          <View style={styles.streakBadge}>
-            <Text style={styles.streakNumber}>{streakDays}</Text>
-          </View>
-        )}
+        <Text
+          style={[
+            styles.streakValue,
+            streakDays > 0 && { color: Colors.primary[500] },
+          ]}
+        >
+          {streakDays}
+        </Text>
+        <Text style={styles.streakLabel}>
+          {streakDays === 1 ? "Day" : "Days"}
+        </Text>
       </View>
     </View>
   );
@@ -41,53 +78,65 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 16,
-    paddingRight: 16,
   },
   greetingSection: {
     flex: 1,
+    marginRight: 16,
   },
-  greeting: {
+  greetingLabel: {
+    fontFamily: FontFamilies.spartanMedium,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  userName: {
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.heading2XL,
-    color: Colors.text.primary,
+    color: Colors.text.inverse,
     marginBottom: 4,
   },
-  subtitle: {
+  motivation: {
     fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
-    lineHeight: 20,
+    lineHeight: 18,
   },
-  streakContainer: {
-    position: "relative",
-    width: 40,
-    height: 40,
-    justifyContent: "center",
+
+  // Streak card
+  streakCard: {
     alignItems: "center",
+    justifyContent: "center",
+    width: 68,
+    paddingVertical: 10,
+    borderRadius: 16,
+    gap: 2,
+  },
+  streakActive: {
+    backgroundColor: Colors.primary[500] + "18",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+  },
+  streakInactive: {
+    backgroundColor: Colors.secondary[600],
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
   },
   streakIcon: {
-    width: 32,
-    height: 32,
-  },
-  streakBadge: {
-    position: "absolute",
-    top: -4,
-    left: 24,
-    // backgroundColor: Colors.primary[500],
-    borderRadius: 12,
-
-    minWidth: 24,
+    width: 24,
     height: 24,
-    paddingHorizontal: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.primary[500],
   },
-  streakNumber: {
-    fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: 14,
-    color: Colors.text.inverse,
-    lineHeight: 20,
+  streakValue: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.secondary,
+    lineHeight: 22,
+  },
+  streakLabel: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: 10,
+    color: Colors.text.secondary,
+    marginTop: -2,
   },
 });

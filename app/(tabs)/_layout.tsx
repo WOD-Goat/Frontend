@@ -16,7 +16,8 @@ export default function TabLayout() {
           paddingTop: 10,
           height: responsiveSize(90),
           position: "absolute",
-          borderColor: Colors.secondary[600],
+          borderColor: Colors.neutral[700],
+          borderTopWidth: 1,
         },
         tabBarLabelStyle: {
           display: "none", // Hide labels to match design
@@ -66,8 +67,8 @@ export default function TabLayout() {
               <Image
                 source={tabIcons.ai}
                 style={{
-                  width: '100%',
-                  height: '100%',
+                  width: "100%",
+                  height: "100%",
                 }}
               />
             </View>

@@ -1,11 +1,12 @@
 import { useGlobalState } from "@/components/lib";
+import { router } from "expo-router";
 import {
-    BannerCarousel,
-    Gap,
-    HeaderSection,
-    Page,
-    StatsCard,
-    WODCard,
+  BannerCarousel,
+  Gap,
+  HeaderSection,
+  Page,
+  StatsCard,
+  WODCard,
 } from "../../components";
 
 export default function HomeScreen() {
@@ -14,24 +15,19 @@ export default function HomeScreen() {
   const rawUserName = user?.nickname ?? "User";
   const userName = rawUserName.charAt(0).toUpperCase() + rawUserName.slice(1);
 
-  // TODO: Fetch streak from API and store in global state
-  const streakDays = 0; // Placeholder - will be loaded from user stats
-
   return (
     <Page showBackButton={false}>
-      <HeaderSection userName={userName} streakDays={streakDays} />
-      <Gap size={26} />
-      <WODCard
-        coach="Yahia"
-        workoutCount={4}
-        title="Today's WOD"
-        workoutType="Strength Day"
-        onPress={() => {}}
+      <HeaderSection
+        userName={userName}
+        streakDays={user?.statsSummary.currentStreak}
       />
-      <Gap size={26} />
+      <Gap size={20} />
+      <WODCard onPress={() => router.push("/(tabs)/workouts")} />
+      <Gap size={24} />
       <BannerCarousel onBannerPress={() => {}} />
-      <Gap size={26} />
+      <Gap size={24} />
       <StatsCard />
+      <Gap size={24} />
     </Page>
   );
 }

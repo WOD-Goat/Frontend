@@ -1,28 +1,29 @@
 import { mascotAssets } from "@/assets/images";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  Dimensions,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  Touchable,
-  TouchableOpacity,
-  View,
+    Dimensions,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { Button } from "../ui";
 
 const { width: screenWidth } = Dimensions.get("window");
-const BANNER_WIDTH = screenWidth * 0.85;
-const BANNER_HEIGHT = 160;
-const BANNER_GAP = 16;
+const BANNER_WIDTH = screenWidth * 0.82;
+const BANNER_HEIGHT = 150;
+const BANNER_GAP = 12;
 
 interface Banner {
   id: string;
   image: any;
   title?: string;
   subtitle?: string;
+  iconName?: keyof typeof Ionicons.glyphMap;
+  accentColor?: string;
 }
 
 interface BannerCarouselProps {
@@ -33,24 +34,28 @@ interface BannerCarouselProps {
 const defaultBanners: Banner[] = [
   {
     id: "1",
-    image: mascotAssets.coach,
-    title: "Ask WODGoat AI",
-    subtitle:
-      "From WOD strategy to recovery advice, your AI fitness expert is ready to guide you.",
+    image: mascotAssets["hands-free"],
+    title: "Hands-Free Logging",
+    subtitle: "Tap to record reps, weights, and results using your voice.",
+    iconName: "mic",
+    accentColor: Colors.primary[500],
   },
   {
     id: "2",
-    image: mascotAssets["hands-free"],
-    title: "Hands-Free Logging",
+    image: mascotAssets.coach,
+    title: "Ask WODGoat AI",
     subtitle:
-      "Hands tired after WOD? Tap to record reps, weights, and results using your voice.",
+      "From WOD strategy to recovery advice, your AI fitness expert is ready.",
+    iconName: "chatbubble-ellipses",
+    accentColor: Colors.primary[500],
   },
   {
     id: "3",
     image: mascotAssets.track,
     title: "Track your WODs",
-    subtitle:
-      "Log every workout, track your PRs, and measure real progress over time.",
+    subtitle: "Log every workout, track your PRs, and measure real progress.",
+    iconName: "analytics",
+    accentColor: Colors.primary[500],
   },
 ];
 
@@ -62,24 +67,8 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset;
-    const pageIndex = Math.round(contentOffset.x / BANNER_WIDTH);
+    const pageIndex = Math.round(contentOffset.x / (BANNER_WIDTH + BANNER_GAP));
     setCurrentIndex(Math.max(0, Math.min(pageIndex, banners.length - 1)));
-  };
-
-  const renderPaginationDots = () => {
-    return (
-      <View style={styles.paginationContainer}>
-        {banners.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.paginationDot,
-              index === currentIndex ? styles.activeDot : styles.inactiveDot,
-            ]}
-          />
-        ))}
-      </View>
-    );
   };
 
   const handleBannerPress = (banner: Banner) => {
@@ -90,7 +79,11 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>WODGoat AI</Text>
+      <View style={styles.sectionHeader}>
+        <Ionicons name="sparkles" size={18} color={Colors.primary[500]} />
+        <Text style={styles.sectionTitle}>WODGoat AI</Text>
+      </View>
+
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -103,41 +96,89 @@ const BannerCarousel: React.FC<BannerCarouselProps> = ({
         snapToAlignment="start"
         pagingEnabled={false}
       >
-        {banners.map((banner, index) => (
-          <TouchableOpacity
-            key={banner.id}
-            onPress={() => handleBannerPress(banner)}
-            style={[
-              styles.banner,
-              {
-                marginLeft: index === 0 ? 0 : BANNER_GAP / 2,
-                marginRight: index === banners.length - 1 ? 0 : BANNER_GAP / 2,
-              },
-            ]}
-          >
-            <View style={styles.bannerContent}>
-              <Text style={styles.bannerTitle}>{banner.title}</Text>
-              <Text style={styles.bannerSubtitle}>{banner.subtitle}</Text>
-            </View>
-            <Image source={banner.image} style={styles.bannerImage} />
-          </TouchableOpacity>
-        ))}
+        {banners.map((banner, index) => {
+          const accent = banner.accentColor || Colors.primary[500];
+          return (
+            <TouchableOpacity
+              key={banner.id}
+              onPress={() => handleBannerPress(banner)}
+              activeOpacity={0.85}
+              style={[
+                styles.banner,
+                {
+                  marginLeft: index === 0 ? 0 : BANNER_GAP / 2,
+                  marginRight:
+                    index === banners.length - 1 ? 0 : BANNER_GAP / 2,
+                  borderColor: accent + "35",
+                },
+              ]}
+            >
+              {/* Left accent bar */}
+              <View
+                style={[styles.bannerAccent, { backgroundColor: accent }]}
+              />
+
+              <View style={styles.bannerBody}>
+                <View style={styles.bannerContent}>
+                  {banner.iconName && (
+                    <View
+                      style={[
+                        styles.bannerIconBg,
+                        { backgroundColor: accent + "20" },
+                      ]}
+                    >
+                      <Ionicons
+                        name={banner.iconName}
+                        size={16}
+                        color={accent}
+                      />
+                    </View>
+                  )}
+                  <Text style={styles.bannerTitle} numberOfLines={1}>
+                    {banner.title}
+                  </Text>
+                  <Text style={styles.bannerSubtitle} numberOfLines={3}>
+                    {banner.subtitle}
+                  </Text>
+                </View>
+                <Image source={banner.image} style={styles.bannerImage} />
+              </View>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
 
-      {renderPaginationDots()}
+      {/* Pagination */}
+      <View style={styles.paginationContainer}>
+        {banners.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.paginationDot,
+              index === currentIndex ? styles.activeDot : styles.inactiveDot,
+            ]}
+          />
+        ))}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 20,
+    marginVertical: 4,
   },
-  title: {
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  sectionTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.headingXL,
-    color: "#FFFFFF",
-    marginBottom: 16,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.primary,
+    letterSpacing: 0.5,
   },
   scrollView: {
     flexGrow: 0,
@@ -149,66 +190,70 @@ const styles = StyleSheet.create({
     width: BANNER_WIDTH,
     height: BANNER_HEIGHT,
     flexDirection: "row",
-    padding: 20,
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 16,
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  bannerAccent: {
+    width: 4,
+    alignSelf: "stretch",
+  },
+  bannerBody: {
+    flex: 1,
+    flexDirection: "row",
+    padding: 16,
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255, 107, 44, 0.5)",
-    shadowColor: "#ffffff",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   bannerContent: {
     flex: 1,
     paddingRight: 12,
     justifyContent: "center",
-    flexShrink: 1,
+    gap: 6,
+  },
+  bannerIconBg: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "flex-start",
   },
   bannerTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyXL,
-    color: "#FFFFFF",
-    marginBottom: 4,
-    flexWrap: "wrap",
+    fontSize: FontSizes.headingMD,
+    color: Colors.text.inverse,
   },
   bannerSubtitle: {
-    fontFamily: FontFamilies.spartanRegular,
-    fontSize: FontSizes.bodyMD,
-    color: "#FFFFFF",
-    opacity: 0.9,
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
     lineHeight: 16,
-    flexWrap: "wrap",
   },
   bannerImage: {
-    width: "25%",
-    height: "100%",
+    width: "22%",
+    height: "90%",
     resizeMode: "contain",
   },
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 14,
   },
   paginationDot: {
-    width: 6,
     height: 6,
     borderRadius: 3,
     marginHorizontal: 3,
   },
   activeDot: {
     backgroundColor: Colors.primary[500],
-    width: 20,
+    width: 22,
   },
   inactiveDot: {
-    backgroundColor: "#A6A6A6",
+    backgroundColor: Colors.neutral[600],
+    width: 6,
   },
 });
 

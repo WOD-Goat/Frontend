@@ -45,10 +45,11 @@ export const FontFamilies = {
 
 export const FontSizes = {
   // Display sizes (largest)
+  display3XL: responsiveSize(64),
   display2XL: responsiveSize(48),
   displayXL: responsiveSize(40),
   displayLG: responsiveSize(36),
-  displayMD: responsiveSize(30),
+  displayMD: responsiveSize(26),
 
   // Heading sizes
   heading2XL: responsiveSize(24),
