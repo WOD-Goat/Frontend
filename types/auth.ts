@@ -17,15 +17,16 @@ export interface User {
   weight: number;
   profilePictureUrl: string;
   statsSummary: {
-    totalWorkouts: number;
+    completedWorkouts: number;
     currentStreak: number;
     longestStreak: number;
     lastWorkoutDate: Date | null;
     latestPR: {
       exerciseId: string | null;
       exerciseName: string | null;
-      estimated1RM: number;
+      value: number;
     };
+    totalPRs: number;
   };
   createdAt: Date;
   updatedAt: Date;

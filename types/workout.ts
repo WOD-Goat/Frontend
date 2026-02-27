@@ -34,6 +34,7 @@ export interface ResultData {
   weight: number | null;
   timeInSeconds: number | null;
   distanceMeters: number | null;
+  calories: number | null;
 }
 
 export interface AssignedWorkoutData {

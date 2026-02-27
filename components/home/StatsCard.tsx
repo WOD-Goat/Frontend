@@ -1,5 +1,6 @@
 import { icons } from "@/assets/images";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { User } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
@@ -13,45 +14,45 @@ interface StatItem {
 }
 
 interface StatsCardProps {
+  user: User | null;
   title?: string;
   stats?: StatItem[];
 }
 
-const defaultStats: StatItem[] = [
-  {
-    icon: icons["active-streak"],
-    ionIcon: "flame",
-    iconColor: Colors.primary[500],
-    value: "3 Day",
-    label: "Streak",
-  },
-  {
-    icon: icons.dumbell,
-    ionIcon: "barbell",
-    iconColor: Colors.fitness.strength,
-    value: "120KG",
-    label: "Backsquat PR",
-  },
-  {
-    icon: icons.trophy,
-    ionIcon: "trophy",
-    iconColor: Colors.warning[500],
-    value: "4 PRs",
-    label: "This month",
-  },
-  {
-    icon: icons.star,
-    ionIcon: "heart",
-    iconColor: Colors.fitness.cardio,
-    value: "Favorite",
-    label: "Squat Cleans",
-  },
-];
-
 export default function StatsCard({
+  user,
   title = "Latest Performance",
-  stats = defaultStats,
 }: StatsCardProps) {
+  const stats: StatItem[] = [
+    {
+      icon: icons["active-streak"],
+      ionIcon: "flame",
+      iconColor: Colors.primary[500],
+      value: `${user?.statsSummary?.currentStreak || 0} ${user?.statsSummary?.currentStreak === 1 ? "Day" : "Days"}`,
+      label: "Streak",
+    },
+    {
+      icon: icons.dumbell,
+      ionIcon: "barbell",
+      iconColor: Colors.fitness.strength,
+      value: `${user?.statsSummary?.latestPR.value || 0}`,
+      label: user?.statsSummary?.latestPR.exerciseName || "Latest PR",
+    },
+    {
+      icon: icons.trophy,
+      ionIcon: "trophy",
+      iconColor: Colors.warning[500],
+      value: `${user?.statsSummary?.totalPRs || 0}`,
+      label: "Total PRs",
+    },
+    {
+      icon: icons.star,
+      ionIcon: "heart",
+      iconColor: Colors.fitness.cardio,
+      value: "Favorite",
+      label: "Squat Cleans",
+    },
+  ];
   return (
     <View style={styles.container}>
       <View style={styles.sectionHeader}>

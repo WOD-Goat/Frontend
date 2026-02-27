@@ -15,6 +15,7 @@ interface ResultEntry {
   weight: string;
   timeInSeconds: string;
   distanceMeters: string;
+  calories: string;
 }
 
 export default function WorkoutResultsScreen() {
@@ -33,6 +34,7 @@ export default function WorkoutResultsScreen() {
       weight: "",
       timeInSeconds: "",
       distanceMeters: "",
+      calories: "",
     },
   ]);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +72,7 @@ export default function WorkoutResultsScreen() {
         weight: "",
         timeInSeconds: "",
         distanceMeters: "",
+        calories: "",
       },
     ]);
   };
@@ -238,7 +241,7 @@ export default function WorkoutResultsScreen() {
             break;
 
           case "calories":
-            if (!result.reps) {
+            if (!result.calories) {
               Alert.alert(
                 "Validation Error",
                 `Result ${i + 1} (${exercise.name}): Please enter calories`,
@@ -246,7 +249,7 @@ export default function WorkoutResultsScreen() {
               setSubmitting(false);
               return;
             }
-            if (parseInt(result.reps) <= 0) {
+            if (parseInt(result.calories) <= 0) {
               Alert.alert(
                 "Validation Error",
                 `Result ${i + 1} (${exercise.name}): Calories must be greater than 0`,
@@ -266,6 +269,7 @@ export default function WorkoutResultsScreen() {
         weight: r.weight ? parseFloat(r.weight) : null,
         timeInSeconds: r.timeInSeconds ? parseInt(r.timeInSeconds) : null,
         distanceMeters: r.distanceMeters ? parseInt(r.distanceMeters) : null,
+        calories: r.calories ? parseInt(r.calories) : null,
       }));
 
       const response = await workoutsService.completeWorkout(
@@ -376,8 +380,8 @@ export default function WorkoutResultsScreen() {
             <Text style={styles.inputLabel}>Calories</Text>
             <Input
               placeholder="0"
-              value={result.reps}
-              onChangeText={(text) => updateResult(result.id, "reps", text)}
+              value={result.calories}
+              onChangeText={(text) => updateResult(result.id, "calories", text)}
               keyboardType="numeric"
             />
           </View>

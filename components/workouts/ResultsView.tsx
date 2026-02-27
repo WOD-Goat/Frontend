@@ -70,22 +70,38 @@ export default function ResultsView({
                   )}
                 </View>
               )}
-              {originalResult.reps !== null && (
+              {originalResult.reps !== null &&
+                (exercise.trackingType === "reps" || exercise.trackingType === "weight_reps") && (
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultLabel}>Reps</Text>
+                    {isEditingResults ? (
+                      <Input
+                        value={result.reps?.toString() || ""}
+                        onChangeText={(text) =>
+                          onUpdateResult(index, "reps", text)
+                        }
+                        keyboardType="numeric"
+                        placeholder="0"
+                      />
+                    ) : (
+                      <Text style={styles.resultValue}>{result.reps}</Text>
+                    )}
+                  </View>
+                )}
+              {originalResult.calories !== null && exercise.trackingType === "calories" && (
                 <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>
-                    {exercise.trackingType === "calories" ? "Calories" : "Reps"}
-                  </Text>
+                  <Text style={styles.resultLabel}>Calories</Text>
                   {isEditingResults ? (
                     <Input
-                      value={result.reps?.toString() || ""}
+                      value={result.calories?.toString() || ""}
                       onChangeText={(text) =>
-                        onUpdateResult(index, "reps", text)
+                        onUpdateResult(index, "calories", text)
                       }
                       keyboardType="numeric"
                       placeholder="0"
                     />
                   ) : (
-                    <Text style={styles.resultValue}>{result.reps}</Text>
+                    <Text style={styles.resultValue}>{result.calories}</Text>
                   )}
                 </View>
               )}

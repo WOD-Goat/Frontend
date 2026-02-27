@@ -53,6 +53,7 @@ export interface CreatePersonalRecordData {
   bestReps?: number | null;
   bestEstimated1RM?: number | null;
   bestTimeInSeconds?: number | null;
+  bestCalories?: number | null;
 }
 
 export interface UpdatePersonalRecordData {

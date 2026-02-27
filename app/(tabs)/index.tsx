@@ -26,7 +26,7 @@ export default function HomeScreen() {
       <Gap size={24} />
       <BannerCarousel onBannerPress={() => {}} />
       <Gap size={24} />
-      <StatsCard />
+      <StatsCard user={user} />
       <Gap size={24} />
     </Page>
   );

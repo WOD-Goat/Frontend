@@ -1,5 +1,6 @@
 import { workoutsService } from "@/api/services";
 import { Gap, Page, WorkoutHeader, WorkoutSection } from "@/components";
+import { useGlobalState } from "@/components/lib";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { AssignedWorkoutData } from "@/types";
 import { formatShortDate, parseFirebaseDate } from "@/utils";
@@ -25,6 +26,8 @@ export default function WorkoutsScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const globalState = useGlobalState();
+  const user = globalState.get("user");
 
   useEffect(() => {
     loadWorkouts();
@@ -84,7 +87,7 @@ export default function WorkoutsScreen() {
   const stats = useMemo(
     () => ({
       total: workoutSections.length,
-      done: completed.length,
+      done: user?.statsSummary.completedWorkouts || 0,
       pending: upcoming.length,
     }),
     [workoutSections, upcoming, completed],

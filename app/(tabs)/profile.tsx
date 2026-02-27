@@ -142,10 +142,10 @@ export default function ProfileScreen() {
             <Ionicons
               name="barbell"
               size={18}
-              color={Colors.fitness.strength}
+              color={Colors.text.success}
             />
           </View>
-          <Text style={styles.statValue}>{stats?.totalWorkouts ?? 0}</Text>
+          <Text style={styles.statValue}>{stats?.completedWorkouts ?? 0}</Text>
           <Text style={styles.statLabel}>Workouts</Text>
         </View>
         <View style={styles.statCard}>
@@ -229,7 +229,7 @@ export default function ProfileScreen() {
               </View>
               <View style={styles.prValueContainer}>
                 <Text style={styles.prValue}>
-                  {stats.latestPR.estimated1RM}
+                  {stats.latestPR.value}
                 </Text>
                 <Text style={styles.prUnit}>KG</Text>
               </View>
