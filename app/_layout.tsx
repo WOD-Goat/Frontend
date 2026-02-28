@@ -7,7 +7,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
 import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
-import { useStorage } from "../components/lib/storage";
+import { storage, useStorage } from "../components/lib/storage";
 import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
@@ -117,6 +117,10 @@ export default function RootLayout() {
 
       // Navigate to appropriate screen
       if (isAuthenticated) {
+        authService.getProfile().then(async (res) => {
+          await Promise.all([storage.set("user", res.user)]);
+          globalState.set("user", res.user);
+        });
         router.replace("/(tabs)");
       } else {
         router.replace("/onboarding");

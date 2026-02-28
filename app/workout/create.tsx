@@ -1,5 +1,6 @@
-import { workoutsService } from "@/api/services";
+import { authService, workoutsService } from "@/api/services";
 import { Button, ExerciseSearchInput, Input, Page } from "@/components";
+import { storage, useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
 import type { StandardExercise, TrackingType } from "@/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -195,7 +196,7 @@ export default function CreateWorkoutScreen() {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
-
+  const globalState = useGlobalState();
   const handleAddWod = () => {
     const newWod: WOD = {
       id: `wod-${Date.now()}`,
@@ -371,6 +372,10 @@ export default function CreateWorkoutScreen() {
       });
 
       if (response.success) {
+        authService.getProfile().then(async (res) => {
+          await Promise.all([storage.set("user", res.user)]);
+          globalState.set("user", res.user);
+        });
         router.dismissAll();
         router.replace("/(tabs)/workouts");
       } else {

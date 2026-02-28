@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
     LOGIN: "/api/users/login",
     REFRESH_TOKEN: "/api/users/refresh-token",
     LOGOUT: "/api/users/logout",
+    UPDATE_PROFILE: "/api/users/profile",
   },
   WORKOUTS: {
     CREATE: "/api/workouts",

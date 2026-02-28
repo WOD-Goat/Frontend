@@ -1,5 +1,6 @@
-import { workoutsService } from "@/api/services";
+import { authService, workoutsService } from "@/api/services";
 import { BottomSheetSelect, Button, Input, Page } from "@/components";
+import { storage, useGlobalState } from "@/components/lib";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { AssignedWorkoutData, ResultData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,7 +39,7 @@ export default function WorkoutResultsScreen() {
     },
   ]);
   const [submitting, setSubmitting] = useState(false);
-
+  const globalState = useGlobalState();
   const addResultEntry = () => {
     // Find first WOD and exercise combination that hasn't been selected yet
     let newWodIndex = 0;
@@ -278,6 +279,10 @@ export default function WorkoutResultsScreen() {
       );
 
       if (response.success) {
+        authService.getProfile().then(async (res) => {
+          await Promise.all([storage.set("user", res.user)]);
+          globalState.set("user", res.user);
+        });
         router.dismissAll();
         router.replace("/(tabs)/workouts");
       } else {

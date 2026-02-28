@@ -6,6 +6,7 @@ import type {
   LogoutResponse,
   RegisterResponse,
   RegisterUserData,
+  User,
 } from "@/types/auth";
 
 export const authService = {
@@ -111,6 +112,36 @@ export const authService = {
       // Clear tokens and user data even if logout request fails
       await apiClient.clearTokens();
       await removeFromStorage("user");
+      throw error;
+    }
+  },
+
+      /**
+   * Get current user profile
+   */
+  getProfile: async (): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.get<AuthResponse>("/api/users/profile");
+      return response as unknown as AuthResponse;
+    } catch (error) {
+      console.error("🔐 AuthService: Get profile error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update user profile
+   */
+  updateProfile: async (profileData: Partial<User>): Promise<AuthResponse> => {
+    try {
+      const response = await apiClient.put<AuthResponse>(
+        API_ENDPOINTS.AUTH.UPDATE_PROFILE,
+        profileData,
+      );
+      // Optionally update local storage or global state here if needed
+      return response as unknown as AuthResponse;
+    } catch (error) {
+      console.error("🔐 AuthService: Update profile error:", error);
       throw error;
     }
   },
