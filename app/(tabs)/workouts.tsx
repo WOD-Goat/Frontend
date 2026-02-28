@@ -10,7 +10,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 interface WorkoutSectionData {
   date: string;
-  status: "not-started-yet" | "completed";
+  status: "not-started-yet" | "completed" | "missed";
   workoutId: string;
   wods: {
     id: string;
@@ -37,7 +37,7 @@ export default function WorkoutsScreen() {
     try {
       setLoading(true);
       setError(null);
-      const response = await workoutsService.getAllWorkouts();
+      const response = await workoutsService.getAllWorkouts(12);
 
       if (response.success && response.data) {
         const sections = transformWorkoutsToSections(response.data);
@@ -62,7 +62,12 @@ export default function WorkoutsScreen() {
 
       return {
         date,
-        status: workout.completed ? "completed" : "not-started-yet",
+        scheduledFor: workout.scheduledFor,
+        status: workout.completed
+          ? "completed"
+          : parseFirebaseDate(workout.scheduledFor) < new Date()
+            ? "missed"
+            : "not-started-yet",
         workoutType: workout.wods[0]?.name || "Workout",
         workoutId: workout.id || "",
         wods: workout.wods.map((wod, wodIndex) => ({
@@ -75,22 +80,23 @@ export default function WorkoutsScreen() {
   };
 
   // Split into upcoming and completed
-  const { upcoming, completed } = useMemo(() => {
+  const { upcoming, completed, missed } = useMemo(() => {
     const upcoming = workoutSections.filter(
       (s) => s.status === "not-started-yet",
     );
     const completed = workoutSections.filter((s) => s.status === "completed");
-    return { upcoming, completed };
+    const missed = workoutSections.filter((s) => s.status === "missed");
+    return { upcoming, completed, missed };
   }, [workoutSections]);
 
   // Summary stats
   const stats = useMemo(
     () => ({
-      total: workoutSections.length,
       done: user?.statsSummary.completedWorkouts || 0,
       pending: upcoming.length,
+      missed: missed.length,
     }),
-    [workoutSections, upcoming, completed],
+    [workoutSections, upcoming, completed, missed],
   );
 
   if (loading) {
@@ -164,18 +170,6 @@ export default function WorkoutsScreen() {
           <View
             style={[
               styles.statIconBg,
-              { backgroundColor: Colors.primary[500] + "20" },
-            ]}
-          >
-            <Ionicons name="barbell" size={16} color={Colors.primary[500]} />
-          </View>
-          <Text style={styles.statValue}>{stats.total}</Text>
-          <Text style={styles.statLabel}>Total</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconBg,
               { backgroundColor: Colors.warning[500] + "20" },
             ]}
           >
@@ -203,6 +197,22 @@ export default function WorkoutsScreen() {
           </View>
           <Text style={styles.statValue}>{stats.done}</Text>
           <Text style={styles.statLabel}>Done</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View
+            style={[
+              styles.statIconBg,
+              { backgroundColor: Colors.primary[500] + "20" },
+            ]}
+          >
+            <Ionicons
+              name="trending-down"
+              size={16}
+              color={Colors.primary[500]}
+            />
+          </View>
+          <Text style={styles.statValue}>{stats.missed}</Text>
+          <Text style={styles.statLabel}>Missed</Text>
         </View>
       </View>
 
@@ -265,6 +275,33 @@ export default function WorkoutsScreen() {
         </>
       )}
 
+      {/* Missed Section */}
+      {missed.length > 0 && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Ionicons
+              name="trending-down"
+              size={16}
+              color={Colors.primary[500]}
+            />
+            <Text style={styles.sectionTitle}>Missed</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{missed.length}</Text>
+            </View>
+          </View>
+          <Gap size={10} />
+          {missed.map((section, index) => (
+            <WorkoutSection
+              key={`missed-${index}`}
+              date={section.date}
+              status={section.status}
+              wods={section.wods}
+              workoutType={section.workoutType}
+              workoutId={section.workoutId}
+            />
+          ))}
+        </>
+      )}
       <Gap size={24} />
     </Page>
   );

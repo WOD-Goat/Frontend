@@ -5,7 +5,7 @@ import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import WorkoutCard from "./WorkoutCard";
 
-export type WorkoutStatus = "not-started-yet" | "completed";
+export type WorkoutStatus = "not-started-yet" | "completed" | "missed";
 
 interface WOD {
   id: string;
@@ -34,6 +34,12 @@ const STATUS_CONFIG = {
     color: Colors.success[500],
     bgColor: Colors.success[500] + "18",
   },
+  missed: {
+    label: "Missed",
+    icon: "trending-down" as keyof typeof Ionicons.glyphMap,
+    color: Colors.error[500],
+    bgColor: Colors.error[500] + "18",
+  },
 };
 
 export default function WorkoutSection({
@@ -50,12 +56,7 @@ export default function WorkoutSection({
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        status === "completed" && styles.containerCompleted,
-      ]}
-    >
+    <View style={[styles.container]}>
       {/* Left accent */}
       <View style={[styles.accent, { backgroundColor: config.color }]} />
 
