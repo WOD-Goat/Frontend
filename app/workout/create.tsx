@@ -441,6 +441,7 @@ export default function CreateWorkoutScreen() {
                   value={scheduledFor}
                   mode="date"
                   display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={new Date()}
                   onChange={(event, selectedDate) => {
                     // On Android, hide immediately after selection
                     if (Platform.OS === "android") {
