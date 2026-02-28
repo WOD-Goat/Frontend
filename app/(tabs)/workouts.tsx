@@ -59,13 +59,13 @@ export default function WorkoutsScreen() {
     return workouts.map((workout) => {
       const dateObj = parseFirebaseDate(workout.scheduledFor);
       const date = formatShortDate(dateObj);
-
       return {
         date,
         scheduledFor: workout.scheduledFor,
         status: workout.completed
           ? "completed"
-          : parseFirebaseDate(workout.scheduledFor) < new Date()
+          : parseFirebaseDate(workout.scheduledFor).setHours(0, 0, 0, 0) <
+              new Date().setHours(0, 0, 0, 0)
             ? "missed"
             : "not-started-yet",
         workoutType: workout.wods[0]?.name || "Workout",
