@@ -3,6 +3,8 @@ import { Gap, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
+import { apiClient } from "@/api/client";
+import { API_ENDPOINTS } from "@/api/endpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -69,6 +71,33 @@ export default function ProfileScreen() {
   const nickname = user?.nickname || null;
   const memberSince = getMemberSince(user?.createdAt);
   const stats = user?.statsSummary;
+
+  const handleDeleteAccount = async () => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to permanently delete your account? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete(API_ENDPOINTS.AUTH.DELETE_PROFILE);
+              await logout();
+              router.replace("/auth/login");
+            } catch (error) {
+              console.error("Delete account error:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete account. Please try again.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleLogout = async () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -264,8 +293,15 @@ export default function ProfileScreen() {
           label="Contact Us"
           onPress={() => Alert.alert("Contact Us", "Coming soon")}
         />
+        <View style={styles.detailDivider} />
+        <PressableDetailRow
+          icon="trash-outline"
+          label="Delete Account"
+          onPress={handleDeleteAccount}
+          color={Colors.error[500]}
+        />
       </View>
-      <Gap size={32} />
+      <Gap size={24} />
 
       {/* ── Logout Button ───────────────────────────────── */}
       <TouchableOpacity
@@ -311,11 +347,16 @@ function PressableDetailRow({
   icon,
   label,
   onPress,
+  color,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress?: () => void;
+  color?: string;
 }) {
+  const iconColor = color ?? Colors.text.secondary;
+  const labelColor = color ?? undefined;
+  const chevronColor = color ?? Colors.primary[500];
   return (
     <TouchableOpacity
       style={styles.detailRow}
@@ -323,11 +364,18 @@ function PressableDetailRow({
       onPress={onPress}
     >
       <View style={styles.detailLeft}>
-        <Ionicons name={icon} size={16} color={Colors.text.secondary} />
-        <Text style={styles.detailLabel}>{label}</Text>
+        <Ionicons name={icon} size={16} color={iconColor} />
+        <Text
+          style={[
+            styles.detailLabel,
+            labelColor ? { color: labelColor } : undefined,
+          ]}
+        >
+          {label}
+        </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={16} color={Colors.primary[500]} />
+      <Ionicons name="chevron-forward" size={16} color={chevronColor} />
     </TouchableOpacity>
   );
 }
