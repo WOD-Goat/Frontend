@@ -15,6 +15,7 @@ export type PRTrackingType =
   | "reps"
   | "time"
   | "distance"
+  | "pace"
   | "calories";
 
 export interface PersonalRecord {
@@ -27,6 +28,7 @@ export interface PersonalRecord {
   bestReps: number | null;
   bestEstimated1RM: number | null;
   bestTimeInSeconds: number | null;
+  bestDistanceMeters: number | null;
   achievedAt: Date;
   lastUpdatedAt: Date;
 }
@@ -53,6 +55,7 @@ export interface CreatePersonalRecordData {
   bestReps?: number | null;
   bestEstimated1RM?: number | null;
   bestTimeInSeconds?: number | null;
+  bestDistanceMeters?: number | null;
   bestCalories?: number | null;
 }
 
@@ -61,6 +64,7 @@ export interface UpdatePersonalRecordData {
   bestReps?: number | null;
   bestEstimated1RM?: number | null;
   bestTimeInSeconds?: number | null;
+  bestDistanceMeters?: number | null;
 }
 
 // Helper types for displaying PRs

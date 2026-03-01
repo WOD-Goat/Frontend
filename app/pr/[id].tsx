@@ -8,7 +8,13 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-type TrackingType = "weight_reps" | "reps" | "time_distance" | "calories";
+type TrackingType =
+  | "weight_reps"
+  | "reps"
+  | "time"
+  | "distance"
+  | "pace"
+  | "calories";
 
 const getTrackingType = (exerciseId: string): TrackingType => {
   const exercise = standardExercises.find((e) => e.id === exerciseId);
@@ -24,7 +30,7 @@ const formatPRValue = (
       return { display: `${value}`, unit: "KG" };
     case "reps":
       return { display: `${value}`, unit: "REPS" };
-    case "time_distance": {
+    case "time": {
       const mins = Math.floor(value / 60);
       const secs = value % 60;
       if (mins > 0) {
@@ -34,6 +40,24 @@ const formatPRValue = (
         };
       }
       return { display: `${value}`, unit: "SEC" };
+    }
+    case "distance":
+      return { display: `${value}`, unit: "M" };
+    case "pace": {
+      // value is seconds per meter; convert to seconds per km
+      const secsPerKm = value * 1000;
+      const mins = Math.floor(secsPerKm / 60);
+      const secs = Math.round(secsPerKm % 60);
+      if (mins > 0) {
+        return {
+          display: `${mins}:${secs.toString().padStart(2, "0")}`,
+          unit: "MIN/KM",
+        };
+      }
+      return {
+        display: `${Math.round(secsPerKm)}`,
+        unit: "SEC/KM",
+      };
     }
     case "calories":
       return { display: `${value}`, unit: "CAL" };
@@ -48,8 +72,12 @@ const getImprovementUnit = (trackingType: TrackingType): string => {
       return "KG";
     case "reps":
       return "REPS";
-    case "time_distance":
+    case "time":
       return "SEC";
+    case "distance":
+      return "M";
+    case "pace":
+      return "SEC/KM";
     case "calories":
       return "CAL";
     default:

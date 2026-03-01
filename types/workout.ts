@@ -3,7 +3,9 @@
 export type TrackingType =
   | "weight_reps"
   | "reps"
-  | "time_distance"
+  | "time"
+  | "distance"
+  | "pace"
   | "calories";
 
 export interface StandardExercise {

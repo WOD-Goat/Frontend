@@ -17,14 +17,18 @@ import {
 const TRACKING_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   weight_reps: "barbell-outline",
   reps: "repeat-sharp",
-  time_distance: "timer-outline",
+  time: "timer-outline",
+  distance: "footsteps-outline",
+  pace: "speedometer-outline",
   calories: "flame-outline",
 };
 
 const TRACKING_COLORS: Record<string, string> = {
   weight_reps: Colors.primary[500],
   reps: Colors.fitness.strength,
-  time_distance: Colors.fitness.flexibility,
+  time: Colors.fitness.flexibility,
+  distance: Colors.fitness.rest,
+  pace: Colors.fitness.cardio,
   calories: Colors.fitness.cardio,
 };
 
@@ -62,6 +66,79 @@ export default function PRsScreen() {
     }
   };
 
+  const formatPRValue = (
+    value: number,
+    trackingType: string,
+  ): { display: string; unit: string } => {
+    switch (trackingType) {
+      case "weight_reps":
+        return { display: `${value}`, unit: "KG" };
+      case "reps":
+        return { display: `${value}`, unit: "REPS" };
+      case "time": {
+        const mins = Math.floor(value / 60);
+        const secs = value % 60;
+        if (mins > 0) {
+          return {
+            display: `${mins}:${secs.toString().padStart(2, "0")}`,
+            unit: "MIN",
+          };
+        }
+        return { display: `${value}`, unit: "SEC" };
+      }
+      case "distance":
+        return { display: `${value}`, unit: "M" };
+      case "pace": {
+        const secsPerKm = value * 1000;
+        const mins = Math.floor(secsPerKm / 60);
+        const secs = Math.round(secsPerKm % 60);
+        if (mins > 0) {
+          return {
+            display: `${mins}:${secs.toString().padStart(2, "0")}`,
+            unit: "MIN/KM",
+          };
+        }
+        return { display: `${Math.round(secsPerKm)}`, unit: "SEC/KM" };
+      }
+      case "calories":
+        return { display: `${value}`, unit: "CAL" };
+      default:
+        return { display: `${value}`, unit: "" };
+    }
+  };
+
+  const formatImprovement = (value: number, trackingType: string): string => {
+    switch (trackingType) {
+      case "weight_reps":
+        return `+${value} KG`;
+      case "reps":
+        return `+${value} REPS`;
+      case "time": {
+        const mins = Math.floor(value / 60);
+        const secs = value % 60;
+        if (mins > 0) {
+          return `-${mins}:${secs.toString().padStart(2, "0")} MIN`;
+        }
+        return `-${value} SEC`;
+      }
+      case "distance":
+        return `+${value} M`;
+      case "pace": {
+        const secsPerKm = Math.round(value * 1000);
+        const mins = Math.floor(secsPerKm / 60);
+        const secs = secsPerKm % 60;
+        if (mins > 0) {
+          return `-${mins}:${secs.toString().padStart(2, "0")} MIN/KM`;
+        }
+        return `-${secsPerKm} SEC/KM`;
+      }
+      case "calories":
+        return `+${value} CAL`;
+      default:
+        return `+${value}`;
+    }
+  };
+
   const getExerciseInfo = (exerciseId: string) => {
     const exercise = standardExercises.find((e) => e.id === exerciseId);
     const trackingType = exercise?.trackingType || "weight_reps";
@@ -73,8 +150,14 @@ export default function PRsScreen() {
       case "reps":
         unit = "REPS";
         break;
-      case "time_distance":
+      case "time":
         unit = "SEC";
+        break;
+      case "distance":
+        unit = "M";
+        break;
+      case "pace":
+        unit = "/KM";
         break;
       case "calories":
         unit = "CAL";
@@ -294,9 +377,21 @@ export default function PRsScreen() {
                     </View>
                   </View>
                   <View style={styles.heroValueContainer}>
-                    <Text style={styles.heroValue}>{bestPR.actualPR}</Text>
+                    <Text style={styles.heroValue}>
+                      {
+                        formatPRValue(
+                          bestPR.actualPR,
+                          getExerciseInfo(bestPR.exerciseId).trackingType,
+                        ).display
+                      }
+                    </Text>
                     <Text style={styles.heroUnit}>
-                      {getExerciseInfo(bestPR.exerciseId).unit}
+                      {
+                        formatPRValue(
+                          bestPR.actualPR,
+                          getExerciseInfo(bestPR.exerciseId).trackingType,
+                        ).unit
+                      }
                     </Text>
                   </View>
                 </View>
@@ -309,8 +404,10 @@ export default function PRsScreen() {
                         color={Colors.success[500]}
                       />
                       <Text style={styles.heroImprovementText}>
-                        +{bestPR.improvement}{" "}
-                        {getExerciseInfo(bestPR.exerciseId).unit}
+                        {formatImprovement(
+                          bestPR.improvement,
+                          getExerciseInfo(bestPR.exerciseId).trackingType,
+                        )}
                       </Text>
                     </View>
                     <Text style={styles.heroImprovementLabel}>
@@ -391,7 +488,10 @@ export default function PRsScreen() {
                               color={Colors.success[500]}
                             />
                             <Text style={styles.cardImprovementText}>
-                              +{pr.improvement}
+                              {formatImprovement(
+                                pr.improvement,
+                                info.trackingType,
+                              )}
                             </Text>
                           </View>
                         )}
@@ -399,8 +499,12 @@ export default function PRsScreen() {
                     </View>
                     {/* Value */}
                     <View style={styles.cardValueContainer}>
-                      <Text style={styles.cardValue}>{pr.actualPR}</Text>
-                      <Text style={styles.cardUnit}>{info.unit}</Text>
+                      <Text style={styles.cardValue}>
+                        {formatPRValue(pr.actualPR, info.trackingType).display}
+                      </Text>
+                      <Text style={styles.cardUnit}>
+                        {formatPRValue(pr.actualPR, info.trackingType).unit}
+                      </Text>
                     </View>
                     {/* Chevron */}
                     <View style={styles.cardChevron}>

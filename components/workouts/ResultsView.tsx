@@ -71,7 +71,8 @@ export default function ResultsView({
                 </View>
               )}
               {originalResult.reps !== null &&
-                (exercise.trackingType === "reps" || exercise.trackingType === "weight_reps") && (
+                (exercise.trackingType === "reps" ||
+                  exercise.trackingType === "weight_reps") && (
                   <View style={styles.resultItem}>
                     <Text style={styles.resultLabel}>Reps</Text>
                     {isEditingResults ? (
@@ -88,26 +89,33 @@ export default function ResultsView({
                     )}
                   </View>
                 )}
-              {originalResult.calories !== null && exercise.trackingType === "calories" && (
-                <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Calories</Text>
-                  {isEditingResults ? (
-                    <Input
-                      value={result.calories?.toString() || ""}
-                      onChangeText={(text) =>
-                        onUpdateResult(index, "calories", text)
-                      }
-                      keyboardType="numeric"
-                      placeholder="0"
-                    />
-                  ) : (
-                    <Text style={styles.resultValue}>{result.calories}</Text>
-                  )}
-                </View>
-              )}
+              {originalResult.calories !== null &&
+                exercise.trackingType === "calories" && (
+                  <View style={styles.resultItem}>
+                    <Text style={styles.resultLabel}>Calories</Text>
+                    {isEditingResults ? (
+                      <Input
+                        value={result.calories?.toString() || ""}
+                        onChangeText={(text) =>
+                          onUpdateResult(index, "calories", text)
+                        }
+                        keyboardType="numeric"
+                        placeholder="0"
+                      />
+                    ) : (
+                      <Text style={styles.resultValue}>{result.calories}</Text>
+                    )}
+                  </View>
+                )}
               {originalResult.timeInSeconds !== null && (
                 <View style={styles.resultItem}>
-                  <Text style={styles.resultLabel}>Time (seconds)</Text>
+                  <Text style={styles.resultLabel}>
+                    {isEditingResults
+                      ? "Time (seconds)"
+                      : result.timeInSeconds && result.timeInSeconds >= 60
+                        ? "Time (min:sec)"
+                        : "Time (sec)"}
+                  </Text>
                   {isEditingResults ? (
                     <Input
                       value={result.timeInSeconds?.toString() || ""}

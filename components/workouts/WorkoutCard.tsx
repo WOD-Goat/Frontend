@@ -9,7 +9,7 @@ interface WorkoutCardProps {
 }
 
 export default function WorkoutCard({ title, exercises }: WorkoutCardProps) {
-  const MAX_VISIBLE_EXERCISES = 4;
+  const MAX_VISIBLE_EXERCISES = 3;
   const hasMoreExercises = exercises.length > MAX_VISIBLE_EXERCISES;
   const visibleExercises = hasMoreExercises
     ? exercises.slice(0, MAX_VISIBLE_EXERCISES)

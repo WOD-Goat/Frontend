@@ -1,12 +1,13 @@
 import { authService, workoutsService } from "@/api/services";
 import { BottomSheetSelect, Button, Input, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
+import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { AssignedWorkoutData, ResultData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 interface ResultEntry {
   id: string;
@@ -14,8 +15,9 @@ interface ResultEntry {
   exerciseIndex: number;
   reps: string;
   weight: string;
-  timeInSeconds: string;
-  distanceMeters: string;
+  timeMins: string;
+  timeSecs: string;
+  distanceKm: string;
   calories: string;
 }
 
@@ -33,13 +35,15 @@ export default function WorkoutResultsScreen() {
       exerciseIndex: 0,
       reps: "",
       weight: "",
-      timeInSeconds: "",
-      distanceMeters: "",
+      timeMins: "",
+      timeSecs: "",
+      distanceKm: "",
       calories: "",
     },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const globalState = useGlobalState();
+  const { showToast } = useToast();
   const addResultEntry = () => {
     // Find first WOD and exercise combination that hasn't been selected yet
     let newWodIndex = 0;
@@ -71,8 +75,9 @@ export default function WorkoutResultsScreen() {
         exerciseIndex: newExerciseIndex,
         reps: "",
         weight: "",
-        timeInSeconds: "",
-        distanceMeters: "",
+        timeMins: "",
+        timeSecs: "",
+        distanceKm: "",
         calories: "",
       },
     ]);
@@ -171,10 +176,7 @@ export default function WorkoutResultsScreen() {
         const exercise = getExercise(result.wodIndex, result.exerciseIndex);
 
         if (!exercise) {
-          Alert.alert(
-            "Validation Error",
-            `Result ${i + 1}: Invalid exercise selection`,
-          );
+          showToast({ type: "error", label: `Invalid exercise selection` });
           setSubmitting(false);
           return;
         }
@@ -183,18 +185,18 @@ export default function WorkoutResultsScreen() {
         switch (exercise.trackingType) {
           case "weight_reps":
             if (!result.weight && !result.reps) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Please enter weight or reps`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter weight or reps`,
+              });
               setSubmitting(false);
               return;
             }
             if (parseFloat(result.weight) < 0 || parseInt(result.reps) <= 0) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Weight and reps must be greater than 0`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Weight and reps must be greater than 0`,
+              });
               setSubmitting(false);
               return;
             }
@@ -202,40 +204,84 @@ export default function WorkoutResultsScreen() {
 
           case "reps":
             if (!result.reps) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Please enter reps`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter reps`,
+              });
               setSubmitting(false);
               return;
             }
             if (parseInt(result.reps) <= 0) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Reps must be greater than 0`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Reps must be greater than 0`,
+              });
               setSubmitting(false);
               return;
             }
             break;
 
-          case "time_distance":
-            if (!result.timeInSeconds && !result.distanceMeters) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Please enter at least time or distance`,
-              );
+          case "time":
+            if (!result.timeMins && !result.timeSecs) {
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter time`,
+              });
               setSubmitting(false);
               return;
             }
             if (
-              (result.timeInSeconds && parseInt(result.timeInSeconds) <= 0) ||
-              (result.distanceMeters && parseInt(result.distanceMeters) <= 0)
+              (parseInt(result.timeMins || "0") === 0 &&
+                parseInt(result.timeSecs || "0") === 0) ||
+              parseInt(result.timeSecs || "0") > 59
             ) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Values must be greater than 0`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter a valid time`,
+              });
+              setSubmitting(false);
+              return;
+            }
+            break;
+
+          case "distance":
+            if (!result.distanceKm) {
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter distance`,
+              });
+              setSubmitting(false);
+              return;
+            }
+            if (parseFloat(result.distanceKm) <= 0) {
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Distance must be greater than 0`,
+              });
+              setSubmitting(false);
+              return;
+            }
+            break;
+
+          case "pace":
+            if ((!result.timeMins && !result.timeSecs) || !result.distanceKm) {
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter both time and distance`,
+              });
+              setSubmitting(false);
+              return;
+            }
+            if (
+              (parseInt(result.timeMins || "0") === 0 &&
+                parseInt(result.timeSecs || "0") === 0) ||
+              parseInt(result.timeSecs || "0") > 59 ||
+              parseFloat(result.distanceKm) <= 0
+            ) {
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter valid time and distance`,
+              });
               setSubmitting(false);
               return;
             }
@@ -243,18 +289,18 @@ export default function WorkoutResultsScreen() {
 
           case "calories":
             if (!result.calories) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Please enter calories`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Please enter calories`,
+              });
               setSubmitting(false);
               return;
             }
             if (parseInt(result.calories) <= 0) {
-              Alert.alert(
-                "Validation Error",
-                `Result ${i + 1} (${exercise.name}): Calories must be greater than 0`,
-              );
+              showToast({
+                type: "error",
+                label: `${exercise.name} : Calories must be greater than 0`,
+              });
               setSubmitting(false);
               return;
             }
@@ -263,15 +309,22 @@ export default function WorkoutResultsScreen() {
       }
 
       // Format results for API
-      const formattedResults: ResultData[] = results.map((r) => ({
-        wodIndex: r.wodIndex,
-        exerciseIndex: r.exerciseIndex,
-        reps: r.reps ? parseInt(r.reps) : null,
-        weight: r.weight ? parseFloat(r.weight) : null,
-        timeInSeconds: r.timeInSeconds ? parseInt(r.timeInSeconds) : null,
-        distanceMeters: r.distanceMeters ? parseInt(r.distanceMeters) : null,
-        calories: r.calories ? parseInt(r.calories) : null,
-      }));
+      const formattedResults: ResultData[] = results.map((r) => {
+        const totalSeconds =
+          parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
+        const meters = r.distanceKm
+          ? Math.round(parseFloat(r.distanceKm) * 1000)
+          : null;
+        return {
+          wodIndex: r.wodIndex,
+          exerciseIndex: r.exerciseIndex,
+          reps: r.reps ? parseInt(r.reps) : null,
+          weight: r.weight ? parseFloat(r.weight) : null,
+          timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
+          distanceMeters: meters,
+          calories: r.calories ? parseInt(r.calories) : null,
+        };
+      });
 
       const response = await workoutsService.completeWorkout(
         workoutData.id!,
@@ -285,19 +338,22 @@ export default function WorkoutResultsScreen() {
         });
         router.dismissAll();
         router.replace("/(tabs)/workouts");
+        showToast({
+          type: "success",
+          label: "Workout results submitted successfully!",
+        });
       } else {
-        Alert.alert("Error", response.message || "Failed to submit results", [
-          {
-            text: "OK",
-            onPress: () => {
-              router.back();
-            },
-          },
-        ]);
+        showToast({
+          type: "error",
+          label: response.message || "Failed to submit results",
+        });
       }
     } catch (error: any) {
       console.error("Error submitting results:", error);
-      Alert.alert("Error", error.message || "Failed to submit results");
+      showToast({
+        type: "error",
+        label: error.message || "Failed to submit results",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -349,32 +405,86 @@ export default function WorkoutResultsScreen() {
           </View>
         );
 
-      case "time_distance":
+      case "time":
+        return (
+          <View style={styles.inputRow}>
+            <View style={styles.inputHalf}>
+              <Text style={styles.inputLabel}>Minutes</Text>
+              <Input
+                placeholder="0"
+                value={result.timeMins}
+                onChangeText={(text) =>
+                  updateResult(result.id, "timeMins", text)
+                }
+                keyboardType="numeric"
+              />
+            </View>
+            <View style={styles.inputHalf}>
+              <Text style={styles.inputLabel}>Seconds</Text>
+              <Input
+                placeholder="0"
+                value={result.timeSecs}
+                onChangeText={(text) =>
+                  updateResult(result.id, "timeSecs", text)
+                }
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        );
+
+      case "distance":
+        return (
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Distance (km)</Text>
+            <Input
+              placeholder="0.0"
+              value={result.distanceKm}
+              onChangeText={(text) =>
+                updateResult(result.id, "distanceKm", text)
+              }
+              keyboardType="decimal-pad"
+            />
+          </View>
+        );
+
+      case "pace":
         return (
           <>
             <View style={styles.inputRow}>
               <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Time (seconds)</Text>
+                <Text style={styles.inputLabel}>Minutes</Text>
                 <Input
                   placeholder="0"
-                  value={result.timeInSeconds}
+                  value={result.timeMins}
                   onChangeText={(text) =>
-                    updateResult(result.id, "timeInSeconds", text)
+                    updateResult(result.id, "timeMins", text)
                   }
                   keyboardType="numeric"
                 />
               </View>
               <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Distance (meters)</Text>
+                <Text style={styles.inputLabel}>Seconds</Text>
                 <Input
                   placeholder="0"
-                  value={result.distanceMeters}
+                  value={result.timeSecs}
                   onChangeText={(text) =>
-                    updateResult(result.id, "distanceMeters", text)
+                    updateResult(result.id, "timeSecs", text)
                   }
                   keyboardType="numeric"
                 />
               </View>
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Distance (km)</Text>
+              <Input
+                placeholder="0.0"
+                value={result.distanceKm}
+                onChangeText={(text) =>
+                  updateResult(result.id, "distanceKm", text)
+                }
+                keyboardType="decimal-pad"
+              />
             </View>
           </>
         );
