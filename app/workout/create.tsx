@@ -2,12 +2,12 @@ import { authService, workoutsService } from "@/api/services";
 import { Button, ExerciseSearchInput, Input, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
+import { useToast } from "@/components/lib";
 import type { StandardExercise, TrackingType } from "@/types";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  Alert,
   Animated,
   Platform,
   StyleSheet,
@@ -197,6 +197,7 @@ export default function CreateWorkoutScreen() {
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const globalState = useGlobalState();
+  const { showToast } = useToast();
   const handleAddWod = () => {
     const newWod: WOD = {
       id: `wod-${Date.now()}`,
@@ -376,14 +377,21 @@ export default function CreateWorkoutScreen() {
           await Promise.all([storage.set("user", res.user)]);
           globalState.set("user", res.user);
         });
+        showToast({ type: "success", label: "Workout created successfully!" });
         router.dismissAll();
         router.replace("/(tabs)/workouts");
       } else {
-        Alert.alert("Error", response.message || "Failed to create workout");
+        showToast({
+          type: "error",
+          label: response.message || "Failed to create workout",
+        });
       }
     } catch (error: any) {
       console.error("Error creating workout:", error);
-      Alert.alert("Error", error.message || "Failed to create workout");
+      showToast({
+        type: "error",
+        label: error.message || "Failed to create workout",
+      });
     } finally {
       setLoading(false);
     }

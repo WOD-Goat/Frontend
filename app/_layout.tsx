@@ -8,8 +8,9 @@ import { apiClient } from "../api/client";
 import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
 import { storage, useStorage } from "../components/lib/storage";
-import { preloadImages } from "../utils/imagePreloader";
+import { ToastProvider } from "../components/lib/toast/ToastProvider";
 import "../config/firebase"; //
+import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync();
@@ -135,14 +136,16 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="light" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="auth/login" />
-        <Stack.Screen name="auth/signup" />
-        <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
-      </Stack>
+      <ToastProvider>
+        <StatusBar style="light" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="auth/login" />
+          <Stack.Screen name="auth/signup" />
+          <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+        </Stack>
+      </ToastProvider>
     </SafeAreaProvider>
   );
 }

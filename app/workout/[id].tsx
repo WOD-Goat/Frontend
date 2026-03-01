@@ -1,5 +1,6 @@
 import { workoutsService } from "@/api/services";
 import { Button, Page } from "@/components";
+import { useToast } from "@/components/lib/toast/ToastProvider";
 import ResultsView from "@/components/workouts/ResultsView";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
@@ -48,6 +49,8 @@ export default function WorkoutDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wods, setWods] = useState<WOD[]>([]);
+
+  const { showToast } = useToast();
 
   const [expandedExercises, setExpandedExercises] = useState<{
     [key: string]: boolean;
@@ -162,15 +165,22 @@ export default function WorkoutDetailScreen() {
               if (response.success) {
                 router.dismissAll();
                 router.replace("/(tabs)/workouts");
+                showToast({
+                  type: "success",
+                  label: "Workout deleted successfully!",
+                });
               } else {
-                Alert.alert(
-                  "Error",
-                  response.message || "Failed to delete workout",
-                );
+                showToast({
+                  type: "error",
+                  label: response.message || "Failed to delete workout",
+                });
               }
             } catch (err: any) {
               console.error("Error deleting workout:", err);
-              Alert.alert("Error", err.message || "Failed to delete workout");
+              showToast({
+                type: "error",
+                label: err.message || "Failed to delete workout",
+              });
             } finally {
               setLoading(false);
             }
@@ -201,13 +211,22 @@ export default function WorkoutDetailScreen() {
         setIsEditingResults(false);
         router.dismissAll();
         router.replace("/(tabs)/workouts");
-        Alert.alert("Success", "Results updated successfully!");
+        showToast({
+          type: "success",
+          label: "Workout results updated successfully!",
+        });
       } else {
-        Alert.alert("Error", response.message || "Failed to update results");
+        showToast({
+          type: "error",
+          label: response.message || "Failed to update results",
+        });
       }
     } catch (err: any) {
       console.error("Error updating results:", err);
-      Alert.alert("Error", err.message || "Failed to update results");
+      showToast({
+        type: "error",
+        label: err.message || "Failed to update results",
+      });
     } finally {
       setLoading(false);
     }
@@ -256,12 +275,22 @@ export default function WorkoutDetailScreen() {
       if (response.success) {
         router.dismissAll();
         router.replace("/(tabs)/workouts");
+        showToast({
+          type: "success",
+          label: "Workout updated successfully!",
+        });
       } else {
-        Alert.alert("Error", response.message || "Failed to update workout");
+        showToast({
+          type: "error",
+          label: response.message || "Failed to update workout",
+        });
       }
     } catch (err: any) {
       console.error("Error updating workout:", err);
-      Alert.alert("Error", err.message || "Failed to update workout");
+      showToast({
+        type: "error",
+        label: err.message || "Failed to update workout",
+      });
     } finally {
       setLoading(false);
     }
@@ -316,7 +345,7 @@ export default function WorkoutDetailScreen() {
 
   const handleRemoveWod = (wodId: string) => {
     if (editedWods.length <= 1) {
-      Alert.alert("Cannot Remove", "You must have at least one WOD");
+      showToast({ type: "error", label: "You must have at least one WOD" });
       return;
     }
     setEditedWods(editedWods.filter((wod) => wod.id !== wodId));
@@ -346,7 +375,10 @@ export default function WorkoutDetailScreen() {
     if (!wod) return;
 
     if (wod.exercises.length <= 1) {
-      Alert.alert("Cannot Remove", "Each WOD must have at least one exercise");
+      showToast({
+        type: "error",
+        label: "Each WOD must have at least one exercise",
+      });
       return;
     }
 
