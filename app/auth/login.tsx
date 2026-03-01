@@ -1,5 +1,5 @@
 import { Button, Input, Page } from "@/components";
-import { Colors, Typography } from "@/constants";
+import { Colors, FontFamilies, FontSizes, Typography } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -153,18 +153,18 @@ export default function LoginScreen() {
             style={styles.forgotPasswordContainer}
             onPress={handleForgotPassword}
           >
-            <Text style={[styles.forgotPasswordText, Typography.bodySmall]}>
+            <Text style={[styles.forgotPasswordText]}>
               Forget Password?
             </Text>
           </TouchableOpacity>
         </View>
       </View>
       <View style={styles.registerTextContainer}>
-        <Text style={[styles.registerText, Typography.bodyMedium]}>
+        <Text style={[styles.registerText]}>
           Don&apos;t have an account?{" "}
         </Text>
         <TouchableOpacity onPress={handleRegister}>
-          <Text style={[styles.registerLink, Typography.bodyMedium]}>
+          <Text style={[styles.registerLink]}>
             Register
           </Text>
         </TouchableOpacity>
@@ -210,6 +210,8 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     color: Colors.text.primary,
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.spartanMedium
   },
 
   // Register Section
@@ -220,10 +222,13 @@ const styles = StyleSheet.create({
   },
   registerText: {
     color: Colors.text.primary,
+    fontSize: FontSizes.bodyMD,
+    fontFamily: FontFamilies.spartanMedium
   },
   registerLink: {
     color: Colors.primary[500],
-    fontWeight: "bold",
+    fontSize: FontSizes.bodyMD,
+    fontFamily: FontFamilies.spartanBold,
   },
   
   // Error Text

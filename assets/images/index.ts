@@ -8,7 +8,9 @@ export const tabIcons = {
   prSelected: require("./pr-selected.png"),
   profile: require("./profile.png"),
   profileSelected: require("./profile-selected.png"),
-  ai: require("./ai.png"),
+  groups: require("./group.png"),
+  groupsSelected: require("./group-selected.png"),
+
 };
 
 // App Icons

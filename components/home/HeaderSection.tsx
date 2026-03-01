@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   motivation: {
     fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
+    color: Colors.text.secondary,
     lineHeight: 18,
   },
 

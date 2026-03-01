@@ -709,7 +709,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   } as ViewStyle,
   addWodButtonText: {
-    color: "#000000",
+    color: Colors.text.primary,
     fontSize: 16,
     fontWeight: "700",
   } as TextStyle,

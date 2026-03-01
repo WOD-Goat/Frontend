@@ -1,5 +1,5 @@
 import { BottomSheet } from "@/components";
-import { Colors } from "@/constants";
+import { Colors, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import type { StandardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -101,7 +101,7 @@ export default function ExerciseSearchInput({
                 style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Type at least 2 characters to search..."
+                placeholder="Search exercises..."
                 placeholderTextColor={Colors.text.tertiary}
                 autoCapitalize="words"
                 autoFocus
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   } as ViewStyle,
   inputText: {
-    fontSize: 16,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
     flex: 1,
   } as TextStyle,
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
     padding: 0,
   } as TextStyle,
@@ -233,13 +233,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   } as ViewStyle,
   emptyStateText: {
-    fontSize: 16,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
     marginTop: 16,
     textAlign: "center",
   } as TextStyle,
   emptyStateSubtext: {
-    fontSize: 14,
+    fontSize: FontSizes.bodySM,
     color: Colors.text.tertiary,
     marginTop: 8,
     textAlign: "center",
@@ -259,12 +259,12 @@ const styles = StyleSheet.create({
     gap: 4,
   } as ViewStyle,
   exerciseName: {
-    fontSize: 16,
+    fontSize: FontSizes.bodyMD,
     fontWeight: "600",
     color: Colors.text.primary,
   } as TextStyle,
   exerciseDetails: {
-    fontSize: 12,
+    fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     textTransform: "capitalize",
   } as TextStyle,

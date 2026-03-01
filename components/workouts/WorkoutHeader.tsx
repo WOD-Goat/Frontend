@@ -38,13 +38,13 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   subtitle: {
     fontFamily: FontFamilies.spartanMedium,
-    fontSize: FontSizes.bodySM,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   addButton: {
     width: 44,

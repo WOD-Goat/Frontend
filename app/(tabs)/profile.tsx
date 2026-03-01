@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { useMemo } from "react";
+import { JSX, useMemo } from "react";
 import {
   Alert,
   Dimensions,
@@ -67,7 +67,6 @@ export default function ProfileScreen() {
   }, [user?.name]);
 
   const nickname = user?.nickname || null;
-  const age = getAge(user?.birthYear);
   const memberSince = getMemberSince(user?.createdAt);
   const stats = user?.statsSummary;
 
@@ -104,16 +103,6 @@ export default function ProfileScreen() {
         <Gap size={14} />
         <Text style={styles.displayName}>{displayName}</Text>
         {nickname && <Text style={styles.nickname}>@{nickname}</Text>}
-        {memberSince && (
-          <View style={styles.memberRow}>
-            <Ionicons
-              name="calendar-outline"
-              size={12}
-              color={Colors.text.secondary}
-            />
-            <Text style={styles.memberText}>Member since {memberSince}</Text>
-          </View>
-        )}
       </View>
 
       <Gap size={20} />
@@ -139,11 +128,7 @@ export default function ProfileScreen() {
               { backgroundColor: Colors.fitness.strength + "20" },
             ]}
           >
-            <Ionicons
-              name="barbell"
-              size={18}
-              color={Colors.text.success}
-            />
+            <Ionicons name="barbell" size={18} color={Colors.text.success} />
           </View>
           <Text style={styles.statValue}>{stats?.completedWorkouts ?? 0}</Text>
           <Text style={styles.statLabel}>Workouts</Text>
@@ -160,44 +145,6 @@ export default function ProfileScreen() {
           <Text style={styles.statValue}>{stats?.longestStreak ?? 0}</Text>
           <Text style={styles.statLabel}>Best Streak</Text>
         </View>
-      </View>
-
-      <Gap size={24} />
-
-      {/* ── Body Details Section ────────────────────────── */}
-      <View style={styles.sectionHeader}>
-        <Ionicons name="body-outline" size={16} color={Colors.primary[500]} />
-        <Text style={styles.sectionTitle}>Body Details</Text>
-      </View>
-      <Gap size={10} />
-      <View style={styles.detailsCard}>
-        <DetailRow
-          icon="person-outline"
-          label="Gender"
-          value={
-            user?.gender
-              ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1)
-              : "—"
-          }
-        />
-        <View style={styles.detailDivider} />
-        <DetailRow
-          icon="calendar-outline"
-          label="Age"
-          value={age ? `${age} years` : "—"}
-        />
-        <View style={styles.detailDivider} />
-        <DetailRow
-          icon="resize-outline"
-          label="Height"
-          value={user?.height ? `${user.height} cm` : "—"}
-        />
-        <View style={styles.detailDivider} />
-        <DetailRow
-          icon="scale-outline"
-          label="Weight"
-          value={user?.weight ? `${user.weight} kg` : "—"}
-        />
       </View>
 
       <Gap size={24} />
@@ -228,9 +175,7 @@ export default function ProfileScreen() {
                 <Text style={styles.prSubtext}>Estimated 1RM</Text>
               </View>
               <View style={styles.prValueContainer}>
-                <Text style={styles.prValue}>
-                  {stats.latestPR.value}
-                </Text>
+                <Text style={styles.prValue}>{stats.latestPR.value}</Text>
                 <Text style={styles.prUnit}>KG</Text>
               </View>
               <Ionicons
@@ -256,6 +201,8 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
+        <DetailRow icon="sparkles" label="Plan" value={"Free"} />
+        <View style={styles.detailDivider} />
         <DetailRow
           icon="mail-outline"
           label="Email"
@@ -263,12 +210,61 @@ export default function ProfileScreen() {
         />
         <View style={styles.detailDivider} />
         <DetailRow
-          icon="call-outline"
-          label="Phone"
-          value={user?.mobileNumber || "—"}
+          icon="person-outline"
+          label="Nickname"
+          value={user?.nickname || "—"}
+        />
+        <View style={styles.detailDivider} />
+        <DetailRow
+          icon="calendar-outline"
+          label="Member Since"
+          value={memberSince ? memberSince : "—"}
         />
       </View>
-
+      <Gap size={24} />
+      {/* ── Account Section ─────────────────────────────── */}
+      <View style={styles.sectionHeader}>
+        <Ionicons name="star" size={16} color={Colors.primary[500]} />
+        <Text style={styles.sectionTitle}>Features</Text>
+      </View>
+      <Gap size={10} />
+      <View style={styles.detailsCard}>
+        <PressableDetailRow
+          icon="sparkles"
+          label="What's New"
+          onPress={() => Alert.alert("What's New", "Coming soon")}
+        />
+        <View style={styles.detailDivider} />
+        <PressableDetailRow
+          icon="rocket-outline"
+          label="Upgrade to Pro"
+          onPress={() => Alert.alert("Upgrade to Pro", "Coming soon")}
+        />
+      </View>
+      <Gap size={24} />
+      {/* ── About App ─────────────────────────────── */}
+      <View style={styles.sectionHeader}>
+        <Ionicons
+          name="information-circle-outline"
+          size={16}
+          color={Colors.primary[500]}
+        />
+        <Text style={styles.sectionTitle}>About App</Text>
+      </View>
+      <Gap size={10} />
+      <View style={styles.detailsCard}>
+        <PressableDetailRow
+          icon="shield-checkmark-outline"
+          label="Privacy Policy"
+          onPress={() => Alert.alert("Privacy Policy", "Coming soon")}
+        />
+        <View style={styles.detailDivider} />
+        <PressableDetailRow
+          icon="document-text-outline"
+          label="Contact Us"
+          onPress={() => Alert.alert("Contact Us", "Coming soon")}
+        />
+      </View>
       <Gap size={32} />
 
       {/* ── Logout Button ───────────────────────────────── */}
@@ -308,6 +304,31 @@ function DetailRow({
         {value}
       </Text>
     </View>
+  );
+}
+
+function PressableDetailRow({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress?: () => void;
+}) {
+  return (
+    <TouchableOpacity
+      style={styles.detailRow}
+      activeOpacity={0.8}
+      onPress={onPress}
+    >
+      <View style={styles.detailLeft}>
+        <Ionicons name={icon} size={16} color={Colors.text.secondary} />
+        <Text style={styles.detailLabel}>{label}</Text>
+      </View>
+
+      <Ionicons name="chevron-forward" size={16} color={Colors.primary[500]} />
+    </TouchableOpacity>
   );
 }
 

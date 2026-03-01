@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "WODGoat",
-    "slug": "WODGoat",
+    "slug": "wodgoat",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "fa719d32-832a-4738-987a-4744b1759dbe"
+      }
+    },
+    "owner": "yahiaanas"
   }
 }

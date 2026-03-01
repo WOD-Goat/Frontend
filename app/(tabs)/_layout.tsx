@@ -1,7 +1,7 @@
 import { tabIcons } from "@/assets/images";
 import { Colors, responsiveSize } from "@/constants";
 import { Tabs } from "expo-router";
-import { Image, View } from "react-native";
+import { Image, Platform, View } from "react-native";
 
 export default function TabLayout() {
   return (
@@ -14,7 +14,7 @@ export default function TabLayout() {
           borderTopRightRadius: 16,
           paddingBottom: 10,
           paddingTop: 10,
-          height: responsiveSize(90),
+          height: Platform.OS === "ios" ? responsiveSize(90) : responsiveSize(110),
           position: "absolute",
           borderColor: Colors.neutral[700],
           borderTopWidth: 1,
@@ -28,7 +28,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Image
               source={focused ? tabIcons.homeSelected : tabIcons.home}
               style={{ width: responsiveSize(32), height: responsiveSize(32) }}
@@ -40,7 +40,7 @@ export default function TabLayout() {
         name="workouts"
         options={{
           title: "Workouts",
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Image
               source={focused ? tabIcons.workoutSelected : tabIcons.workout}
               style={{ width: responsiveSize(32), height: responsiveSize(32) }}
@@ -49,29 +49,14 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="ai"
+        name="groups"
         options={{
-          title: "AI",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              style={{
-                width: responsiveSize(64),
-                height: responsiveSize(64),
-                borderRadius: 36,
-                backgroundColor: Colors.primary[500],
-                justifyContent: "center",
-                alignItems: "center",
-                marginTop: responsiveSize(-55),
-              }}
-            >
-              <Image
-                source={tabIcons.ai}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
-            </View>
+          title: "Groups",
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={focused ? tabIcons.groupsSelected : tabIcons.groups}
+              style={{ width: responsiveSize(34), height: responsiveSize(34) }}
+            />
           ),
         }}
       />
@@ -79,7 +64,7 @@ export default function TabLayout() {
         name="prs"
         options={{
           title: "Personal Records",
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Image
               source={focused ? tabIcons.prSelected : tabIcons.pr}
               style={{ width: responsiveSize(32), height: responsiveSize(32) }}
@@ -91,7 +76,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
+          tabBarIcon: ({ focused }) => (
             <Image
               source={focused ? tabIcons.profileSelected : tabIcons.profile}
               style={{ width: responsiveSize(32), height: responsiveSize(32) }}

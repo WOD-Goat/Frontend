@@ -217,7 +217,12 @@ const styles = StyleSheet.create({
   // Footer styles
   footerContainer: {
     paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 8,
+    paddingTop: 12,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    borderTopWidth: 1,
+    borderColor: Colors.neutral[700],
+    backgroundColor: Colors.secondary[600],
+    paddingBottom: 16,
   },
 });

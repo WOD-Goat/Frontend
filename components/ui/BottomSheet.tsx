@@ -1,6 +1,7 @@
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ScrollView,
   StyleSheet,
@@ -30,13 +31,19 @@ export function BottomSheet({
   minHeight = "50%",
   height,
 }: BottomSheetProps) {
+  const insets = useSafeAreaInsets();
   return (
     <RNBottomSheet
       visible={visible}
       onBackButtonPress={onClose}
       onBackdropPress={onClose}
     >
-      <View style={[styles.bottomSheetContainer, { maxHeight, minHeight, height }]}>
+      <View
+        style={[
+          styles.bottomSheetContainer,
+          { maxHeight, minHeight, height, paddingBottom: (insets.bottom ?? 0) + 20 },
+        ]}
+      >
         {/* Header */}
         {title && (
           <View style={styles.bottomSheetHeader}>
@@ -53,7 +60,15 @@ export function BottomSheet({
         )}
 
         {/* Content */}
-        <ScrollView style={styles.bottomSheetContent}>{children}</ScrollView>
+        <ScrollView
+          contentContainerStyle={[
+            styles.bottomSheetContent,
+            { paddingBottom: (insets.bottom ?? 0) + 20 },
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
       </View>
     </RNBottomSheet>
   );

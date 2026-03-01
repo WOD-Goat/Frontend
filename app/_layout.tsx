@@ -9,6 +9,7 @@ import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
 import { storage, useStorage } from "../components/lib/storage";
 import { preloadImages } from "../utils/imagePreloader";
+import "../config/firebase"; //
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync();

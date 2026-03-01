@@ -1,4 +1,4 @@
-import { Colors, responsiveSize, Typography } from '@/constants';
+import { Colors, FontFamilies, FontSizes, responsiveSize, Typography } from '@/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
@@ -27,7 +27,7 @@ export default function Input({
 
   return (
     <View style={styles.container}>
-      {label && <Text style={[styles.label, Typography.labelLarge]}>{label}</Text>}
+      {label && <Text style={[styles.label]}>{label}</Text>}
 
       <View style={[
         styles.inputContainer,
@@ -38,7 +38,7 @@ export default function Input({
       ]}>
 
         <TextInput
-          style={[styles.input, Typography.bodyMedium]}
+          style={[styles.input]}
           placeholder={placeholder}
           placeholderTextColor="#999999"
           onFocus={() => setIsFocused(true)}
@@ -66,10 +66,10 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   label: {
-    fontSize: 16,
-    fontWeight: '600',
     color: Colors.text.primary,
     marginBottom: 8,
+    fontSize: FontSizes.labelMD,
+    fontFamily: FontFamilies.spartanMedium,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -77,11 +77,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     gap: 12,
-    height: responsiveSize(48),
+    height: responsiveSize(55),
   },
   input: {
     flex: 1,
     height: '100%',
+    fontSize: FontSizes.bodySM,
   },
   
   // Variants
@@ -107,8 +108,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   errorText: {
-    fontSize: 14,
-    color: '#FF3B30',
+    fontSize: FontSizes.bodyXS,
+    color: Colors.error[500],
     marginTop: 4,
   },
 });

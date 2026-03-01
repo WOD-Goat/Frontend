@@ -10,11 +10,6 @@ export interface User {
   name: string;
   nickname: string;
   email: string;
-  mobileNumber: string;
-  birthYear: number;
-  gender: string;
-  height: number;
-  weight: number;
   profilePictureUrl: string;
   statsSummary: {
     completedWorkouts: number;
@@ -37,11 +32,6 @@ export interface RegisterUserData {
   nickname: string;
   email: string;
   password: string;
-  mobileNumber: string;
-  birthYear: number;
-  gender: string;
-  height: number;
-  weight: number;
   profilePictureUrl: string;
 }
 

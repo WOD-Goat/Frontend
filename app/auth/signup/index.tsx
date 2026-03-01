@@ -1,26 +1,30 @@
 import { Button, Input, Page } from "@/components";
-import { useGlobalState } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
+import { useAuth } from "@/hooks";
+import { RegisterUserData } from "@/types";
 import { router } from "expo-router";
+import {
+  getAuth,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function SignupScreen() {
-  const { get: getFromGlobalState, set: setInGlobalState } = useGlobalState();
-  const signupData = getFromGlobalState("signupData") || {};
   const [formData, setFormData] = useState({
-    name: signupData.name || "",
-    nickname: signupData.nickname || "",
-    email: signupData.email || "",
-    mobileNumber: signupData.mobileNumber || "",
-    password: signupData.password || "",
+    name: "",
+    nickname: "",
+    email: "",
+    password: "",
   });
+  const { register } = useAuth();
 
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({
     name: "",
     nickname: "",
     email: "",
-    mobileNumber: "",
     password: "",
   });
 
@@ -28,7 +32,6 @@ export default function SignupScreen() {
     name: false,
     nickname: false,
     email: false,
-    mobileNumber: false,
     password: false,
   });
 
@@ -50,9 +53,6 @@ export default function SignupScreen() {
           break;
         case "email":
           fieldError = validateEmail(value);
-          break;
-        case "mobileNumber":
-          fieldError = validateEgyptianPhone(value);
           break;
         case "password":
           fieldError = validatePassword(value);
@@ -81,9 +81,6 @@ export default function SignupScreen() {
       case "email":
         fieldError = validateEmail(value);
         break;
-      case "mobileNumber":
-        fieldError = validateEgyptianPhone(value);
-        break;
       case "password":
         fieldError = validatePassword(value);
         break;
@@ -97,27 +94,6 @@ export default function SignupScreen() {
     if (!email.trim()) return "Email is required";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  };
-
-  const validateEgyptianPhone = (phone: string): string => {
-    if (!phone.trim()) return "Phone number is required";
-
-    // Remove any spaces, dashes, or parentheses
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
-
-    // Check if it starts with +20 followed by 10 digits
-    const egyptianPhoneRegex = /^\+20[0-9]{10}$/;
-
-    // Also allow format without +20 prefix (must be 11 digits starting with 01)
-    const localPhoneRegex = /^01[0-9]{9}$/;
-
-    if (
-      !egyptianPhoneRegex.test(cleanPhone) &&
-      !localPhoneRegex.test(cleanPhone)
-    ) {
-      return "Please enter a valid Egyptian phone number";
-    }
     return "";
   };
 
@@ -139,43 +115,34 @@ export default function SignupScreen() {
     return "";
   };
 
-  const validateForm = (): boolean => {
-    const newErrors = {
-      name: validateRequired(formData.name, "Full Name"),
-      nickname: validateRequired(formData.nickname, "Nickname"),
-      email: validateEmail(formData.email),
-      mobileNumber: validateEgyptianPhone(formData.mobileNumber),
-      password: validatePassword(formData.password),
-    };
+  const handleRegister = async () => {
+    try {
+      setIsLoading(true);
 
-    setErrors(newErrors);
+      const userData: RegisterUserData = {
+        email: formData.email!,
+        password: formData.password!,
+        name: formData.name!,
+        nickname: formData.nickname!,
+        profilePictureUrl: "",
+      };
 
-    // Check if there are any errors
-    return !Object.values(newErrors).some((error) => error !== "");
-  };
+      // Call register function
+      const success = await register(userData);
 
-  const handleContinue = () => {
-    if (!validateForm()) {
-      console.log("Form validation failed");
-      return;
+      if (success) {
+        console.log("Registration completed successfully!");
+        const auth = getAuth();
+        signInWithEmailAndPassword(auth, userData.email, userData.password);
+        sendEmailVerification(auth.currentUser!);
+
+        router.replace("/(tabs)");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+    } finally {
+      setIsLoading(false);
     }
-
-    // Format phone number to include +20 if not present
-    let formattedPhone = formData.mobileNumber.replace(/[\s\-\(\)]/g, "");
-    if (formattedPhone.startsWith("01") && formattedPhone.length === 11) {
-      formattedPhone = "+20" + formattedPhone.substring(1);
-    }
-
-    const formattedData = {
-      ...formData,
-      mobileNumber: formattedPhone,
-    };
-
-    // Update context with current form data
-    setInGlobalState("signupData", formattedData);
-    console.log("Updated signup data:", formattedData);
-    // Navigate to gender selection
-    router.push("/auth/signup/gender");
   };
 
   const handleLogin = () => {
@@ -191,12 +158,13 @@ export default function SignupScreen() {
 
     return (
       <Button
-        title="Continue →"
-        onPress={handleContinue}
+        title="Register →"
+        onPress={handleRegister}
         variant="primary"
         size="large"
         fullWidth
         disabled={isDisabled}
+        loading={isLoading}
       />
     );
   };
@@ -262,24 +230,6 @@ export default function SignupScreen() {
           />
           {errors.email ? (
             <Text style={styles.errorText}>{errors.email}</Text>
-          ) : null}
-        </View>
-
-        {/* Mobile Number Field */}
-        <View style={styles.inputGroup}>
-          <Text style={[styles.label, Typography.labelMedium]}>
-            Mobile Number
-          </Text>
-          <Input
-            placeholder="01234567890"
-            value={formData.mobileNumber}
-            onChangeText={(value) => handleInputChange("mobileNumber", value)}
-            onBlur={() => handleFieldBlur("mobileNumber")}
-            keyboardType="phone-pad"
-            autoComplete="tel"
-          />
-          {errors.mobileNumber ? (
-            <Text style={styles.errorText}>{errors.mobileNumber}</Text>
           ) : null}
         </View>
 

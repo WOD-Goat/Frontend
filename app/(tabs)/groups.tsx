@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export default function TimerScreen() {
+export default function GroupsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Timer</Text>
-      <Text style={styles.subtitle}>Rest timer and workout timing</Text>
+      <Text style={styles.title}>Groups</Text>
+      <Text style={styles.subtitle}>Manage and view your workout groups</Text>
     </View>
   );
 }
