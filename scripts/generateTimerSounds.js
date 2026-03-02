@@ -33,13 +33,13 @@ function buildWav(samples, sampleRate) {
 
   // fmt chunk
   buf.write("fmt ", 12);
-  buf.writeUInt32LE(16, 16);          // chunk size
-  buf.writeUInt16LE(1, 20);           // PCM
-  buf.writeUInt16LE(1, 22);           // mono
+  buf.writeUInt32LE(16, 16); // chunk size
+  buf.writeUInt16LE(1, 20); // PCM
+  buf.writeUInt16LE(1, 22); // mono
   buf.writeUInt32LE(sampleRate, 24);
   buf.writeUInt32LE(byteRate, 28);
-  buf.writeUInt16LE(2, 32);           // block align (16-bit mono)
-  buf.writeUInt16LE(16, 34);          // bits per sample
+  buf.writeUInt16LE(2, 32); // block align (16-bit mono)
+  buf.writeUInt16LE(16, 34); // bits per sample
 
   // data chunk
   buf.write("data", 36);
@@ -59,7 +59,7 @@ function buildWav(samples, sampleRate) {
 let _seed = 0x1337cafe;
 function noise() {
   _seed = (_seed * 1664525 + 1013904223) & 0xffffffff;
-  return (_seed / 0x80000000) - 1.0;
+  return _seed / 0x80000000 - 1.0;
 }
 
 /**
@@ -68,7 +68,7 @@ function noise() {
  */
 function punchyEnv(i, n, attackSamples = 32) {
   if (i < attackSamples) return i / attackSamples;
-  return Math.exp(-4.5 * (i - attackSamples) / (n - attackSamples));
+  return Math.exp((-4.5 * (i - attackSamples)) / (n - attackSamples));
 }
 
 /**
@@ -80,8 +80,9 @@ function punchyBeep(freq, durationMs, amp = 0.72) {
   for (let i = 0; i < n; i++) {
     const t = i / SAMPLE_RATE;
     // Fundamental + 2nd harmonic for brightness
-    const sig = Math.sin(2 * Math.PI * freq * t) * 0.75
-              + Math.sin(2 * Math.PI * freq * 2 * t) * 0.25;
+    const sig =
+      Math.sin(2 * Math.PI * freq * t) * 0.75 +
+      Math.sin(2 * Math.PI * freq * 2 * t) * 0.25;
     samples[i] = amp * punchyEnv(i, n, 8) * sig;
   }
   return samples;
@@ -98,19 +99,17 @@ function airHorn(fundamentalHz, durationMs, amp = 0.85, detuneCents = 8) {
 
   // Harmonic series: 1f 2f 3f 4f 5f with slight detuning on odd partials
   const partials = [
-    { freq: fundamentalHz,          amp: 0.38 },
-    { freq: fundamentalHz * 2,      amp: 0.28 },
+    { freq: fundamentalHz, amp: 0.38 },
+    { freq: fundamentalHz * 2, amp: 0.28 },
     { freq: fundamentalHz * 3 * detune, amp: 0.18 },
-    { freq: fundamentalHz * 4,      amp: 0.10 },
+    { freq: fundamentalHz * 4, amp: 0.1 },
     { freq: fundamentalHz * 5 * detune, amp: 0.06 },
   ];
 
   for (let i = 0; i < n; i++) {
     const t = i / SAMPLE_RATE;
     // Fast attack (2ms), slow exponential decay — classic horn shape
-    const env = i < 88
-      ? i / 88
-      : Math.exp(-1.8 * (i - 88) / (n - 88));
+    const env = i < 88 ? i / 88 : Math.exp((-1.8 * (i - 88)) / (n - 88));
 
     let sig = 0;
     for (const p of partials) {
@@ -140,11 +139,12 @@ function buzzer(durationMs, amp = 0.82) {
   for (let i = 0; i < n; i++) {
     const t = i / SAMPLE_RATE;
     // Hard attack (1ms), decay plateau, sharp cut
-    const env = i < 44
-      ? i / 44
-      : i < n * 0.7
-      ? 1.0
-      : Math.exp(-6 * (i - n * 0.7) / (n * 0.3));
+    const env =
+      i < 44
+        ? i / 44
+        : i < n * 0.7
+          ? 1.0
+          : Math.exp((-6 * (i - n * 0.7)) / (n * 0.3));
 
     // FM: carrier frequency is modulated by modulator
     const mod = Math.sin(2 * Math.PI * modulatorHz * t);
@@ -185,27 +185,22 @@ function silence(ms) {
 // ─── Sound definitions ────────────────────────────────────────────────────────
 
 const sounds = {
-
   /** Sharp 1000 Hz electronic pip — heard clearly over gym noise */
   beep_countdown: () => punchyBeep(1000, 85, 0.72),
 
   /** Triple ascending beep — unmistakable GO signal */
   beep_go: () =>
     concat(
-      punchyBeep(880,  80, 0.68),
+      punchyBeep(880, 80, 0.68),
       silence(25),
-      punchyBeep(1046, 80, 0.70),  // C6
+      punchyBeep(1046, 80, 0.7), // C6
       silence(25),
       punchyBeep(1318, 140, 0.75), // E6 — major chord ascent
     ),
 
   /** Urgent double-pip warning — lower than countdown so it reads differently */
   beep_warning: () =>
-    concat(
-      punchyBeep(660, 100, 0.70),
-      silence(40),
-      punchyBeep(660, 100, 0.70),
-    ),
+    concat(punchyBeep(660, 100, 0.7), silence(40), punchyBeep(660, 100, 0.7)),
 
   /** Air horn blast — round start */
   horn_start: () => airHorn(220, 500, 0.88, 10),
@@ -215,7 +210,7 @@ const sounds = {
     concat(
       airHorn(220, 420, 0.85, 10),
       silence(90),
-      airHorn(220, 600, 0.92, 12),  // second blast = bigger
+      airHorn(220, 600, 0.92, 12), // second blast = bigger
     ),
 
   /** FM buzzer — work↔rest phase transition */
