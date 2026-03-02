@@ -1,8 +1,8 @@
-import { Input } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { AssignedWorkoutData, ResultData } from "@/types";
 import { formatDate, parseFirebaseDate } from "@/utils";
 import { StyleSheet, Text, View } from "react-native";
+import Input from "../ui/Input";
 
 interface ResultsViewProps {
   workout: AssignedWorkoutData;

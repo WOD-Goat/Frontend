@@ -3791,6 +3791,11 @@ expo-asset@^11.1.7, expo-asset@~11.1.7:
     "@expo/image-utils" "^0.7.6"
     expo-constants "~17.1.7"
 
+expo-av@~15.1.7:
+  version "15.1.7"
+  resolved "https://registry.yarnpkg.com/expo-av/-/expo-av-15.1.7.tgz#a8422646eca9250c842e8a44fccccb1a4b070a05"
+  integrity sha512-NC+JR+65sxXfQN1mOHp3QBaXTL2J+BzNwVO27XgUEc5s9NaoBTdHWElYXrfxvik6xwytZ+a7abrqfNNgsbQzsA==
+
 expo-blur@~14.1.5:
   version "14.1.5"
   resolved "https://registry.npmjs.org/expo-blur/-/expo-blur-14.1.5.tgz"
@@ -3883,6 +3888,11 @@ expo-secure-store@^14.2.3:
   version "14.2.3"
   resolved "https://registry.npmjs.org/expo-secure-store/-/expo-secure-store-14.2.3.tgz"
   integrity sha512-hYBbaAD70asKTFd/eZBKVu+9RTo9OSTMMLqXtzDF8ndUGjpc6tmRCoZtrMHlUo7qLtwL5jm+vpYVBWI8hxh/1Q==
+
+expo-speech@~13.1.7:
+  version "13.1.7"
+  resolved "https://registry.yarnpkg.com/expo-speech/-/expo-speech-13.1.7.tgz#b5b4cc3617eaf9040dd3eef3fdf20e7d81cb4418"
+  integrity sha512-RMMgK6IIPQD9uLhmY2Q9v+2j3wmTGqB/qZ7sdy5//5TLCzFwAq1vlpy5A2psVsctoWVxUO4EmlaNai0ahQmKRg==
 
 expo-splash-screen@^0.30.10:
   version "0.30.10"
