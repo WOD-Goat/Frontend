@@ -132,11 +132,16 @@ export default function SignupScreen() {
 
       if (success) {
         console.log("Registration completed successfully!");
-        const auth = getAuth();
-        signInWithEmailAndPassword(auth, userData.email, userData.password);
-        sendEmailVerification(auth.currentUser!);
+        const firebaseAuth = getAuth();
+        const userCredential = await signInWithEmailAndPassword(
+          firebaseAuth,
+          userData.email,
+          userData.password,
+        );
+        await sendEmailVerification(userCredential.user);
+        console.log("Verification email sent to:", userData.email);
 
-        router.replace("/(tabs)");
+        router.replace("/auth/signup/verify");
       }
     } catch (error) {
       console.error("Registration error:", error);
