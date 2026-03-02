@@ -2,6 +2,7 @@ import { authService } from "@/api/services/auth";
 import { useGlobalState } from "@/components/lib/global-state";
 import type { AuthResponse, RegisterUserData, User } from "@/types/auth";
 import { useState } from "react";
+import Purchases from "react-native-purchases";
 
 interface UseAuthReturn {
   loading: boolean;
@@ -92,6 +93,14 @@ export const useAuth = (): UseAuthReturn => {
       // Even if logout request fails, clear local state
       console.error("Logout error:", error);
     } finally {
+      // Log out from RevenueCat to reset to anonymous user
+      try {
+        await Purchases.logOut();
+        console.log("💰 RevenueCat: Logged out user");
+      } catch (rcErr) {
+        console.warn("⚠️ RevenueCat: logOut failed", rcErr);
+      }
+
       setUser(null);
       setError(null);
       setLoading(false);

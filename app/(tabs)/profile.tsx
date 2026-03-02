@@ -1,14 +1,16 @@
+import { apiClient } from "@/api/client";
+import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
 import { Gap, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
+import { ENTITLEMENTS } from "@/config/revenuecat";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
-import { apiClient } from "@/api/client";
-import { API_ENDPOINTS } from "@/api/endpoints";
+import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { JSX, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Alert,
   Dimensions,
@@ -17,6 +19,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -57,6 +60,7 @@ export default function ProfileScreen() {
   const globalState = useGlobalState();
   const user = globalState.get("user");
   const userStorage = storage.get("user") || {};
+  const { isPro, isLoading: rcLoading } = useRevenueCat();
   console.log("User from global state:", user);
   console.log("User from storage:", userStorage);
 
@@ -71,6 +75,62 @@ export default function ProfileScreen() {
   const nickname = user?.nickname || null;
   const memberSince = getMemberSince(user?.createdAt);
   const stats = user?.statsSummary;
+
+  const handleUpgradeToPro = async () => {
+    try {
+      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywallIfNeeded({
+        requiredEntitlementIdentifier: ENTITLEMENTS.PRO,
+      });
+      if (
+        result === PAYWALL_RESULT.PURCHASED ||
+        result === PAYWALL_RESULT.RESTORED
+      ) {
+        Alert.alert(
+          "Welcome to Pro! 🎉",
+          "Your WODGoat Pro subscription is now active.",
+        );
+      }
+    } catch (error) {
+      console.error("❌ Paywall error:", error);
+      Alert.alert("Error", "Unable to open the paywall. Please try again.");
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await RevenueCatUI.presentCustomerCenter({
+        callbacks: {
+          onShowingManageSubscriptions: () => {
+            console.log("📋 Customer Center: manage subscriptions shown");
+          },
+          onRestoreStarted: () => {
+            console.log("🔄 Customer Center: restore started");
+          },
+          onRestoreCompleted: ({ customerInfo }) => {
+            console.log(
+              "✅ Customer Center: restore completed",
+              Object.keys(customerInfo.entitlements.active),
+            );
+          },
+          onRestoreFailed: ({ error }) => {
+            console.error("❌ Customer Center: restore failed", error);
+          },
+          onFeedbackSurveyCompleted: ({ feedbackSurveyOptionId }) => {
+            console.log(
+              "📝 Customer Center: feedback submitted",
+              feedbackSurveyOptionId,
+            );
+          },
+        },
+      });
+    } catch (error) {
+      console.error("❌ Customer Center error:", error);
+      Alert.alert(
+        "Error",
+        "Unable to open subscription management. Please try again.",
+      );
+    }
+  };
 
   const handleDeleteAccount = async () => {
     Alert.alert(
@@ -230,7 +290,11 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
-        <DetailRow icon="sparkles" label="Plan" value={"Free"} />
+        <DetailRow
+          icon="sparkles"
+          label="Plan"
+          value={isPro ? "WODGoat Pro ✨" : "Free"}
+        />
         <View style={styles.detailDivider} />
         <DetailRow
           icon="mail-outline"
@@ -264,11 +328,19 @@ export default function ProfileScreen() {
           onPress={() => Alert.alert("What's New", "Coming soon")}
         />
         <View style={styles.detailDivider} />
-        <PressableDetailRow
-          icon="rocket-outline"
-          label="Upgrade to Pro"
-          onPress={() => Alert.alert("Upgrade to Pro", "Coming soon")}
-        />
+        {isPro ? (
+          <PressableDetailRow
+            icon="card-outline"
+            label="Manage Subscription"
+            onPress={handleManageSubscription}
+          />
+        ) : (
+          <PressableDetailRow
+            icon="rocket-outline"
+            label="Upgrade to Pro"
+            onPress={handleUpgradeToPro}
+          />
+        )}
       </View>
       <Gap size={24} />
       {/* ── About App ─────────────────────────────── */}
