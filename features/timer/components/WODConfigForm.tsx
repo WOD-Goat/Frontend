@@ -1,13 +1,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// WODConfigForm — per-mode configuration form
+// WODConfigForm — modern per-mode configuration form
 //
-// Each WOD mode renders its own minimal input section.
+// Each WOD mode renders its own minimal input section with stepper controls.
 // The form calls `onConfirm(config)` which bubbles to the screen.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { Colors } from "@/constants/Colors";
+import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import {
-  ScrollView,
+  Pressable,
   StyleSheet,
   Switch,
   Text,
@@ -15,7 +17,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Colors } from "../../../constants/Colors";
 import type {
   AMRAPConfig,
   CustomBlock,
@@ -40,35 +41,122 @@ export interface WODConfigFormHandle {
 
 type TriggerRef = React.MutableRefObject<(() => void) | null>;
 
-// ─── Helper ───────────────────────────────────────────────────────────────────
+// ─── Stepper Control ──────────────────────────────────────────────────────────
 
-function NumericInput({
+function StepperInput({
   label,
   value,
   onChange,
   unit,
   min = 1,
+  step = 1,
+  icon,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   unit?: string;
   min?: number;
+  step?: number;
+  icon?: keyof typeof Ionicons.glyphMap;
 }) {
+  const numericValue = parseInt(value, 10) || 0;
+
+  const decrement = () => {
+    const next = Math.max(min, numericValue - step);
+    onChange(String(next));
+  };
+  const increment = () => {
+    onChange(String(numericValue + step));
+  };
+
   return (
-    <View style={formStyles.row}>
-      <Text style={formStyles.label}>{label}</Text>
-      <View style={formStyles.inputWrap}>
+    <View style={s.stepperRow}>
+      <View style={s.stepperLabelWrap}>
+        {icon && (
+          <Ionicons
+            name={icon}
+            size={18}
+            color={Colors.neutral[500]}
+            style={{ marginRight: 8 }}
+          />
+        )}
+        <Text style={s.stepperLabel}>{label}</Text>
+        {unit && <Text style={s.stepperUnit}>{unit}</Text>}
+      </View>
+
+      <View style={s.stepperControls}>
+        <Pressable
+          style={({ pressed }) => [
+            s.stepperBtn,
+            pressed && s.stepperBtnPressed,
+          ]}
+          onPress={decrement}
+        >
+          <Ionicons name="remove" size={18} color={Colors.text.primary} />
+        </Pressable>
+
         <TextInput
-          style={formStyles.input}
+          style={s.stepperValue}
           value={value}
           onChangeText={onChange}
+          onBlur={() => {
+            const n = parseInt(value, 10) || 0;
+            if (n < min) onChange(String(min));
+          }}
           keyboardType="number-pad"
-          placeholderTextColor="#8E8E93"
           returnKeyType="done"
+          selectTextOnFocus
         />
-        {unit ? <Text style={formStyles.unit}>{unit}</Text> : null}
+
+        <Pressable
+          style={({ pressed }) => [
+            s.stepperBtn,
+            s.stepperBtnAccent,
+            pressed && s.stepperBtnPressed,
+          ]}
+          onPress={increment}
+        >
+          <Ionicons name="add" size={18} color="#FFF" />
+        </Pressable>
       </View>
+    </View>
+  );
+}
+
+// ─── Toggle Row ───────────────────────────────────────────────────────────────
+
+function ToggleRow({
+  label,
+  value,
+  onValueChange,
+  icon,
+}: {
+  label: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  icon?: keyof typeof Ionicons.glyphMap;
+}) {
+  return (
+    <View style={s.stepperRow}>
+      <View style={s.stepperLabelWrap}>
+        {icon && (
+          <Ionicons
+            name={icon}
+            size={18}
+            color={Colors.neutral[500]}
+            style={{ marginRight: 8 }}
+          />
+        )}
+        <Text style={s.stepperLabel}>{label}</Text>
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: "#3A3A3C", true: Colors.primary[500] }}
+        thumbColor="#FFFFFF"
+        ios_backgroundColor="#3A3A3C"
+      />
     </View>
   );
 }
@@ -95,30 +183,30 @@ function ForTimeForm({
 
   return (
     <>
-      <View style={formStyles.row}>
-        <Text style={formStyles.label}>Time Cap</Text>
-        <Switch
-          value={hasCap}
-          onValueChange={setHasCap}
-          trackColor={{ false: "#2E2E2E", true: Colors.primary[500] }}
-          thumbColor="#FFFFFF"
-        />
-      </View>
+      <ToggleRow
+        label="Time Cap"
+        value={hasCap}
+        onValueChange={setHasCap}
+        icon="timer-outline"
+      />
 
       {hasCap && (
-        <NumericInput
+        <StepperInput
           label="Cap"
           value={capMinutes}
           onChange={setCapMinutes}
           unit="min"
+          icon="hourglass-outline"
         />
       )}
 
-      <NumericInput
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -145,17 +233,20 @@ function AMRAPForm({
 
   return (
     <>
-      <NumericInput
+      <StepperInput
         label="Duration"
         value={minutes}
         onChange={setMinutes}
         unit="min"
+        icon="time-outline"
       />
-      <NumericInput
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -182,17 +273,20 @@ function EMOMForm({
 
   return (
     <>
-      <NumericInput
+      <StepperInput
         label="Total Minutes"
         value={totalMinutes}
         onChange={setTotalMinutes}
         unit="min"
+        icon="time-outline"
       />
-      <NumericInput
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -221,22 +315,26 @@ function EXMOMForm({
 
   return (
     <>
-      <NumericInput
+      <StepperInput
         label="Interval"
         value={intervalSec}
         onChange={setIntervalSec}
         unit="sec"
+        icon="swap-horizontal-outline"
       />
-      <NumericInput
+      <StepperInput
         label="Rounds"
         value={totalIntervals}
         onChange={setTotalIntervals}
+        icon="repeat-outline"
       />
-      <NumericInput
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -267,14 +365,35 @@ function TabataForm({
 
   return (
     <>
-      <NumericInput label="Work" value={work} onChange={setWork} unit="sec" />
-      <NumericInput label="Rest" value={rest} onChange={setRest} unit="sec" />
-      <NumericInput label="Rounds" value={rounds} onChange={setRounds} />
-      <NumericInput
+      <StepperInput
+        label="Work"
+        value={work}
+        onChange={setWork}
+        unit="sec"
+        step={5}
+        icon="flame-outline"
+      />
+      <StepperInput
+        label="Rest"
+        value={rest}
+        onChange={setRest}
+        unit="sec"
+        step={5}
+        icon="bed-outline"
+      />
+      <StepperInput
+        label="Rounds"
+        value={rounds}
+        onChange={setRounds}
+        icon="repeat-outline"
+      />
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -301,17 +420,20 @@ function DeathByForm({
 
   return (
     <>
-      <NumericInput
+      <StepperInput
         label="Max Minutes"
         value={maxMinutes}
         onChange={setMaxMinutes}
         unit="min"
+        icon="skull-outline"
       />
-      <NumericInput
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -394,61 +516,97 @@ function CustomForm({
   return (
     <>
       {blocks.map((block, i) => (
-        <View key={block.id} style={formStyles.blockCard}>
-          <Text style={formStyles.blockIndex}>Block {i + 1}</Text>
-          <TextInput
-            style={[formStyles.input, { marginBottom: 8 }]}
-            value={block.label}
-            onChangeText={(v) => updateBlock(block.id, "label", v)}
-            placeholderTextColor="#8E8E93"
-            placeholder="Label"
-          />
-          <NumericInput
+        <View key={block.id} style={s.blockCard}>
+          <View style={s.blockHeader}>
+            <View style={s.blockBadge}>
+              <Text style={s.blockBadgeText}>{i + 1}</Text>
+            </View>
+            <TextInput
+              style={s.blockLabelInput}
+              value={block.label}
+              onChangeText={(v) => updateBlock(block.id, "label", v)}
+              placeholderTextColor={Colors.neutral[500]}
+              placeholder="Label"
+            />
+            <TouchableOpacity
+              style={s.blockRemoveBtn}
+              onPress={() => removeBlock(block.id)}
+            >
+              <Ionicons
+                name="close-circle"
+                size={22}
+                color={Colors.error[500]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <StepperInput
             label="Duration"
             value={String(block.durationSeconds)}
             onChange={(v) => updateBlock(block.id, "durationSeconds", v)}
             unit="sec"
+            step={5}
           />
-          <View style={formStyles.row}>
-            <Text style={formStyles.label}>Phase</Text>
-            <View style={formStyles.phaseToggle}>
+
+          <View style={s.phaseRow}>
+            <Text style={s.stepperLabel}>Phase</Text>
+            <View style={s.phaseToggle}>
               {(["WORK", "REST"] as const).map((p) => (
-                <TouchableOpacity
+                <Pressable
                   key={p}
                   style={[
-                    formStyles.phaseBtn,
-                    block.phase === p && formStyles.phaseBtnActive,
+                    s.phaseBtn,
+                    block.phase === p &&
+                      (p === "WORK" ? s.phaseBtnWork : s.phaseBtnRest),
                   ]}
                   onPress={() => updateBlock(block.id, "phase", p)}
                 >
+                  <Ionicons
+                    name={p === "WORK" ? "flame" : "bed"}
+                    size={14}
+                    color={block.phase === p ? "#FFF" : Colors.neutral[500]}
+                    style={{ marginRight: 4 }}
+                  />
                   <Text
                     style={[
-                      formStyles.phaseBtnText,
-                      block.phase === p && formStyles.phaseBtnTextActive,
+                      s.phaseBtnText,
+                      block.phase === p && s.phaseBtnTextActive,
                     ]}
                   >
                     {p}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
-          <TouchableOpacity onPress={() => removeBlock(block.id)}>
-            <Text style={formStyles.removeText}>Remove</Text>
-          </TouchableOpacity>
         </View>
       ))}
 
-      <TouchableOpacity style={formStyles.addBlockBtn} onPress={addBlock}>
-        <Text style={formStyles.addBlockText}>+ Add Block</Text>
-      </TouchableOpacity>
+      <Pressable
+        style={({ pressed }) => [s.addBlockBtn, pressed && { opacity: 0.7 }]}
+        onPress={addBlock}
+      >
+        <Ionicons
+          name="add-circle-outline"
+          size={20}
+          color={Colors.primary[500]}
+        />
+        <Text style={s.addBlockText}>Add Block</Text>
+      </Pressable>
 
-      <NumericInput label="Cycles" value={cycles} onChange={setCycles} />
-      <NumericInput
+      <StepperInput
+        label="Cycles"
+        value={cycles}
+        onChange={setCycles}
+        icon="repeat-outline"
+      />
+      <StepperInput
         label="Lead-in"
         value={leadIn}
         onChange={setLeadIn}
         unit="sec"
+        min={5}
+        icon="play-outline"
       />
     </>
   );
@@ -467,11 +625,7 @@ export const WODConfigForm = forwardRef<
   }));
 
   return (
-    <ScrollView
-      style={formStyles.scroll}
-      contentContainerStyle={formStyles.content}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={s.formContent}>
       {mode === "FOR_TIME" && (
         <ForTimeForm onConfirm={onConfirm} triggerRef={triggerRef} />
       )}
@@ -493,99 +647,169 @@ export const WODConfigForm = forwardRef<
       {mode === "CUSTOM" && (
         <CustomForm onConfirm={onConfirm} triggerRef={triggerRef} />
       )}
-    </ScrollView>
+    </View>
   );
 });
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const formStyles = StyleSheet.create({
-  scroll: { flex: 1, backgroundColor: "#1C1C1E" },
-  content: { padding: 24, paddingBottom: 80, gap: 16 },
+const s = StyleSheet.create({
+  formContent: {
+    padding: 18,
+    gap: 2,
+  },
 
-  row: {
+  /* ── Stepper Row ── */
+  stepperRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingVertical: 14,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(255,255,255,0.06)",
   },
-  label: {
-    fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 16,
-    color: "#E6EDF3",
-    letterSpacing: 1,
-  },
-  inputWrap: {
+  stepperLabelWrap: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    flex: 1,
   },
-  input: {
-    width: 80,
-    height: 44,
-    backgroundColor: "#2E2E2E",
+  stepperLabel: {
+    fontFamily: "LeagueSpartan-SemiBold",
+    fontSize: 15,
+    color: Colors.text.primary,
+    letterSpacing: 0.3,
+  },
+  stepperUnit: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 12,
+    color: Colors.neutral[500],
+    marginLeft: 6,
+  },
+
+  stepperControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  stepperBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepperBtnAccent: {
+    backgroundColor: Colors.primary[500],
+  },
+  stepperBtnPressed: {
+    opacity: 0.6,
+    transform: [{ scale: 0.92 }],
+  },
+  stepperValue: {
+    width: 56,
+    height: 38,
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 10,
     textAlign: "center",
-    color: "#E6EDF3",
+    color: "#FFFFFF",
     fontFamily: "LeagueSpartan-Bold",
     fontSize: 20,
   },
-  unit: {
-    fontFamily: "LeagueSpartan-Regular",
+
+  /* ── Custom Block Card ── */
+  blockCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  blockHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 4,
+  },
+  blockBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: Colors.primary[500],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockBadgeText: {
+    fontFamily: "LeagueSpartan-Bold",
     fontSize: 14,
-    color: "#8E8E93",
+    color: "#FFF",
+  },
+  blockLabelInput: {
+    flex: 1,
+    height: 36,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    color: Colors.text.primary,
+    fontFamily: "LeagueSpartan-SemiBold",
+    fontSize: 15,
+  },
+  blockRemoveBtn: {
+    padding: 4,
   },
 
-  blockCard: {
-    backgroundColor: "#2E2E2E",
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  blockIndex: {
-    fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 14,
-    color: "#8E8E93",
-    letterSpacing: 2,
-    marginBottom: 4,
+  /* ── Phase Toggle ── */
+  phaseRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
   },
   phaseToggle: {
     flexDirection: "row",
     gap: 8,
   },
   phaseBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: "#1C1C1E",
+    backgroundColor: "rgba(255,255,255,0.06)",
   },
-  phaseBtnActive: {
-    backgroundColor: "#FF6B2C",
+  phaseBtnWork: {
+    backgroundColor: Colors.primary[500],
+  },
+  phaseBtnRest: {
+    backgroundColor: Colors.success[600],
   },
   phaseBtnText: {
     fontFamily: "LeagueSpartan-SemiBold",
     fontSize: 13,
-    color: "#8E8E93",
+    color: Colors.neutral[500],
   },
   phaseBtnTextActive: {
-    color: "#000",
+    color: "#FFF",
   },
-  removeText: {
-    fontFamily: "LeagueSpartan-Regular",
-    fontSize: 13,
-    color: "#FF3B30",
-    alignSelf: "flex-end",
-  },
+
+  /* ── Add Block ── */
   addBlockBtn: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#FF6B2C",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.primary[500],
     borderStyle: "dashed",
+    marginBottom: 8,
   },
   addBlockText: {
-    fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 16,
-    color: "#FF6B2C",
+    fontFamily: "LeagueSpartan-Bold",
+    fontSize: 15,
+    color: Colors.primary[500],
   },
 });

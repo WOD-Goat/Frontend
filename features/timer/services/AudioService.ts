@@ -9,12 +9,12 @@
 //  - Never throw — audio failures must be silent; the timer must keep running.
 //
 // Required packages (add to package.json):
-//   expo-av          → npx expo install expo-av
+//   expo-audio       → npx expo install expo-audio
 //   expo-speech      → npx expo install expo-speech
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { AVPlaybackSource } from "expo-av";
-import { Audio, InterruptionModeAndroid, InterruptionModeIOS } from "expo-av";
+import type { AudioPlayer } from "expo-audio";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Speech from "expo-speech";
 import type { AudioEvent, SoundCueId } from "../types";
 
@@ -22,26 +22,20 @@ import type { AudioEvent, SoundCueId } from "../types";
 // All files live in assets/sounds/timer/
 // Use short mono WAV or AAC files (<100 KB each) to keep load time minimal.
 
-const SOUND_ASSETS: Record<SoundCueId, AVPlaybackSource> = {
-  beep_countdown:
-    require("../../../assets/sounds/timer/beep_countdown.wav") as AVPlaybackSource,
-  beep_go:
-    require("../../../assets/sounds/timer/beep_go.wav") as AVPlaybackSource,
-  beep_warning:
-    require("../../../assets/sounds/timer/beep_warning.wav") as AVPlaybackSource,
-  horn_start:
-    require("../../../assets/sounds/timer/horn_start.wav") as AVPlaybackSource,
-  horn_end:
-    require("../../../assets/sounds/timer/horn_end.wav") as AVPlaybackSource,
-  buzzer_transition:
-    require("../../../assets/sounds/timer/buzzer_transition.wav") as AVPlaybackSource,
+const SOUND_ASSETS: Record<SoundCueId, number> = {
+  beep_countdown: require("../../../assets/sounds/timer/beep_countdown.wav"),
+  beep_go: require("../../../assets/sounds/timer/beep_go.wav"),
+  beep_warning: require("../../../assets/sounds/timer/beep_warning.wav"),
+  horn_start: require("../../../assets/sounds/timer/horn_start.wav"),
+  horn_end: require("../../../assets/sounds/timer/horn_end.wav"),
+  buzzer_transition: require("../../../assets/sounds/timer/buzzer_transition.wav"),
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface AudioServiceState {
   isReady: boolean;
-  sounds: Partial<Record<SoundCueId, Audio.Sound>>;
+  sounds: Partial<Record<SoundCueId, AudioPlayer>>;
   /** Epoch ms of the last time each sound was played. Prevents rapid-fire repeats. */
   lastPlayed: Partial<Record<SoundCueId, number>>;
   isSpeaking: boolean;
@@ -71,24 +65,23 @@ class AudioService {
    * Audio session config:
    *  - `staysActiveInBackground: true`  → keeps playback alive when screen locks
    *  - `playsInSilentModeIOS: true`     → overrides iOS silent/ringer switch
-   *  - `interruptionModeIOS: DoNotMix`  → don't duck other apps; fully take over
-   *  - `shouldDuckAndroid: false`       → same for Android
+   *  - `interruptionModeIOS: DuckOthers` → lowers background music for our beeps
+   *  - `shouldDuckAndroid: true`         → same for Android
    */
   async init(): Promise<void> {
     if (this.state.isReady) return;
 
     try {
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-        staysActiveInBackground: true,
-        playsInSilentModeIOS: true,
-        interruptionModeIOS: InterruptionModeIOS.DoNotMix,
-        interruptionModeAndroid: InterruptionModeAndroid.DuckOthers,
-        shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
+      await setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        // "mixWithOthers" plays our sounds alongside background music
+        // without lowering or pausing it — minimal OS overhead, zero latency.
+        interruptionMode: "mixWithOthers",
+        interruptionModeAndroid: "mixWithOthers",
       });
 
-      await this._preloadSounds();
+      this._preloadSounds();
       this.state.isReady = true;
     } catch (err) {
       // Non-fatal: timer still works, just muted
@@ -98,9 +91,9 @@ class AudioService {
 
   /** Release all Sound objects. Call on timer screen unmount. */
   async dispose(): Promise<void> {
-    for (const sound of Object.values(this.state.sounds)) {
+    for (const player of Object.values(this.state.sounds)) {
       try {
-        await sound?.unloadAsync();
+        player?.remove();
       } catch (_) {}
     }
     this.state.sounds = {};
@@ -120,9 +113,20 @@ class AudioService {
     if (!this.state.isReady) return;
     if (events.length === 0) return;
 
-    // Split and process in priority order
+    // Split into sounds and TTS
     const sounds = events.filter((e) => e.type === "SOUND");
     const ttsEvents = events.filter((e) => e.type === "TTS");
+
+    // Pick highest-priority TTS (if any)
+    let ttsText: string | null = null;
+    let ttsPriority = 0;
+    if (ttsEvents.length > 0) {
+      const highest = ttsEvents.reduce((prev, curr) =>
+        (curr.priority ?? 0) > (prev.priority ?? 0) ? curr : prev,
+      );
+      ttsText = highest.text ?? null;
+      ttsPriority = highest.priority ?? 0;
+    }
 
     // Play sounds immediately (fire and forget)
     for (const event of sounds) {
@@ -130,12 +134,7 @@ class AudioService {
     }
 
     // Queue TTS by priority (higher priority wins)
-    if (ttsEvents.length > 0) {
-      const highest = ttsEvents.reduce((prev, curr) =>
-        (curr.priority ?? 0) > (prev.priority ?? 0) ? curr : prev,
-      );
-      if (highest.text) this._enqueueTTS(highest.text, highest.priority ?? 0);
-    }
+    if (ttsText) this._enqueueTTS(ttsText, ttsPriority);
   }
 
   // ─── Sound playback ─────────────────────────────────────────────────────────
@@ -147,13 +146,16 @@ class AudioService {
     if (now - lastPlayed < this.DEBOUNCE_MS) return;
     this.state.lastPlayed[id] = now;
 
-    const sound = this.state.sounds[id];
-    if (!sound) return;
+    const player = this.state.sounds[id];
+    if (!player) return;
 
     try {
-      // Rewind to start so rapid re-triggers work correctly
-      await sound.setPositionAsync(0);
-      await sound.playAsync();
+      // Rewind to start so rapid re-triggers work correctly.
+      // Fire-and-forget seekTo — don't await it; the player handles
+      // the seek+play sequence internally and awaiting adds latency.
+      player.seekTo(0);
+      player.volume = 1.0;
+      player.play();
     } catch (err) {
       console.warn(`[AudioService] failed to play ${id}:`, err);
     }
@@ -162,13 +164,15 @@ class AudioService {
   // ─── TTS ────────────────────────────────────────────────────────────────────
 
   /**
-   * Priority queue: if a higher-priority announcement comes in while TTS is
-   * speaking, interrupt and speak the new one. Same or lower priority: discard.
+   * Priority queue: if an equal-or-higher-priority announcement comes in while
+   * TTS is speaking, interrupt and speak the new one. Lower priority: discard.
+   * This ensures rapid-fire countdown numbers (3 → 2 → 1) always replace each
+   * other instead of being silently dropped.
    */
   private _currentTTSPriority = -1;
 
   private _enqueueTTS(text: string, priority: number): void {
-    if (this.state.isSpeaking && priority <= this._currentTTSPriority) return;
+    if (this.state.isSpeaking && priority < this._currentTTSPriority) return;
 
     if (this.state.isSpeaking) {
       Speech.stop();
@@ -177,10 +181,15 @@ class AudioService {
     this._currentTTSPriority = priority;
     this.state.isSpeaking = true;
 
+    // Short utterances (single digits, "Go!") use a faster rate so they
+    // finish well within one second and never overlap the next cue.
+    const isShort = text.length <= 3;
+
     Speech.speak(text, {
       language: "en-US",
       pitch: 1.0,
-      rate: 0.9, // Slightly slower for clarity during exertion
+      rate: isShort ? 1.1 : 0.9,
+      volume: 1.0, // Maximum volume for noisy environments
       onDone: () => {
         this.state.isSpeaking = false;
         this._currentTTSPriority = -1;
@@ -198,25 +207,18 @@ class AudioService {
 
   // ─── Preload ─────────────────────────────────────────────────────────────────
 
-  private async _preloadSounds(): Promise<void> {
-    const entries = Object.entries(SOUND_ASSETS) as [
-      SoundCueId,
-      AVPlaybackSource,
-    ][];
+  private _preloadSounds(): void {
+    const entries = Object.entries(SOUND_ASSETS) as [SoundCueId, number][];
 
-    await Promise.allSettled(
-      entries.map(async ([id, asset]) => {
-        try {
-          const { sound } = await Audio.Sound.createAsync(asset, {
-            shouldPlay: false,
-            volume: 1.0,
-          });
-          this.state.sounds[id] = sound;
-        } catch (err) {
-          console.warn(`[AudioService] failed to preload ${id}:`, err);
-        }
-      }),
-    );
+    for (const [id, asset] of entries) {
+      try {
+        const player = createAudioPlayer(asset);
+        player.volume = 1.0;
+        this.state.sounds[id] = player;
+      } catch (err) {
+        console.warn(`[AudioService] failed to preload ${id}:`, err);
+      }
+    }
   }
 }
 

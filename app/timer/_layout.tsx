@@ -11,8 +11,6 @@ export default function TimerLayout() {
       <Stack.Screen
         name="active"
         options={{
-          // Hide the bottom tab bar on the active clock screen
-          tabBarStyle: { display: "none" },
           // Prevent accidental swipe-back while a workout is running
           gestureEnabled: false,
           // Slide up like a modal for a clean full-screen feel

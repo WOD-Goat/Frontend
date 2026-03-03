@@ -72,10 +72,15 @@ class LeadInStrategy implements ModeStrategy {
       const remaining = this.leadIn - elapsedSeconds;
       const audioEvents: AudioEvent[] = [];
 
+      // Say "Ready" on the very first tick to warm up TTS before 3-2-1
+      if (previousElapsed === 0 && elapsedSeconds > 0) {
+        audioEvents.push(tts("Get Ready", 6));
+      }
+
       if (crossedSecond(previousElapsed, elapsedSeconds)) {
         const secInt = Math.ceil(remaining);
         if (secInt <= 3 && secInt >= 1) {
-          audioEvents.push(beep("beep_countdown"));
+          audioEvents.push(tts(`${secInt}`, 8));
         }
       }
 
@@ -99,10 +104,8 @@ class LeadInStrategy implements ModeStrategy {
     const innerPrev = Math.max(0, previousElapsed - this.leadIn);
     const result = this.inner.compute(innerElapsed, innerPrev);
 
-    // Fire the "Go!" cue exactly once — the moment we cross the lead-in boundary.
+    // Fire the GO horn exactly once — the moment we cross the lead-in boundary.
     if (previousElapsed < this.leadIn) {
-      result.audioEvents.push(beep("horn_start"));
-      result.audioEvents.push(tts("Go!", 10));
       result.audioEvents.push(beep("beep_go"));
     }
 
@@ -153,10 +156,11 @@ class ForTimeStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       if (this.cap !== null) {
         const remaining = this.cap - elapsedSeconds;
-        if (Math.ceil(remaining) === 60) {
+        const remInt = Math.ceil(remaining);
+        if (remInt === 60) {
           audioEvents.push(tts("One minute remaining", 5));
-        } else if (Math.ceil(remaining) <= 5 && Math.ceil(remaining) > 0) {
-          audioEvents.push(beep("beep_warning"));
+        } else if (remInt <= 5 && remInt > 0) {
+          audioEvents.push(tts(`${remInt}`, 8));
         }
       }
     }
@@ -212,11 +216,7 @@ class AMRAPStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(remaining);
       if (remInt === 60) audioEvents.push(tts("One minute remaining", 5));
-      if (remInt <= 10 && remInt > 5) audioEvents.push(beep("beep_warning"));
-      if (remInt <= 5 && remInt > 0) audioEvents.push(beep("beep_warning"));
-      if (remInt === 3) audioEvents.push(tts("3", 8));
-      if (remInt === 2) audioEvents.push(tts("2", 8));
-      if (remInt === 1) audioEvents.push(tts("1", 8));
+      if (remInt <= 5 && remInt > 0) audioEvents.push(tts(`${remInt}`, 8));
     }
 
     return {
@@ -282,11 +282,8 @@ class EMOMStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(intervalRemaining);
       if (remInt <= 5 && remInt > 0 && !isNewRound) {
-        audioEvents.push(beep("beep_warning"));
+        audioEvents.push(tts(`${remInt}`, 8));
       }
-      if (remInt === 3 && !isNewRound) audioEvents.push(tts("3", 6));
-      if (remInt === 2 && !isNewRound) audioEvents.push(tts("2", 6));
-      if (remInt === 1 && !isNewRound) audioEvents.push(tts("1", 6));
     }
 
     return {
@@ -377,7 +374,7 @@ class TabataStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(phaseRemaining);
       if (remInt <= 3 && remInt > 0) {
-        audioEvents.push(beep("beep_countdown"));
+        audioEvents.push(tts(`${remInt}`, 8));
       }
     }
 
@@ -481,7 +478,7 @@ class CustomStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(blockRemaining);
       if (remInt <= 3 && remInt > 0 && block.id === prevBlock.id) {
-        audioEvents.push(beep("beep_countdown"));
+        audioEvents.push(tts(`${remInt}`, 8));
       }
     }
 
@@ -545,7 +542,7 @@ class DeathByStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(remaining);
       if (remInt <= 5 && remInt > 0 && currentMinute === prevMinute) {
-        audioEvents.push(beep("beep_warning"));
+        audioEvents.push(tts(`${remInt}`, 8));
       }
     }
 

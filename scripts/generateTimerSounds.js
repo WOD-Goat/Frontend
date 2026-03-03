@@ -185,32 +185,25 @@ function silence(ms) {
 // ─── Sound definitions ────────────────────────────────────────────────────────
 
 const sounds = {
-  /** Sharp 1000 Hz electronic pip — heard clearly over gym noise */
-  beep_countdown: () => punchyBeep(1000, 85, 0.72),
+  /** Sharp 1400 Hz electronic pip — heard clearly over gym noise */
+  beep_countdown: () => punchyBeep(1400, 150, 0.72),
 
-  /** Triple ascending beep — unmistakable GO signal */
-  beep_go: () =>
-    concat(
-      punchyBeep(880, 80, 0.68),
-      silence(25),
-      punchyBeep(1046, 80, 0.7), // C6
-      silence(25),
-      punchyBeep(1318, 140, 0.75), // E6 — major chord ascent
-    ),
+  /** Long loud air horn blast — unmistakable BEEEEEEEEEP start signal */
+  beep_go: () => airHorn(440, 1200, 0.95, 10),
 
   /** Urgent double-pip warning — lower than countdown so it reads differently */
   beep_warning: () =>
-    concat(punchyBeep(660, 100, 0.7), silence(40), punchyBeep(660, 100, 0.7)),
+    concat(punchyBeep(900, 100, 0.7), silence(40), punchyBeep(900, 100, 0.7)),
 
-  /** Air horn blast — round start */
-  horn_start: () => airHorn(220, 500, 0.88, 10),
+  /** Air horn blast — round start, raised to 330 Hz for brightness */
+  horn_start: () => airHorn(330, 500, 0.88, 10),
 
-  /** Double air horn — session complete (second blast louder/longer) */
+  /** Double air horn — session complete, raised to 330 Hz for clarity */
   horn_end: () =>
     concat(
-      airHorn(220, 420, 0.85, 10),
+      airHorn(330, 420, 0.85, 10),
       silence(90),
-      airHorn(220, 600, 0.92, 12), // second blast = bigger
+      airHorn(330, 600, 0.92, 12), // second blast = bigger
     ),
 
   /** FM buzzer — work↔rest phase transition */
