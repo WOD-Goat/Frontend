@@ -6,7 +6,15 @@ import type { AssignedWorkoutData } from "@/types";
 import { formatShortDate, parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const PAGE_SIZE = 7;
 
 interface WorkoutSectionData {
   date: string;
@@ -25,23 +33,49 @@ export default function WorkoutsScreen() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [startAfter, setStartAfter] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
   const globalState = useGlobalState();
   const user = globalState.get("user");
 
   useEffect(() => {
-    loadWorkouts();
+    loadWorkouts(null, false);
   }, []);
 
-  const loadWorkouts = async () => {
+  const loadWorkouts = async (
+    startAfter: string | null,
+    isLoadMore: boolean,
+  ) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
-      const response = await workoutsService.getAllWorkouts(12);
+      const response = await workoutsService.getAllWorkouts(
+        PAGE_SIZE,
+        startAfter,
+      );
 
       if (response.success && response.data) {
-        const sections = transformWorkoutsToSections(response.data);
-        setWorkoutSections(sections);
+        const newSections = transformWorkoutsToSections(response.data);
+        if (isLoadMore) {
+          setWorkoutSections((prev) => [...prev, ...newSections]);
+        } else {
+          setWorkoutSections(newSections);
+        }
+        if (response.data.length >= PAGE_SIZE) {
+          const last = response.data[response.data.length - 1];
+          const lastDate = parseFirebaseDate(last.scheduledFor);
+          setStartAfter(lastDate.toISOString());
+          setHasMore(true);
+        } else {
+          setStartAfter(null);
+          setHasMore(false);
+        }
       } else {
         setError(response.message || "Failed to load workouts");
       }
@@ -50,7 +84,12 @@ export default function WorkoutsScreen() {
       setError(err.message || "Failed to load workouts");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    loadWorkouts(startAfter, true);
   };
 
   const transformWorkoutsToSections = (
@@ -302,6 +341,32 @@ export default function WorkoutsScreen() {
           ))}
         </>
       )}
+
+      {/* Load More */}
+      {hasMore && (
+        <>
+          <Gap size={16} />
+          <TouchableOpacity
+            style={styles.loadMoreButton}
+            onPress={handleLoadMore}
+            disabled={loadingMore}
+            activeOpacity={0.75}
+          >
+            {loadingMore ? (
+              <ActivityIndicator size="small" color={Colors.primary[500]} />
+            ) : (
+              <>
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={Colors.primary[500]}
+                />
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </>
+      )}
       <Gap size={24} />
     </Page>
   );
@@ -406,5 +471,23 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.spartanBold,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
+  },
+
+  // ── Load More ────────────────────────────────────────
+  loadMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "40",
+    backgroundColor: Colors.secondary[600],
+  },
+  loadMoreText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.primary[500],
   },
 });

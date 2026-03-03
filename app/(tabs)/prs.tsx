@@ -5,14 +5,18 @@ import standardExercises from "@/constants/standardExercises.json";
 import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
+const PR_PAGE_SIZE = 10;
 
 const TRACKING_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   weight_reps: "barbell-outline",
@@ -36,6 +40,9 @@ export default function PRsScreen() {
   const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PR_PAGE_SIZE);
+  const searchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     loadPRs();
@@ -181,17 +188,40 @@ export default function PRsScreen() {
     [],
   );
 
+  // Filter PRs by search query using exerciseId.includes (id is close to name)
+  const filteredPRs = useMemo(() => {
+    if (!searchQuery.trim()) return prs;
+    const q = searchQuery.toLowerCase();
+    return prs.filter(
+      (pr) =>
+        pr.exerciseId?.toLowerCase().includes(q) ||
+        pr.exerciseName?.toLowerCase().includes(q),
+    );
+  }, [prs, searchQuery]);
+
+  // Paginated slice of filtered results
+  const visiblePRs = useMemo(
+    () => filteredPRs.slice(0, visibleCount),
+    [filteredPRs, visibleCount],
+  );
+  const hasMorePRs = visibleCount < filteredPRs.length;
+
+  // Reset pagination when search changes
+  const handleSearchChange = (text: string) => {
+    setSearchQuery(text);
+    setVisibleCount(PR_PAGE_SIZE);
+  };
+
   // Find the best/most recent PR for the hero card
   const bestPR = useMemo(() => {
-    if (prs.length === 0) return null;
-    // Most recent PR (already sorted by date desc)
-    return prs[0];
-  }, [prs]);
+    if (filteredPRs.length === 0) return null;
+    return filteredPRs[0];
+  }, [filteredPRs]);
 
   const remainingPRs = useMemo(() => {
-    if (prs.length <= 1) return [];
-    return prs.slice(1);
-  }, [prs]);
+    if (visiblePRs.length <= 1) return [];
+    return visiblePRs.slice(1);
+  }, [visiblePRs]);
 
   // Summary stats
   const stats = useMemo(() => {
@@ -265,7 +295,31 @@ export default function PRsScreen() {
   return (
     <Page showBackButton={false}>
       <PRHeader />
-      <Gap size={16} />
+      {/* Search Input */}
+      <Pressable
+        style={styles.searchContainer}
+        onPress={() => searchInputRef.current?.focus()}
+      >
+        <Ionicons
+          name="search"
+          size={18}
+          color={Colors.text.tertiary}
+          style={styles.searchIcon}
+        />
+        <TextInput
+          ref={searchInputRef}
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={handleSearchChange}
+          placeholder="Search by exercise name..."
+          placeholderTextColor={Colors.text.tertiary}
+          autoCapitalize="none"
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
+      </Pressable>
+
+      <Gap size={24} />
 
       {/* Stats Row */}
       <View style={styles.statsRow}>
@@ -321,206 +375,252 @@ export default function PRsScreen() {
 
       <Gap size={20} />
 
-      {/* Hero Card — Latest PR */}
-      {bestPR && (
+      {filteredPRs.length === 0 && searchQuery.length > 0 ? (
+        <View style={styles.centerContainer}>
+          <Ionicons
+            name="search-outline"
+            size={48}
+            color={Colors.text.tertiary}
+          />
+          <Gap size={12} />
+          <Text style={styles.emptyTitle}>No Results</Text>
+          <Text style={styles.emptyText}>No PRs found for "{searchQuery}"</Text>
+        </View>
+      ) : (
         <>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="star" size={18} color={Colors.primary[500]} />
-            <Text style={styles.sectionTitle}>Latest Record</Text>
-          </View>
-          <Gap size={10} />
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() =>
-              handlePRPress(bestPR.exerciseId, bestPR.exerciseName)
-            }
-          >
-            <View style={styles.heroCard}>
-              <View style={styles.heroAccent} />
-              <View style={styles.heroBody}>
-                <View style={styles.heroTop}>
-                  <View style={styles.heroInfo}>
-                    <View style={styles.heroNameRow}>
-                      <View
-                        style={[
-                          styles.heroTypeBadge,
-                          {
-                            backgroundColor:
-                              getExerciseInfo(bestPR.exerciseId).color + "25",
-                          },
-                        ]}
-                      >
-                        <Ionicons
-                          name={
-                            getExerciseInfo(bestPR.exerciseId)
-                              .icon as keyof typeof Ionicons.glyphMap
-                          }
-                          size={14}
-                          color={getExerciseInfo(bestPR.exerciseId).color}
-                        />
+          {/* Hero Card — Latest PR */}
+          {bestPR && (
+            <>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              >
+                <Ionicons name="star" size={18} color={Colors.primary[500]} />
+                <Text style={styles.sectionTitle}>Latest Record</Text>
+              </View>
+              <Gap size={10} />
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() =>
+                  handlePRPress(bestPR.exerciseId, bestPR.exerciseName)
+                }
+              >
+                <View style={styles.heroCard}>
+                  <View style={styles.heroAccent} />
+                  <View style={styles.heroBody}>
+                    <View style={styles.heroTop}>
+                      <View style={styles.heroInfo}>
+                        <View style={styles.heroNameRow}>
+                          <View
+                            style={[
+                              styles.heroTypeBadge,
+                              {
+                                backgroundColor:
+                                  getExerciseInfo(bestPR.exerciseId).color +
+                                  "25",
+                              },
+                            ]}
+                          >
+                            <Ionicons
+                              name={
+                                getExerciseInfo(bestPR.exerciseId)
+                                  .icon as keyof typeof Ionicons.glyphMap
+                              }
+                              size={14}
+                              color={getExerciseInfo(bestPR.exerciseId).color}
+                            />
+                          </View>
+                          <Text style={styles.heroName} numberOfLines={1}>
+                            {bestPR.exerciseName}
+                          </Text>
+                        </View>
+                        <View style={styles.heroDateRow}>
+                          <Ionicons
+                            name="calendar-outline"
+                            size={12}
+                            color={Colors.text.secondary}
+                          />
+                          <Text style={styles.heroDate}>
+                            {formatShortDate(
+                              new Date(bestPR.date?._seconds * 1000),
+                            )}
+                          </Text>
+                        </View>
                       </View>
-                      <Text style={styles.heroName} numberOfLines={1}>
-                        {bestPR.exerciseName}
-                      </Text>
+                      <View style={styles.heroValueContainer}>
+                        <Text style={styles.heroValue}>
+                          {
+                            formatPRValue(
+                              bestPR.actualPR,
+                              getExerciseInfo(bestPR.exerciseId).trackingType,
+                            ).display
+                          }
+                        </Text>
+                        <Text style={styles.heroUnit}>
+                          {
+                            formatPRValue(
+                              bestPR.actualPR,
+                              getExerciseInfo(bestPR.exerciseId).trackingType,
+                            ).unit
+                          }
+                        </Text>
+                      </View>
                     </View>
-                    <View style={styles.heroDateRow}>
-                      <Ionicons
-                        name="calendar-outline"
-                        size={12}
-                        color={Colors.text.secondary}
-                      />
-                      <Text style={styles.heroDate}>
-                        {formatShortDate(
-                          new Date(bestPR.date?._seconds * 1000),
-                        )}
-                      </Text>
-                    </View>
+                    {bestPR.improvement !== null && bestPR.improvement > 0 && (
+                      <View style={styles.heroImprovementRow}>
+                        <View style={styles.heroImprovementPill}>
+                          <Ionicons
+                            name="arrow-up"
+                            size={12}
+                            color={Colors.success[500]}
+                          />
+                          <Text style={styles.heroImprovementText}>
+                            {formatImprovement(
+                              bestPR.improvement,
+                              getExerciseInfo(bestPR.exerciseId).trackingType,
+                            )}
+                          </Text>
+                        </View>
+                        <Text style={styles.heroImprovementLabel}>
+                          from previous best
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={styles.heroValueContainer}>
-                    <Text style={styles.heroValue}>
-                      {
-                        formatPRValue(
-                          bestPR.actualPR,
-                          getExerciseInfo(bestPR.exerciseId).trackingType,
-                        ).display
-                      }
-                    </Text>
-                    <Text style={styles.heroUnit}>
-                      {
-                        formatPRValue(
-                          bestPR.actualPR,
-                          getExerciseInfo(bestPR.exerciseId).trackingType,
-                        ).unit
-                      }
-                    </Text>
+                  <View style={styles.heroChevron}>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={20}
+                      color={Colors.primary[400]}
+                    />
                   </View>
                 </View>
-                {bestPR.improvement !== null && bestPR.improvement > 0 && (
-                  <View style={styles.heroImprovementRow}>
-                    <View style={styles.heroImprovementPill}>
-                      <Ionicons
-                        name="arrow-up"
-                        size={12}
-                        color={Colors.success[500]}
-                      />
-                      <Text style={styles.heroImprovementText}>
-                        {formatImprovement(
-                          bestPR.improvement,
-                          getExerciseInfo(bestPR.exerciseId).trackingType,
-                        )}
-                      </Text>
-                    </View>
-                    <Text style={styles.heroImprovementLabel}>
-                      from previous best
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.heroChevron}>
-                <Ionicons
-                  name="chevron-forward"
-                  size={20}
-                  color={Colors.primary[400]}
-                />
-              </View>
-            </View>
-          </TouchableOpacity>
-          <Gap size={24} />
-        </>
-      )}
+              </TouchableOpacity>
+              <Gap size={24} />
+            </>
+          )}
 
-      {/* All PRs List */}
-      {remainingPRs.length > 0 && (
-        <>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Ionicons name="list" size={16} color={Colors.text.secondary} />
-            <Text style={styles.sectionTitle}>All Records</Text>
-          </View>
-          <Gap size={10} />
-          {remainingPRs.map((pr, index) => {
-            const info = getExerciseInfo(pr.exerciseId);
-            return (
-              <View key={pr.exerciseName + pr.date?._seconds}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => handlePRPress(pr.exerciseId, pr.exerciseName)}
-                >
-                  <View style={styles.prCard}>
-                    {/* Left accent */}
-                    <View
-                      style={[
-                        styles.cardAccent,
-                        { backgroundColor: info.color },
-                      ]}
-                    />
-                    {/* Icon */}
-                    <View
-                      style={[
-                        styles.cardIconContainer,
-                        { backgroundColor: info.color + "18" },
-                      ]}
+          {/* All PRs List */}
+          {remainingPRs.length > 0 && (
+            <>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+              >
+                <Ionicons name="list" size={16} color={Colors.text.secondary} />
+                <Text style={styles.sectionTitle}>All Records</Text>
+              </View>
+              <Gap size={10} />
+              {remainingPRs.map((pr, index) => {
+                const info = getExerciseInfo(pr.exerciseId);
+                return (
+                  <View key={pr.exerciseName + pr.date?._seconds}>
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() =>
+                        handlePRPress(pr.exerciseId, pr.exerciseName)
+                      }
                     >
-                      <Ionicons
-                        name={info.icon as keyof typeof Ionicons.glyphMap}
-                        size={20}
-                        color={info.color}
-                      />
-                    </View>
-                    {/* Content */}
-                    <View style={styles.cardBody}>
-                      <Text style={styles.cardName} numberOfLines={1}>
-                        {pr.exerciseName}
-                      </Text>
-                      <View style={styles.cardMeta}>
-                        <Ionicons
-                          name="calendar-outline"
-                          size={11}
-                          color={Colors.text.secondary}
+                      <View style={styles.prCard}>
+                        {/* Left accent */}
+                        <View
+                          style={[
+                            styles.cardAccent,
+                            { backgroundColor: info.color },
+                          ]}
                         />
-                        <Text style={styles.cardDate}>
-                          {formatShortDate(new Date(pr.date?._seconds * 1000))}
-                        </Text>
-                        {pr.improvement !== null && pr.improvement > 0 && (
-                          <View style={styles.cardImprovementPill}>
+                        {/* Icon */}
+                        <View
+                          style={[
+                            styles.cardIconContainer,
+                            { backgroundColor: info.color + "18" },
+                          ]}
+                        >
+                          <Ionicons
+                            name={info.icon as keyof typeof Ionicons.glyphMap}
+                            size={20}
+                            color={info.color}
+                          />
+                        </View>
+                        {/* Content */}
+                        <View style={styles.cardBody}>
+                          <Text style={styles.cardName} numberOfLines={1}>
+                            {pr.exerciseName}
+                          </Text>
+                          <View style={styles.cardMeta}>
                             <Ionicons
-                              name="arrow-up"
-                              size={10}
-                              color={Colors.success[500]}
+                              name="calendar-outline"
+                              size={11}
+                              color={Colors.text.secondary}
                             />
-                            <Text style={styles.cardImprovementText}>
-                              {formatImprovement(
-                                pr.improvement,
-                                info.trackingType,
+                            <Text style={styles.cardDate}>
+                              {formatShortDate(
+                                new Date(pr.date?._seconds * 1000),
                               )}
                             </Text>
+                            {pr.improvement !== null && pr.improvement > 0 && (
+                              <View style={styles.cardImprovementPill}>
+                                <Ionicons
+                                  name="arrow-up"
+                                  size={10}
+                                  color={Colors.success[500]}
+                                />
+                                <Text style={styles.cardImprovementText}>
+                                  {formatImprovement(
+                                    pr.improvement,
+                                    info.trackingType,
+                                  )}
+                                </Text>
+                              </View>
+                            )}
                           </View>
-                        )}
+                        </View>
+                        {/* Value */}
+                        <View style={styles.cardValueContainer}>
+                          <Text style={styles.cardValue}>
+                            {
+                              formatPRValue(pr.actualPR, info.trackingType)
+                                .display
+                            }
+                          </Text>
+                          <Text style={styles.cardUnit}>
+                            {formatPRValue(pr.actualPR, info.trackingType).unit}
+                          </Text>
+                        </View>
+                        {/* Chevron */}
+                        <View style={styles.cardChevron}>
+                          <Ionicons
+                            name="chevron-forward"
+                            size={18}
+                            color={Colors.neutral[600]}
+                          />
+                        </View>
                       </View>
-                    </View>
-                    {/* Value */}
-                    <View style={styles.cardValueContainer}>
-                      <Text style={styles.cardValue}>
-                        {formatPRValue(pr.actualPR, info.trackingType).display}
-                      </Text>
-                      <Text style={styles.cardUnit}>
-                        {formatPRValue(pr.actualPR, info.trackingType).unit}
-                      </Text>
-                    </View>
-                    {/* Chevron */}
-                    <View style={styles.cardChevron}>
-                      <Ionicons
-                        name="chevron-forward"
-                        size={18}
-                        color={Colors.neutral[600]}
-                      />
-                    </View>
+                    </TouchableOpacity>
+                    {index < remainingPRs.length - 1 && <Gap size={10} />}
                   </View>
-                </TouchableOpacity>
-                {index < remainingPRs.length - 1 && <Gap size={10} />}
-              </View>
-            );
-          })}
-        </>
+                );
+              })}
+            </>
+          )}
+
+          {/* Load More */}
+          {hasMorePRs && (
+            <>
+              <Gap size={16} />
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => setVisibleCount((c) => c + PR_PAGE_SIZE)}
+                activeOpacity={0.75}
+              >
+                <Ionicons
+                  name="chevron-down"
+                  size={16}
+                  color={Colors.primary[500]}
+                />
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </> // closes filteredPRs.length === 0 else branch
       )}
       <Gap size={24} />
     </Page>
@@ -786,5 +886,46 @@ const styles = StyleSheet.create({
   },
   cardChevron: {
     paddingHorizontal: 10,
+  },
+
+  // ── Search ─────────────────────────────────────────────
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    gap: 10,
+    borderWidth: 0.5,
+    borderColor: Colors.primary[400],
+  },
+  searchIcon: {
+    flexShrink: 0,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: FontFamilies.spartanMedium,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.inverse,
+    padding: 0,
+  },
+
+  // ── Load More ──────────────────────────────────────────
+  loadMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "40",
+    backgroundColor: Colors.secondary[600],
+  },
+  loadMoreText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.primary[500],
   },
 });

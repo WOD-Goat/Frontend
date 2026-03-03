@@ -37,14 +37,25 @@ export const workoutsService = {
 
   /**
    * Get all workouts for the authenticated user
-   * @param limit - Optional limit on number of workouts to return
+   * @param limit - Number of workouts to return per page
+   * @param cursor - Cursor from previous response for pagination
    */
-  getAllWorkouts: async (limit?: number): Promise<WorkoutsResponse> => {
-    console.log("🏋️ WorkoutsService: Fetching all workouts", { limit });
+  getAllWorkouts: async (
+    limit?: number,
+    startAfter?: string | null,
+  ): Promise<WorkoutsResponse> => {
+    console.log("🏋️ WorkoutsService: Fetching all workouts", {
+      limit,
+      startAfter,
+    });
 
     try {
-      const endpoint = limit
-        ? `${API_ENDPOINTS.WORKOUTS.GET_ALL}?limit=${limit}`
+      const params = new URLSearchParams();
+      if (limit !== undefined) params.append("limit", String(limit));
+      if (startAfter) params.append("startAfter", startAfter);
+      const query = params.toString();
+      const endpoint = query
+        ? `${API_ENDPOINTS.WORKOUTS.GET_ALL}?${query}`
         : API_ENDPOINTS.WORKOUTS.GET_ALL;
 
       const response = await apiClient.get<WorkoutsResponse>(endpoint);
