@@ -1,21 +1,20 @@
-import { BottomSheet } from "@/components";
 import { Colors, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import type { StandardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle
 } from "react-native";
+import { BottomSheet } from "./BottomSheet";
 
 interface ExerciseSearchInputProps {
   value: string;

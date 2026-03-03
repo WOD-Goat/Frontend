@@ -13,6 +13,3 @@ export const defaultState: GlobalStateRegistry = {
   groups: null,
   personalRecords: null,
 };
-
-export { GlobalStateProvider, useGlobalState } from "../../global-state";
-

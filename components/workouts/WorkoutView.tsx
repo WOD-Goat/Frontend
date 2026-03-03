@@ -1,15 +1,16 @@
-import { ExerciseSearchInput, Input } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { StandardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  Animated,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Animated,
+    Pressable,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
+import ExerciseSearchInput from "../ui/ExerciseSearchInput";
+import Input from "../ui/Input";
 
 interface Exercise {
   name: string;
@@ -106,7 +107,12 @@ export default function WorkoutView({
                     <ExerciseSearchInput
                       value={exercise.name}
                       onSelectExercise={(selectedExercise: StandardExercise) =>
-                        onUpdateExercise(wod.id, index, "name", selectedExercise.name)
+                        onUpdateExercise(
+                          wod.id,
+                          index,
+                          "name",
+                          selectedExercise.name,
+                        )
                       }
                       placeholder="Search for an exercise"
                     />
@@ -280,7 +286,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
     gap: 12,
-
   },
   exercisesCard: {
     backgroundColor: Colors.background.secondary,

@@ -144,6 +144,7 @@ export default function RootLayout() {
           <Stack.Screen name="auth/login" />
           <Stack.Screen name="auth/signup" />
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="timer" options={{ headerShown: false }} />
         </Stack>
       </ToastProvider>
     </SafeAreaProvider>
