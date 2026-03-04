@@ -10,5 +10,4 @@ export {
     preloadImages,
     preloadImagesSimple
 } from "./imagePreloader";
-export { useImagePreloader } from "./useImagePreloader";
 

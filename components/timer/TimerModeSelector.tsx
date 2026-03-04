@@ -3,10 +3,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Colors } from "@/constants/Colors";
+import type { WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { WODMode } from "../types";
 
 const MODES: {
   id: WODMode;

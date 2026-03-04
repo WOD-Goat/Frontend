@@ -9,20 +9,20 @@
 // covers every pixel — header, clock, and controls as one unified surface.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { useTimer } from "@/lib/timer/hooks/useTimer";
+import { useTimerTheme } from "@/lib/timer/hooks/useTimerTheme";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect } from "react";
 import {
-    Animated,
-    BackHandler,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  BackHandler,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useTimer } from "../hooks/useTimer";
-import { useTimerTheme } from "../hooks/useTimerTheme";
 import { TimerControls } from "./TimerControls";
 import { TimerDisplay } from "./TimerDisplay";
 

@@ -1,1 +1,1 @@
-export { default } from "@/features/timer/components/TimerSetupScreen";
+export { TimerSetupScreen as default } from "@/components/timer";

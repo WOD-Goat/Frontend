@@ -8,12 +8,12 @@
 import { Gap } from "@/components";
 import Page from "@/components/ui/Page";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { useTimer } from "@/lib/timer/hooks/useTimer";
+import type { WODConfig, WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useTimer } from "../hooks/useTimer";
-import type { WODConfig, WODMode } from "../types";
 import { TimerModeSelector } from "./TimerModeSelector";
 import type { WODConfigFormHandle } from "./WODConfigForm";
 import { WODConfigForm } from "./WODConfigForm";

@@ -11,9 +11,9 @@
 // The flashing background replaces the entire screen BG — not just text.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import type { TimerPhase, TimerTheme } from "@/lib/timer/types";
 import { memo } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
-import type { TimerPhase, TimerTheme } from "../types";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 

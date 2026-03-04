@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Timer Feature — Public API
-// Import everything you need from "@/features/timer"
+// Import everything you need from "@/lib/timer"
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Types
@@ -42,12 +42,3 @@ export type { TimerStore } from "./viewmodels/timerStore";
 export { useTimer } from "./hooks/useTimer";
 export type { UseTimerReturn } from "./hooks/useTimer";
 export { useTimerTheme } from "./hooks/useTimerTheme";
-
-// Components
-export { default as TimerActiveScreen } from "./components/TimerActiveScreen";
-export { TimerControls } from "./components/TimerControls";
-export { TimerDisplay } from "./components/TimerDisplay";
-export { TimerModeSelector } from "./components/TimerModeSelector";
-export { default as TimerSetupScreen } from "./components/TimerSetupScreen";
-export { WODConfigForm } from "./components/WODConfigForm";
-

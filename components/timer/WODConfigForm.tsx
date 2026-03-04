@@ -6,29 +6,29 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Colors } from "@/constants/Colors";
+import type {
+    AMRAPConfig,
+    CustomBlock,
+    CustomConfig,
+    DeathByConfig,
+    EMOMConfig,
+    EXMOMConfig,
+    ForTimeConfig,
+    TabataConfig,
+    WODConfig,
+    WODMode,
+} from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import {
-  Pressable,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Pressable,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import type {
-  AMRAPConfig,
-  CustomBlock,
-  CustomConfig,
-  DeathByConfig,
-  EMOMConfig,
-  EXMOMConfig,
-  ForTimeConfig,
-  TabataConfig,
-  WODConfig,
-  WODMode,
-} from "../types";
 
 interface WODConfigFormProps {
   mode: WODMode;
