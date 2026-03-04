@@ -1,5 +1,5 @@
 import { personalRecordsService } from "@/api/services";
-import { Gap, Page, PRHeader } from "@/components";
+import { Gap, Page, PRHeader, PRsSkeleton } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { formatShortDate } from "@/utils";
@@ -7,13 +7,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const PR_PAGE_SIZE = 10;
@@ -233,20 +232,7 @@ export default function PRsScreen() {
   }, [prs]);
 
   if (loading) {
-    return (
-      <Page
-        showBackButton={false}
-        contentStyle={{ flex: 1 }}
-        scrollable={false}
-      >
-        <PRHeader />
-        <Gap size={26} />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[500]} />
-          <Text style={styles.loadingText}>Loading PRs...</Text>
-        </View>
-      </Page>
-    );
+    return <PRsSkeleton />;
   }
 
   if (error) {

@@ -1,5 +1,11 @@
 import { workoutsService } from "@/api/services";
-import { Gap, Page, WorkoutHeader, WorkoutSection } from "@/components";
+import {
+  Gap,
+  Page,
+  WorkoutHeader,
+  WorkoutSection,
+  WorkoutsSkeleton,
+} from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import type { AssignedWorkoutData } from "@/types";
@@ -139,20 +145,7 @@ export default function WorkoutsScreen() {
   );
 
   if (loading) {
-    return (
-      <Page
-        showBackButton={false}
-        contentStyle={{ flex: 1 }}
-        scrollable={false}
-      >
-        <WorkoutHeader />
-        <Gap size={20} />
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={Colors.primary[500]} />
-          <Text style={styles.loadingText}>Loading workouts...</Text>
-        </View>
-      </Page>
-    );
+    return <WorkoutsSkeleton />;
   }
 
   if (error) {

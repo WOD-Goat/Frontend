@@ -4,6 +4,7 @@ import {
   BannerCarousel,
   Gap,
   HeaderSection,
+  HomeSkeleton,
   Page,
   StatsCard,
   WODCard,
@@ -12,6 +13,12 @@ import {
 export default function HomeScreen() {
   const globalState = useGlobalState();
   const user = globalState.get("user");
+
+  // Show skeleton while user data hasn't loaded yet
+  if (!user) {
+    return <HomeSkeleton />;
+  }
+
   const rawUserName = user?.nickname ?? "User";
   const userName = rawUserName.charAt(0).toUpperCase() + rawUserName.slice(1);
 

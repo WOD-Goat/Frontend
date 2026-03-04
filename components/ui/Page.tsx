@@ -12,7 +12,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface PageProps {
   children: ReactNode;
@@ -53,6 +53,8 @@ export default function Page({
   contentStyle,
   headerStyle,
 }: PageProps) {
+  const insets = useSafeAreaInsets();
+
   const handleBackPress = () => {
     if (onBackPress) {
       onBackPress();
@@ -72,7 +74,11 @@ export default function Page({
               style={styles.backButton}
               onPress={handleBackPress}
             >
-              <Ionicons name="arrow-back" size={24} color={Colors.text.primary} />
+              <Ionicons
+                name="arrow-back"
+                size={24}
+                color={Colors.text.primary}
+              />
             </TouchableOpacity>
           )}
 
@@ -135,21 +141,25 @@ export default function Page({
 
   if (keyboardAvoiding) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
+      <View
+        style={[styles.safeArea, { backgroundColor, paddingTop: insets.top }]}
+      >
         <KeyboardAvoidingView
           style={styles.keyboardView}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
         >
           {pageContent}
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor }]}>
+    <View
+      style={[styles.safeArea, { backgroundColor, paddingTop: insets.top }]}
+    >
       {pageContent}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -178,7 +188,7 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
     marginLeft: -8,
-   },
+  },
   headerTitle: {
     flex: 1,
     color: Colors.text.primary,
