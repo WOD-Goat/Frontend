@@ -49,12 +49,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="groups"
+        name="timer"
         options={{
-          title: "Groups",
+          title: "Timer",
           tabBarIcon: ({ focused }) => (
             <Image
-              source={focused ? tabIcons.groupsSelected : tabIcons.groups}
+              source={focused ? tabIcons.timerSelected : tabIcons.timer}
               style={{ width: responsiveSize(34), height: responsiveSize(34) }}
             />
           ),
