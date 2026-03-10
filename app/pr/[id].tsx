@@ -1,12 +1,19 @@
 import { personalRecordsService } from "@/api/services";
-import { Gap, Page } from "@/components";
+import type { PRStickerData } from "@/components";
+import { Gap, Page, PRShareModal } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { formatDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type TrackingType =
   | "weight_reps"
@@ -92,6 +99,7 @@ export default function PRDetailScreen() {
   const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -136,6 +144,20 @@ export default function PRDetailScreen() {
   );
   const improvementUnit = getImprovementUnit(trackingType);
 
+  const stickerData: PRStickerData | null = useMemo(() => {
+    if (!latestPR) return null;
+    const formatted = formatPRValue(latestPR.actualPR, trackingType);
+    return {
+      exerciseName:
+        typeof name === "string" ? name : (latestPR.exerciseName ?? "Exercise"),
+      value: formatted.display,
+      unit: formatted.unit,
+      improvement: latestPR.improvement ?? null,
+      improvementUnit,
+      date: getFormattedDate(latestPR.date),
+    };
+  }, [latestPR, trackingType, name, improvementUnit]);
+
   if (loading) {
     return (
       <Page title="Personal Record" showBackButton contentStyle={{ flex: 1 }}>
@@ -173,11 +195,26 @@ export default function PRDetailScreen() {
             </Text>
             <Text style={styles.prDate}>{getFormattedDate(latestPR.date)}</Text>
           </View>
-          {latestPR.improvement !== null && (
-            <Text style={styles.improvement}>
-              +{latestPR.improvement} {improvementUnit}
-            </Text>
-          )}
+          <View style={styles.cardTopRight}>
+            {latestPR.improvement !== null && (
+              <Text style={styles.improvement}>
+                +{latestPR.improvement} {improvementUnit}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={styles.shareBtn}
+              onPress={() => setShareModalVisible(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="share-social-outline"
+                size={20}
+                color={Colors.primary[500]}
+              />
+              <Text style={styles.shareBtnText}>Share PR</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         <View style={styles.cardCenter}>
           <Text style={styles.prValue}>
@@ -277,6 +314,14 @@ export default function PRDetailScreen() {
           ))}
         </View>
       )}
+      {/* PR Share Modal */}
+      {stickerData && (
+        <PRShareModal
+          visible={shareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+          data={stickerData}
+        />
+      )}
     </Page>
   );
 }
@@ -319,6 +364,27 @@ const styles = StyleSheet.create({
   },
   cardTopLeft: {
     flex: 1,
+  },
+  cardTopRight: {
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.primary[500] + "1A",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  shareBtnText: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: FontSizes.labelXS,
+    color: Colors.primary[500],
+    letterSpacing: 0.3,
   },
   exerciseName: {
     fontSize: FontSizes.headingLG,
