@@ -29,7 +29,8 @@
       [
         "expo-audio",
         {
-          "enableBackgroundPlayback": true
+          "enableBackgroundPlayback": true,
+          "microphonePermission": "WODGoat needs microphone access to create workouts using your voice."
         }
       ],
       [

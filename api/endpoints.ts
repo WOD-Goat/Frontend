@@ -1,4 +1,7 @@
 export const API_ENDPOINTS = {
+  AI: {
+    PARSE_WORKOUT: "/api/ai/parse-workout",
+  },
   AUTH: {
     REGISTER: "/api/users/register",
     LOGIN: "/api/users/login",

@@ -1,9 +1,16 @@
 import { authService, workoutsService } from "@/api/services";
 import { Button, ExerciseSearchInput, Input, Page } from "@/components";
-import { storage, useGlobalState } from "@/components/lib";
+import { VoiceRecorderModal } from "@/components/ai";
+import { storage, useGlobalState, useToast } from "@/components/lib";
 import { Colors, Typography } from "@/constants";
-import { useToast } from "@/components/lib";
-import type { StandardExercise, TrackingType } from "@/types";
+import standardExercises from "@/constants/standardExercises.json";
+import type { VoiceWorkoutResult } from "@/lib/ai/useVoiceWorkout";
+import type {
+  CreateWorkoutData,
+  StandardExercise,
+  TrackingType,
+} from "@/types";
+import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +32,7 @@ interface Exercise {
   instructions: string;
   trackingType: TrackingType;
   removing?: boolean;
+  unresolved?: boolean;
 }
 
 interface WOD {
@@ -176,6 +184,40 @@ function AnimatedExerciseSection({
   );
 }
 
+function resolveExercise(
+  aiId: string,
+  aiName: string,
+): StandardExercise | null {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  // 1. Exact ID match
+  let match = (standardExercises as StandardExercise[]).find(
+    (e) => e.id === aiId,
+  );
+  if (match) return match;
+
+  // 2. Normalized name match
+  const normAiName = normalize(aiName);
+  match = (standardExercises as StandardExercise[]).find(
+    (e) => normalize(e.name) === normAiName,
+  );
+  if (match) return match;
+
+  // 3. Alias match
+  match = (standardExercises as StandardExercise[]).find((e) =>
+    (e.aliases ?? []).some((alias) => normalize(alias) === normAiName),
+  );
+  if (match) return match;
+
+  // 4. Partial containment match (AI name contains or is contained by standard name)
+  match = (standardExercises as StandardExercise[]).find(
+    (e) =>
+      normalize(e.name).includes(normAiName) ||
+      normAiName.includes(normalize(e.name)),
+  );
+  return match ?? null;
+}
+
 export default function CreateWorkoutScreen() {
   const [wods, setWods] = useState<WOD[]>([
     {
@@ -196,8 +238,42 @@ export default function CreateWorkoutScreen() {
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const globalState = useGlobalState();
   const { showToast } = useToast();
+
+  const handleVoiceResult = (result: VoiceWorkoutResult) => {
+    const data = result.data as CreateWorkoutData;
+    const filled = data.wods.map((w, i) => ({
+      id: `wod-voice-${i}-${Date.now()}`,
+      name: w.name,
+      exercises: w.exercises.map((ex, j) => {
+        const matched = resolveExercise(ex.exerciseId ?? "", ex.name);
+        return {
+          id: `exercise-voice-${i}-${j}-${Date.now()}`,
+          exerciseId: matched?.id ?? "",
+          name: matched?.name ?? ex.name,
+          instructions: ex.instructions ?? "",
+          trackingType: matched?.trackingType ?? ex.trackingType,
+          unresolved: matched === null,
+        };
+      }),
+    }));
+    setWods(filled);
+    if (data.scheduledFor) setScheduledFor(new Date(data.scheduledFor));
+    if (data.notes) setNotes(data.notes);
+    setVoiceModalVisible(false);
+    const unresolvedCount = filled
+      .flatMap((w) => w.exercises)
+      .filter((ex) => ex.unresolved).length;
+    showToast({
+      type: unresolvedCount > 0 ? "error" : "success",
+      label:
+        unresolvedCount > 0
+          ? `${unresolvedCount} exercise(s) not found — please search manually.`
+          : "Workout filled from voice! Review and save.",
+    });
+  };
   const handleAddWod = () => {
     const newWod: WOD = {
       id: `wod-${Date.now()}`,
@@ -335,7 +411,7 @@ export default function CreateWorkoutScreen() {
                       exerciseId: exercise.id,
                       name: exercise.name,
                       trackingType: exercise.trackingType,
-                      // Keep existing instructions, don't overwrite with description
+                      unresolved: false,
                     }
                   : ex,
               ),
@@ -398,6 +474,10 @@ export default function CreateWorkoutScreen() {
   };
 
   const isValid = () => {
+    const hasUnresolved = wods.some((wod) =>
+      wod.exercises.some((ex) => !ex.removing && ex.unresolved),
+    );
+    if (hasUnresolved) return false;
     return wods.some(
       (wod) =>
         !wod.removing &&
@@ -406,206 +486,237 @@ export default function CreateWorkoutScreen() {
   };
 
   return (
-    <Page
-      title="Create Workout"
-      footer={
-        <Button
-          title={loading ? "Creating..." : "Create Workout"}
-          onPress={handleSave}
-          variant="primary"
-          size="large"
-          fullWidth
-          disabled={!isValid() || loading}
-        />
-      }
-    >
-      <View style={styles.container}>
-        {/* Workout Details */}
-        <View style={styles.detailsSection}>
-          <Text style={[styles.sectionTitle, Typography.headingSmall]}>
-            Workout Details
-          </Text>
-
-          <View style={styles.section}>
-            <Text style={[styles.label, Typography.bodyMedium]}>
-              Scheduled Date
-            </Text>
+    <>
+      <VoiceRecorderModal
+        visible={voiceModalVisible}
+        onClose={() => setVoiceModalVisible(false)}
+        onResult={handleVoiceResult}
+      />
+      <Page
+        title="Create Workout"
+        footer={
+          <View style={styles.footerActions}>
+            <View style={{ flex: 1 }}>
+              <Button
+                title={loading ? "Creating..." : "Create Workout"}
+                onPress={handleSave}
+                variant="primary"
+                size="large"
+                fullWidth
+                disabled={!isValid() || loading}
+              />
+            </View>
             <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowDatePicker(true)}
+              style={styles.voiceFooterButton}
+              onPress={() => setVoiceModalVisible(true)}
+              activeOpacity={0.8}
             >
-              <Text style={styles.dateText}>
-                {scheduledFor.toLocaleDateString("en-US", {
-                  weekday: "short",
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </Text>
+              <Ionicons
+                name="mic-outline"
+                size={22}
+                color={Colors.primary[500]}
+              />
             </TouchableOpacity>
-            {showDatePicker && (
-              <>
-                <DateTimePicker
-                  value={scheduledFor}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  minimumDate={new Date()}
-                  onChange={(event, selectedDate) => {
-                    // On Android, hide immediately after selection
-                    if (Platform.OS === "android") {
-                      setShowDatePicker(false);
-                    }
-                    if (selectedDate) {
-                      setScheduledFor(selectedDate);
-                    }
-                  }}
-                />
-                {/* Done button for iOS */}
-                {Platform.OS === "ios" && (
-                  <TouchableOpacity
-                    style={styles.doneButton}
-                    onPress={() => setShowDatePicker(false)}
-                  >
-                    <Text style={styles.doneButtonText}>Done</Text>
-                  </TouchableOpacity>
-                )}
-              </>
-            )}
           </View>
-        </View>
+        }
+      >
+        <View style={styles.container}>
+          {/* Workout Details */}
+          <View style={styles.detailsSection}>
+            <Text style={[styles.sectionTitle, Typography.headingSmall]}>
+              Workout Details
+            </Text>
 
-        {wods.map((wod, wodIndex) => (
-          <AnimatedWODSection
-            key={wod.id}
-            removing={wod.removing}
-            onRemoveComplete={() => handleWodRemoveComplete(wod.id)}
-          >
-            <View style={styles.wodSection}>
-              {/* WOD Header */}
-              <View style={styles.wodHeader}>
-                <Text style={[styles.wodTitle, Typography.headingMedium]}>
-                  WOD {wodIndex + 1}
+            <View style={styles.section}>
+              <Text style={[styles.label, Typography.bodyMedium]}>
+                Scheduled Date
+              </Text>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <Text style={styles.dateText}>
+                  {scheduledFor.toLocaleDateString("en-US", {
+                    weekday: "short",
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </Text>
-                {wods.filter((w) => !w.removing).length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => handleRemoveWod(wod.id)}
-                    style={styles.removeButton}
-                  >
-                    <Text style={styles.removeButtonText}>Remove</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              </TouchableOpacity>
+              {showDatePicker && (
+                <>
+                  <DateTimePicker
+                    value={scheduledFor}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    minimumDate={new Date()}
+                    onChange={(event, selectedDate) => {
+                      // On Android, hide immediately after selection
+                      if (Platform.OS === "android") {
+                        setShowDatePicker(false);
+                      }
+                      if (selectedDate) {
+                        setScheduledFor(selectedDate);
+                      }
+                    }}
+                  />
+                  {/* Done button for iOS */}
+                  {Platform.OS === "ios" && (
+                    <TouchableOpacity
+                      style={styles.doneButton}
+                      onPress={() => setShowDatePicker(false)}
+                    >
+                      <Text style={styles.doneButtonText}>Done</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </View>
+          </View>
 
-              {/* WOD Name */}
-              <View style={styles.section}>
-                <Text style={[styles.label, Typography.bodyMedium]}>
-                  WOD Name
-                </Text>
-                <Input
-                  placeholder='e.g., "WOD1" or "Fran"'
-                  value={wod.name}
-                  onChangeText={(text) => handleWodNameChange(wod.id, text)}
-                />
-              </View>
+          {wods.map((wod, wodIndex) => (
+            <AnimatedWODSection
+              key={wod.id}
+              removing={wod.removing}
+              onRemoveComplete={() => handleWodRemoveComplete(wod.id)}
+            >
+              <View style={styles.wodSection}>
+                {/* WOD Header */}
+                <View style={styles.wodHeader}>
+                  <Text style={[styles.wodTitle, Typography.headingMedium]}>
+                    WOD {wodIndex + 1}
+                  </Text>
+                  {wods.filter((w) => !w.removing).length > 1 && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveWod(wod.id)}
+                      style={styles.removeButton}
+                    >
+                      <Text style={styles.removeButtonText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
 
-              {/* Exercises */}
-              <View style={styles.exercisesContainer}>
-                <Text style={[styles.sectionTitle, Typography.headingSmall]}>
-                  Exercises
-                </Text>
+                {/* WOD Name */}
+                <View style={styles.section}>
+                  <Text style={[styles.label, Typography.bodyMedium]}>
+                    WOD Name
+                  </Text>
+                  <Input
+                    placeholder='e.g., "WOD1" or "Fran"'
+                    value={wod.name}
+                    onChangeText={(text) => handleWodNameChange(wod.id, text)}
+                  />
+                </View>
 
-                {wod.exercises.map((exercise, exerciseIndex) => (
-                  <AnimatedExerciseSection
-                    key={exercise.id}
-                    removing={exercise.removing}
-                    onRemoveComplete={() =>
-                      handleExerciseRemoveComplete(wod.id, exercise.id)
-                    }
-                  >
-                    <View style={styles.exerciseSection}>
-                      <View style={styles.exerciseHeader}>
-                        <Text
-                          style={[styles.exerciseLabel, Typography.bodyMedium]}
-                        >
-                          Exercise {exerciseIndex + 1}
-                        </Text>
-                        {wod.exercises.filter((ex) => !ex.removing).length >
-                          1 && (
-                          <TouchableOpacity
-                            onPress={() =>
-                              handleRemoveExercise(wod.id, exercise.id)
-                            }
-                            style={styles.removeExerciseButton}
+                {/* Exercises */}
+                <View style={styles.exercisesContainer}>
+                  <Text style={[styles.sectionTitle, Typography.headingSmall]}>
+                    Exercises
+                  </Text>
+
+                  {wod.exercises.map((exercise, exerciseIndex) => (
+                    <AnimatedExerciseSection
+                      key={exercise.id}
+                      removing={exercise.removing}
+                      onRemoveComplete={() =>
+                        handleExerciseRemoveComplete(wod.id, exercise.id)
+                      }
+                    >
+                      <View style={styles.exerciseSection}>
+                        <View style={styles.exerciseHeader}>
+                          <Text
+                            style={[
+                              styles.exerciseLabel,
+                              Typography.bodyMedium,
+                            ]}
                           >
-                            <Text style={styles.removeExerciseText}>×</Text>
-                          </TouchableOpacity>
+                            Exercise {exerciseIndex + 1}
+                          </Text>
+                          {wod.exercises.filter((ex) => !ex.removing).length >
+                            1 && (
+                            <TouchableOpacity
+                              onPress={() =>
+                                handleRemoveExercise(wod.id, exercise.id)
+                              }
+                              style={styles.removeExerciseButton}
+                            >
+                              <Text style={styles.removeExerciseText}>×</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Name</Text>
+                          <ExerciseSearchInput
+                            value={exercise.name}
+                            onSelectExercise={(selectedExercise) =>
+                              handleExerciseSelect(
+                                wod.id,
+                                exercise.id,
+                                selectedExercise,
+                              )
+                            }
+                            placeholder="Search for an exercise"
+                            error={exercise.unresolved}
+                          />
+                          {exercise.unresolved && (
+                            <Text style={styles.exerciseErrorText}>
+                              Exercise not found — please search manually
+                            </Text>
+                          )}
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                          <Text style={styles.inputLabel}>Instructions</Text>
+                          <Input
+                            placeholder="Exercise instructions (e.g., 21-15-9 reps)"
+                            value={exercise.instructions}
+                            onChangeText={(text) =>
+                              handleExerciseChange(
+                                wod.id,
+                                exercise.id,
+                                "instructions",
+                                text,
+                              )
+                            }
+                            multiline
+                          />
+                        </View>
+
+                        {exercise.exerciseId && (
+                          <View style={styles.inputGroup}>
+                            <Text style={styles.inputLabel}>Tracking Type</Text>
+                            <View style={styles.trackingTypeDisplay}>
+                              <Text style={styles.trackingTypeDisplayText}>
+                                {exercise.trackingType.replace("_", " ")}
+                              </Text>
+                            </View>
+                          </View>
                         )}
                       </View>
+                    </AnimatedExerciseSection>
+                  ))}
 
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Name</Text>
-                        <ExerciseSearchInput
-                          value={exercise.name}
-                          onSelectExercise={(selectedExercise) =>
-                            handleExerciseSelect(
-                              wod.id,
-                              exercise.id,
-                              selectedExercise,
-                            )
-                          }
-                          placeholder="Search for an exercise"
-                        />
-                      </View>
-
-                      <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Instructions</Text>
-                        <Input
-                          placeholder="Exercise instructions (e.g., 21-15-9 reps)"
-                          value={exercise.instructions}
-                          onChangeText={(text) =>
-                            handleExerciseChange(
-                              wod.id,
-                              exercise.id,
-                              "instructions",
-                              text,
-                            )
-                          }
-                          multiline
-                        />
-                      </View>
-
-                      {exercise.exerciseId && (
-                        <View style={styles.inputGroup}>
-                          <Text style={styles.inputLabel}>Tracking Type</Text>
-                          <View style={styles.trackingTypeDisplay}>
-                            <Text style={styles.trackingTypeDisplayText}>
-                              {exercise.trackingType.replace("_", " ")}
-                            </Text>
-                          </View>
-                        </View>
-                      )}
-                    </View>
-                  </AnimatedExerciseSection>
-                ))}
-
-                {/* Add Exercise Button */}
-                <TouchableOpacity
-                  style={styles.addButton}
-                  onPress={() => handleAddExercise(wod.id)}
-                >
-                  <Text style={styles.addButtonText}>+ Add Exercise</Text>
-                </TouchableOpacity>
+                  {/* Add Exercise Button */}
+                  <TouchableOpacity
+                    style={styles.addButton}
+                    onPress={() => handleAddExercise(wod.id)}
+                  >
+                    <Text style={styles.addButtonText}>+ Add Exercise</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          </AnimatedWODSection>
-        ))}
+            </AnimatedWODSection>
+          ))}
 
-        {/* Add WOD Button */}
-        <TouchableOpacity style={styles.addWodButton} onPress={handleAddWod}>
-          <Text style={styles.addWodButtonText}>+ Add WOD</Text>
-        </TouchableOpacity>
-      </View>
-    </Page>
+          {/* Add WOD Button */}
+          <TouchableOpacity style={styles.addWodButton} onPress={handleAddWod}>
+            <Text style={styles.addWodButtonText}>+ Add WOD</Text>
+          </TouchableOpacity>
+        </View>
+      </Page>
+    </>
   );
 }
 
@@ -726,6 +837,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
+    marginTop: 16,
   } as ViewStyle,
   trackingTypeContainer: {
     flexDirection: "row",
@@ -768,6 +880,12 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
     textTransform: "capitalize",
   } as TextStyle,
+  exerciseErrorText: {
+    fontSize: 11,
+    color: Colors.error[500],
+    marginTop: 4,
+    fontWeight: "500",
+  } as TextStyle,
   dateButton: {
     backgroundColor: Colors.background.primary,
     borderRadius: 8,
@@ -793,4 +911,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   } as TextStyle,
+  footerActions: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  } as ViewStyle,
+  voiceFooterButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary[500] + "25",
+  } as ViewStyle,
 });
