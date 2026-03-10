@@ -33,14 +33,16 @@ const { width: SCREEN_W } = Dimensions.get("window");
 const PREVIEW_SCALE = Math.min((SCREEN_W - 64) / STICKER_W, 0.75);
 const PREVIEW_W = Math.round(STICKER_W * PREVIEW_SCALE);
 const PREVIEW_H = Math.round(STICKER_H * PREVIEW_SCALE);
-// Offsets that compensate for transform-scale being applied from center
-const PREVIEW_DX = Math.round((STICKER_W * (1 - PREVIEW_SCALE)) / 2);
-const PREVIEW_DY = Math.round((STICKER_H * (1 - PREVIEW_SCALE)) / 2);
+// Translate to anchor scale to the top-left corner
+const SCALE_TX = -((STICKER_W * (1 - PREVIEW_SCALE)) / 2);
+const SCALE_TY = -((STICKER_H * (1 - PREVIEW_SCALE)) / 2);
 
 const CARD_GAP = 20;
 const SNAP_INTERVAL = PREVIEW_W + CARD_GAP;
 // Left / right padding so the first and last cards are centred
 const SIDE_OFFSET = (SCREEN_W - PREVIEW_W) / 2;
+// The sticker root has borderRadius 20 — scale it to match the preview
+const PREVIEW_BORDER_RADIUS = Math.round(20 * PREVIEW_SCALE);
 
 // ─── Variant metadata ──────────────────────────────────────────────────────
 
@@ -236,18 +238,19 @@ export default function PRShareModal({
                     ]}
                   >
                     {/* Clip container — matches the scaled visual area exactly */}
-                    <View style={styles.cardClip}>
+                    <View
+                      style={[
+                        styles.cardClip,
+                        {
+                          borderColor: isSelected ? accent : "transparent",
+                        },
+                      ]}
+                    >
                       <View style={styles.cardScaled}>
                         <PRStickerOverlay variant={v.id} data={data} />
                       </View>
                     </View>
                   </View>
-                  {/* Selected ring */}
-                  {isSelected && (
-                    <View
-                      style={[styles.selectedRing, { borderColor: accent }]}
-                    />
-                  )}
                 </View>
               );
             })}
@@ -401,7 +404,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   cardShadow: {
-    borderRadius: 15,
+    borderRadius: PREVIEW_BORDER_RADIUS,
     shadowOffset: { width: 0, height: 8 },
     shadowRadius: 16,
   },
@@ -410,20 +413,19 @@ const styles = StyleSheet.create({
     width: PREVIEW_W,
     height: PREVIEW_H,
     overflow: "hidden",
-    borderRadius: 15,
-  },
-  /** Negative margins compensate for transform-scale origin at center */
-  cardScaled: {
-    transform: [{ scale: PREVIEW_SCALE }],
-    marginLeft: -PREVIEW_DX,
-    marginTop: -PREVIEW_DY,
-  },
-  /** Glowing border around the active card */
-  selectedRing: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 15,
+    borderRadius: PREVIEW_BORDER_RADIUS,
     borderWidth: 1.5,
-    opacity: 0.5,
+    borderColor: "transparent",
+  },
+  /** Scales sticker from its top-left corner to fit the preview area */
+  cardScaled: {
+    width: STICKER_W,
+    height: STICKER_H,
+    transform: [
+      { translateX: SCALE_TX },
+      { translateY: SCALE_TY },
+      { scale: PREVIEW_SCALE },
+    ],
   },
 
   /* Variant label */

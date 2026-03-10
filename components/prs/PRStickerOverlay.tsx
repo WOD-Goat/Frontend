@@ -477,11 +477,6 @@ function FrostSticker({ data }: { data: PRStickerData }) {
   const { exerciseName, value, unit, improvement, improvementUnit } = data;
   return (
     <View style={fr.root}>
-      {/* Diagonal transparent ribbon */}
-      <View style={fr.ribbon} pointerEvents="none">
-        <Text style={fr.ribbonText}>TRANSPARENT</Text>
-      </View>
-
       {/* Body */}
       <View style={fr.body}>
         <View style={fr.brandMark}>
@@ -520,26 +515,6 @@ const fr = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: 20,
     overflow: "hidden",
-  },
-  ribbon: {
-    position: "absolute",
-    top: 30,
-    right: -40,
-    width: 160,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-    transform: [{ rotate: "45deg" }],
-    alignItems: "center",
-    paddingVertical: 5,
-    zIndex: 10,
-  },
-  ribbonText: {
-    fontFamily: FontFamilies.spartanBold,
-    fontSize: 8,
-    color: "rgba(255,255,255,0.5)",
-    letterSpacing: 2,
   },
   brandMark: {
     flexDirection: "row",
