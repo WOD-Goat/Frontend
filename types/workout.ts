@@ -15,6 +15,7 @@ export interface StandardExercise {
   trackingType: TrackingType;
   description: string;
   muscleGroups: string[];
+  aliases?: string[];
 }
 
 export interface ExerciseData {

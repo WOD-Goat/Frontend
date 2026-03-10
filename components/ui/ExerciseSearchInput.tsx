@@ -12,7 +12,7 @@ import {
     TextStyle,
     TouchableOpacity,
     View,
-    ViewStyle
+    ViewStyle,
 } from "react-native";
 import { BottomSheet } from "./BottomSheet";
 
@@ -20,12 +20,14 @@ interface ExerciseSearchInputProps {
   value: string;
   onSelectExercise: (exercise: StandardExercise) => void;
   placeholder?: string;
+  error?: boolean;
 }
 
 export default function ExerciseSearchInput({
   value,
   onSelectExercise,
   placeholder = "Search for an exercise",
+  error = false,
 }: ExerciseSearchInputProps) {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,7 +71,10 @@ export default function ExerciseSearchInput({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.input} onPress={handleOpenModal}>
+      <TouchableOpacity
+        style={[styles.input, error && styles.inputError]}
+        onPress={handleOpenModal}
+      >
         <Text style={[styles.inputText, !value && styles.placeholderText]}>
           {value || placeholder}
         </Text>
@@ -185,6 +190,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  } as ViewStyle,
+  inputError: {
+    borderColor: Colors.error[500],
+    borderWidth: 2,
   } as ViewStyle,
   inputText: {
     fontSize: FontSizes.bodyMD,
