@@ -31,7 +31,7 @@ export default function OnboardingScreen() {
       image: mascotAssets.coach,
       title: "Meet WODGoat",
       subtitle:
-        "Your personal AI gym buddy, here to track every WOD, PR, and push you to your best.",
+        "Your personal AI Fitness Buddy, here to track every WOD, PR, and push you to your best.",
     },
     {
       image: mascotAssets.track,

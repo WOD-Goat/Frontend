@@ -164,14 +164,14 @@ export function VoiceRecorderModal({
     if (recordingState === "recording") {
       pulseScale.value = withRepeat(
         withSequence(
-          withTiming(1.7, { duration: 950, easing: Easing.out(Easing.ease) }),
-          withTiming(1, { duration: 950, easing: Easing.in(Easing.ease) }),
+          withTiming(1.7, { duration: 1200, easing: Easing.in(Easing.ease) }),
+          withTiming(1, { duration: 950, easing: Easing.out(Easing.ease) }),
         ),
         -1,
       );
       pulseOpacity.value = withRepeat(
         withSequence(
-          withTiming(0.28, { duration: 950 }),
+          withTiming(0.28, { duration: 1200 }),
           withTiming(0, { duration: 950 }),
         ),
         -1,
@@ -189,7 +189,12 @@ export function VoiceRecorderModal({
       handleClose();
     }
   }, [recordingState, result]);
-
+  // Stop recording automatically at 1:00 (60 seconds)
+  useEffect(() => {
+    if (recordingState === "recording" && elapsedSeconds >= 60) {
+      stopAndProcess();
+    }
+  }, [recordingState, elapsedSeconds]);
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
     opacity: pulseOpacity.value,
@@ -276,7 +281,9 @@ export function VoiceRecorderModal({
               </TouchableOpacity>
 
               {isRecording && (
-                <Text style={styles.timer}>{formatTime(elapsedSeconds)}</Text>
+                <Text
+                  style={styles.timer}
+                >{`${formatTime(elapsedSeconds)}/1:00`}</Text>
               )}
 
               <Text style={styles.statusText}>
@@ -390,8 +397,9 @@ const styles = StyleSheet.create({
   },
   pulseRing: {
     position: "absolute",
-    width: 100,
-    height: 100,
+    top: 50,
+    width: 70,
+    height: 70,
     borderRadius: 50,
     backgroundColor: Colors.primary[500],
   },
