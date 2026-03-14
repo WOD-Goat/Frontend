@@ -26,4 +26,5 @@ export const API_ENDPOINTS = {
     UPDATE: (id: string) => `/api/personal-records/${id}`,
     DELETE: (id: string) => `/api/personal-records/${id}`,
   },
+
 } as const;

@@ -45,6 +45,7 @@ export const icons = {
   trophy: require("./trophy.png"),
   groups: require("./group.png"),
   groupsSelected: require("./group-selected.png"),
+  add: require("./add.png"),
 };
 
 // Export all images as a single object for convenience
