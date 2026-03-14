@@ -8,18 +8,18 @@ export default function WorkoutHeader() {
   const handleAddWorkout = () => {
     router.push("/workout/create");
   };
-    const handleGroupWorkoutPress = () => {
-    router.push("/groups");
-  };
+  //   const handleGroupWorkoutPress = () => {
+  //   router.push("/groups");
+  // };
 
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
         <Text style={styles.title}>Workouts</Text>
         <View style={{ flexDirection: "row", gap: 16 }}>
-          <Pressable onPress={handleGroupWorkoutPress}>
+          {/* <Pressable onPress={handleGroupWorkoutPress}>
             <Image source={icons.groups} style={{ width: 28, height: 28 }} />
-          </Pressable>
+          </Pressable> */}
           <Pressable onPress={handleAddWorkout}>
             <Image source={icons.add} style={{ width: 28, height: 28 }} />
           </Pressable>
