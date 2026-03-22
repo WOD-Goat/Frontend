@@ -41,7 +41,7 @@ export default function OnboardingScreen() {
     {
       image: mascotAssets.help,
       title: "AI Guidance Anytime",
-      subtitle: "Record PRs with your voice, ask questions, and get AI tips with WODGoat A",
+        subtitle: "Log PRs hands-free and get workout guidance using WODGoat AI voice integration.",
     },
   ];
 

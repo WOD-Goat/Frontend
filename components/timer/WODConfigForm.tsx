@@ -5,6 +5,7 @@
 // The form calls `onConfirm(config)` which bubbles to the screen.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import { FontSizes } from "@/constants";
 import { Colors } from "@/constants/Colors";
 import type {
     AMRAPConfig,
@@ -675,13 +676,13 @@ const s = StyleSheet.create({
   },
   stepperLabel: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 15,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
     letterSpacing: 0.3,
   },
   stepperUnit: {
     fontFamily: "Poppins-Regular",
-    fontSize: 12,
+    fontSize: FontSizes.bodySM,
     color: Colors.neutral[500],
     marginLeft: 6,
   },
@@ -714,7 +715,7 @@ const s = StyleSheet.create({
     textAlign: "center",
     color: "#FFFFFF",
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 20,
+    fontSize: FontSizes.bodyMD,
   },
 
   /* ── Custom Block Card ── */
@@ -743,7 +744,7 @@ const s = StyleSheet.create({
   },
   blockBadgeText: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 14,
+    fontSize: FontSizes.bodySM,
     color: "#FFF",
   },
   blockLabelInput: {
@@ -754,7 +755,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     color: Colors.text.primary,
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 15,
+    fontSize: FontSizes.bodyMD,
   },
   blockRemoveBtn: {
     padding: 4,
@@ -787,7 +788,7 @@ const s = StyleSheet.create({
   },
   phaseBtnText: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 13,
+    fontSize: FontSizes.bodySM,
     color: Colors.neutral[500],
   },
   phaseBtnTextActive: {
@@ -809,7 +810,7 @@ const s = StyleSheet.create({
   },
   addBlockText: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 15,
+    fontSize: FontSizes.bodyMD,
     color: Colors.primary[500],
   },
 });

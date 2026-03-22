@@ -3,13 +3,13 @@ import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-    Dimensions,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -42,19 +42,19 @@ const defaultBanners: Banner[] = [
   },
   {
     id: "2",
-    image: mascotAssets.coach,
-    title: "Ask WODGoat AI",
-    subtitle:
-      "From WOD strategy to recovery advice, your AI fitness expert is ready.",
-    iconName: "chatbubble-ellipses",
-    accentColor: Colors.primary[500],
-  },
-  {
-    id: "3",
     image: mascotAssets.track,
     title: "Track your WODs",
     subtitle: "Log every workout, track your PRs, and measure real progress.",
     iconName: "analytics",
+    accentColor: Colors.primary[500],
+  },
+  {
+    id: "3",
+    image: mascotAssets.whistle,
+    title: "Workout Timer",
+    subtitle:
+      "Use interval and countdown timers to optimize your training sessions.",
+    iconName: "timer-outline",
     accentColor: Colors.primary[500],
   },
 ];
