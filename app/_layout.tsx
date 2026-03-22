@@ -2,6 +2,7 @@ import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
@@ -9,7 +10,7 @@ import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
-import "../config/firebase"; //
+import { auth } from "../config/firebase";
 import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
@@ -82,6 +83,21 @@ export default function RootLayout() {
             console.log(
               "✅ Layout: Refresh token valid, access token refreshed",
             );
+
+            // Check Firebase email verification status
+            const firebaseUser = await new Promise<any>((resolve) => {
+              const unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe();
+                resolve(user);
+              });
+            });
+            if (firebaseUser && !firebaseUser.emailVerified) {
+              console.log("⚠️ Layout: Email not verified, logging out");
+              await apiClient.clearTokens();
+              setIsAuthenticated(false);
+              setAuthChecked(true);
+              return;
+            }
 
             // Load user data from storage and set in global state
             const userData = await getStorage("user");

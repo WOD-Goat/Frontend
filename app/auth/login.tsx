@@ -1,7 +1,9 @@
 import { Button, Input, Page } from "@/components";
+import { auth } from "@/config/firebase";
 import { Colors, FontFamilies, FontSizes, Typography } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -75,7 +77,18 @@ export default function LoginScreen() {
     console.log('📱 LoginScreen: Login result:', success);
 
     if (success) {
-      console.log('📱 LoginScreen: Login successful, navigating to tabs');
+      console.log('📱 LoginScreen: Login successful, checking email verification');
+      try {
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+        if (!credential.user.emailVerified) {
+          console.log('📱 LoginScreen: Email not verified, redirecting to verify screen');
+          router.push("/auth/signup/verify");
+          return;
+        }
+      } catch (firebaseError) {
+        console.log('📱 LoginScreen: Firebase sign-in failed, proceeding to tabs anyway', firebaseError);
+      }
+      console.log('📱 LoginScreen: Email verified, navigating to tabs');
       router.replace("/(tabs)");
     } else {
       console.log('📱 LoginScreen: Login failed, error:', error);
@@ -84,8 +97,7 @@ export default function LoginScreen() {
   };
 
   const handleForgotPassword = () => {
-    // Handle forgot password logic
-    console.log("Forgot password pressed");
+    router.push("/auth/forgot-password");
   };
 
   const handleRegister = () => {
