@@ -9,20 +9,21 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wodgoat",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#242426"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.yahiaanas.wodgoat"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "package": "com.wodgoat"
     },
     "plugins": [
       "expo-router",
@@ -37,7 +38,7 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/logo.png",
-          "imageWidth": 200,
+          "imageWidth": 300,
           "contentFit": "contain",
           "backgroundColor": "#242426"
         }
