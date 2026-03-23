@@ -1,6 +1,6 @@
 import { personalRecordsService } from "@/api/services";
 import { Gap, Page, PRHeader, PRsSkeleton } from "@/components";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -264,7 +264,7 @@ export default function PRsScreen() {
           <View style={styles.emptyIconContainer}>
             <Ionicons
               name="trophy-outline"
-              size={56}
+              size={responsiveSize(56)}
               color={Colors.primary[500]}
             />
           </View>
@@ -288,7 +288,7 @@ export default function PRsScreen() {
       >
         <Ionicons
           name="search"
-          size={18}
+          size={responsiveSize(18)}
           color={Colors.text.tertiary}
           style={styles.searchIcon}
         />
@@ -316,7 +316,7 @@ export default function PRsScreen() {
               { backgroundColor: Colors.primary[500] + "20" },
             ]}
           >
-            <Ionicons name="trophy" size={18} color={Colors.primary[500]} />
+            <Ionicons name="trophy" size={responsiveSize(18)} color={Colors.primary[500]} />
           </View>
           <Text style={styles.statValue}>{stats.totalPRs}</Text>
           <Text style={styles.statLabel}>Total PRs</Text>
@@ -330,7 +330,7 @@ export default function PRsScreen() {
           >
             <Ionicons
               name="trending-up"
-              size={18}
+              size={responsiveSize(18)}
               color={Colors.success[500]}
             />
           </View>
@@ -346,7 +346,7 @@ export default function PRsScreen() {
           >
             <Ionicons
               name="flame"
-              size={18}
+              size={responsiveSize(18)}
               color={Colors.fitness.flexibility}
             />
           </View>
@@ -365,7 +365,7 @@ export default function PRsScreen() {
         <View style={styles.centerContainer}>
           <Ionicons
             name="search-outline"
-            size={48}
+            size={responsiveSize(48)}
             color={Colors.text.tertiary}
           />
           <Gap size={12} />
@@ -380,7 +380,7 @@ export default function PRsScreen() {
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
               >
-                <Ionicons name="star" size={18} color={Colors.primary[500]} />
+                <Ionicons name="star" size={responsiveSize(18)} color={Colors.primary[500]} />
                 <Text style={styles.sectionTitle}>Latest Record</Text>
               </View>
               <Gap size={10} />
@@ -411,7 +411,7 @@ export default function PRsScreen() {
                                 getExerciseInfo(bestPR.exerciseId)
                                   .icon as keyof typeof Ionicons.glyphMap
                               }
-                              size={14}
+                              size={responsiveSize(14)}
                               color={getExerciseInfo(bestPR.exerciseId).color}
                             />
                           </View>
@@ -422,7 +422,7 @@ export default function PRsScreen() {
                         <View style={styles.heroDateRow}>
                           <Ionicons
                             name="calendar-outline"
-                            size={12}
+                            size={responsiveSize(12)}
                             color={Colors.text.secondary}
                           />
                           <Text style={styles.heroDate}>
@@ -456,7 +456,7 @@ export default function PRsScreen() {
                         <View style={styles.heroImprovementPill}>
                           <Ionicons
                             name="arrow-up"
-                            size={12}
+                            size={responsiveSize(12)}
                             color={Colors.success[500]}
                           />
                           <Text style={styles.heroImprovementText}>
@@ -475,7 +475,7 @@ export default function PRsScreen() {
                   <View style={styles.heroChevron}>
                     <Ionicons
                       name="chevron-forward"
-                      size={20}
+                      size={responsiveSize(20)}
                       color={Colors.primary[400]}
                     />
                   </View>
@@ -491,7 +491,7 @@ export default function PRsScreen() {
               <View
                 style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
               >
-                <Ionicons name="list" size={16} color={Colors.text.secondary} />
+                <Ionicons name="list" size={responsiveSize(16)} color={Colors.text.secondary} />
                 <Text style={styles.sectionTitle}>All Records</Text>
               </View>
               <Gap size={10} />
@@ -522,7 +522,7 @@ export default function PRsScreen() {
                         >
                           <Ionicons
                             name={info.icon as keyof typeof Ionicons.glyphMap}
-                            size={20}
+                            size={responsiveSize(20)}
                             color={info.color}
                           />
                         </View>
@@ -534,7 +534,7 @@ export default function PRsScreen() {
                           <View style={styles.cardMeta}>
                             <Ionicons
                               name="calendar-outline"
-                              size={11}
+                              size={responsiveSize(11)}
                               color={Colors.text.secondary}
                             />
                             <Text style={styles.cardDate}>
@@ -546,7 +546,7 @@ export default function PRsScreen() {
                               <View style={styles.cardImprovementPill}>
                                 <Ionicons
                                   name="arrow-up"
-                                  size={10}
+                                  size={responsiveSize(10)}
                                   color={Colors.success[500]}
                                 />
                                 <Text style={styles.cardImprovementText}>
@@ -575,7 +575,7 @@ export default function PRsScreen() {
                         <View style={styles.cardChevron}>
                           <Ionicons
                             name="chevron-forward"
-                            size={18}
+                            size={responsiveSize(18)}
                             color={Colors.neutral[600]}
                           />
                         </View>
@@ -599,7 +599,7 @@ export default function PRsScreen() {
               >
                 <Ionicons
                   name="chevron-down"
-                  size={16}
+                  size={responsiveSize(16)}
                   color={Colors.primary[500]}
                 />
                 <Text style={styles.loadMoreText}>Load More</Text>
@@ -851,7 +851,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   cardImprovementText: {
-    fontSize: 10,
+    fontSize: responsiveSize(10),
     fontFamily: FontFamilies.spartanBold,
     color: Colors.success[500],
   },

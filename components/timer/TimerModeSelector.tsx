@@ -3,6 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Colors } from "@/constants/Colors";
+import { responsiveSize } from "@/constants/Typography";
 import type { WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
@@ -86,7 +87,7 @@ export const TimerModeSelector = memo(function TimerModeSelector({
             >
               <Ionicons
                 name={m.icon}
-                size={20}
+                size={responsiveSize(20)}
                 color={isActive ? "#FFF" : Colors.neutral[500]}
               />
             </View>
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
   /* Text */
   label: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 15,
+    fontSize: responsiveSize(15),
     color: Colors.text.primary,
     letterSpacing: 0.3,
     marginBottom: 2,
@@ -157,9 +158,9 @@ const styles = StyleSheet.create({
   },
   desc: {
     fontFamily: "Poppins-Regular",
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: Colors.neutral[500],
-    lineHeight: 15,
+    lineHeight: responsiveSize(15),
   },
   descActive: {
     color: Colors.primary[300],

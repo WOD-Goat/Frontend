@@ -1,5 +1,5 @@
 import { Button } from "@/components";
-import { Colors, Typography } from "@/constants";
+import { Colors, Typography, responsiveSize } from "@/constants";
 import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: Colors.text.primary,
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     fontWeight: "bold",
     textAlign: "center",
   },

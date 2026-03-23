@@ -11,7 +11,8 @@
 // The flashing background replaces the entire screen BG — not just text.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { TimerPhase, TimerTheme } from "@/lib/timer/types";
+import { responsiveSize } from "@/constants";
+import type { TimerTheme } from "@/lib/timer/types";
 import { memo } from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 
@@ -20,13 +21,11 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface TimerDisplayProps {
-  phase: TimerPhase;
   primaryTime: string; // "MM:SS"
   intervalTime: string | null; // "MM:SS" or null
   label: string;
   currentRound: number;
   totalRounds: number | undefined;
-  isFinalMinute: boolean;
   isComplete: boolean;
   // Theme is owned by the screen so the bg covers the full viewport
   theme: TimerTheme;
@@ -109,7 +108,7 @@ const styles = StyleSheet.create({
 
   phaseLabel: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 28,
+    fontSize: responsiveSize(28),
     letterSpacing: 6,
     textTransform: "uppercase",
     marginBottom: 8,
@@ -118,9 +117,9 @@ const styles = StyleSheet.create({
   // Target: readable from 5+ meters. 128pt at full size on a 390pt-wide screen.
   primaryTime: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 128,
+    fontSize: responsiveSize(128),
     letterSpacing: -4,
-    lineHeight: 130,
+    lineHeight: responsiveSize(130),
     textAlign: "center",
     width: SCREEN_WIDTH - 32,
   },
@@ -134,15 +133,15 @@ const styles = StyleSheet.create({
 
   intervalLabel: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 16,
+    fontSize: responsiveSize(16),
     letterSpacing: 3,
   },
 
   intervalTime: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 64,
+    fontSize: responsiveSize(64),
     letterSpacing: -2,
-    lineHeight: 68,
+    lineHeight: responsiveSize(68),
   },
 
   roundBadge: {
@@ -155,13 +154,13 @@ const styles = StyleSheet.create({
 
   roundText: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 20,
+    fontSize: responsiveSize(20),
     letterSpacing: 3,
   },
 
   completeText: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: 48,
+    fontSize: responsiveSize(48),
     letterSpacing: 8,
     marginTop: 24,
   },

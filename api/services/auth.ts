@@ -8,6 +8,7 @@ import type {
   RegisterUserData,
   User,
 } from "@/types/auth";
+import { Alert } from "react-native";
 
 export const authService = {
   /**
@@ -33,6 +34,7 @@ export const authService = {
       return registerResponse;
     } catch (error) {
       console.error("🔐 AuthService: Register error:", error);
+      Alert.alert("Registration Failed", error instanceof Error ? error.message : "Registration failed. Please try again.");
       throw error;
     }
   },

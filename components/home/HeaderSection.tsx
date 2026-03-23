@@ -1,5 +1,5 @@
 import images from "@/assets/images";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -96,6 +96,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.heading2XL,
     color: Colors.text.inverse,
     marginBottom: 4,
+    lineHeight: 28,
   },
   motivation: {
     fontFamily: FontFamilies.spartanMedium,
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
   },
   streakLabel: {
     fontFamily: FontFamilies.poppinsRegular,
-    fontSize: 10,
+    fontSize: responsiveSize(10),
     color: Colors.text.secondary,
     marginTop: -2,
   },

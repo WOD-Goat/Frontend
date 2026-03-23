@@ -1,6 +1,6 @@
 import { Button, Input, Page } from "@/components";
 import { auth } from "@/config/firebase";
-import { Colors, FontFamilies, FontSizes, Typography } from "@/constants";
+import { Colors, FontFamilies, FontSizes, Typography, responsiveSize } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: Colors.error[500],
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     marginTop: 4,
   },
   backContainer: {

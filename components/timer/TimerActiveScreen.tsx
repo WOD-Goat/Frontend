@@ -11,6 +11,7 @@
 
 import { useTimer } from "@/lib/timer/hooks/useTimer";
 import { useTimerTheme } from "@/lib/timer/hooks/useTimerTheme";
+import { responsiveSize } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect } from "react";
@@ -92,7 +93,7 @@ export default function TimerActiveScreen() {
         <View style={styles.headerRight}>
           {!timer.isRunning && !timer.isComplete && (
             <TouchableOpacity style={styles.changeMode} onPress={handleStop}>
-              <Ionicons name="close" size={18} color="#f00" />
+              <Ionicons name="close" size={responsiveSize(18)} color="#f00" />
               <Text style={styles.changeModeText}> Discard</Text>
             </TouchableOpacity>
           )}
@@ -101,13 +102,11 @@ export default function TimerActiveScreen() {
 
       {/* Clock face */}
       <TimerDisplay
-        phase={timer.phase}
         primaryTime={timer.primaryTime}
         intervalTime={timer.intervalTime}
         label={timer.label}
         currentRound={timer.currentRound}
         totalRounds={timer.totalRounds}
-        isFinalMinute={timer.isFinalMinute}
         isComplete={timer.isComplete}
         theme={theme}
       />
@@ -152,7 +151,7 @@ const styles = StyleSheet.create({
   },
   changeModeText: {
     fontFamily: "LeagueSpartan-SemiBold",
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     color: "#f00",
   },
 });

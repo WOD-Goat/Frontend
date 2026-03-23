@@ -1,5 +1,5 @@
 import { appIcons } from "@/assets/images";
-import { FontFamilies } from "@/constants";
+import { FontFamilies, responsiveSize } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
 
@@ -47,7 +47,7 @@ function BlazeSticker({ data }: { data: PRStickerData }) {
       <View style={b.content}>
         <View style={b.badgeRow}>
           <View style={b.badge}>
-            <Ionicons name="trophy" size={13} color="#1C1C1C" />
+            <Ionicons name="trophy" size={responsiveSize(13)} color="#1C1C1C" />
             <Text style={b.badgeText}>NEW PERSONAL RECORD</Text>
           </View>
         </View>
@@ -69,7 +69,7 @@ function BlazeSticker({ data }: { data: PRStickerData }) {
         </View>
         {improvement !== null && improvement > 0 && (
           <View style={b.improvBadge}>
-            <Ionicons name="arrow-up" size={13} color="#34C759" />
+            <Ionicons name="arrow-up" size={responsiveSize(13)} color="#34C759" />
             <Text style={b.improvText}>
               +{improvement} {improvementUnit} IMPROVEMENT
             </Text>
@@ -144,7 +144,7 @@ const b = StyleSheet.create({
   },
   badgeText: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: "#1C1C1C",
     letterSpacing: 1.2,
   },
@@ -157,10 +157,10 @@ const b = StyleSheet.create({
   },
   exerciseName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 20,
+    fontSize: responsiveSize(20),
     color: "#E6EDF3",
     letterSpacing: 1,
-    lineHeight: 24,
+    lineHeight: responsiveSize(24),
     marginBottom: 10,
   },
   valueBlock: {
@@ -170,15 +170,15 @@ const b = StyleSheet.create({
   },
   value: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 68,
+    fontSize: responsiveSize(68),
     color: "#FF6B2C",
-    lineHeight: 68,
+    lineHeight: responsiveSize(68),
     letterSpacing: -2,
     includeFontPadding: false,
   },
   unit: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 22,
+    fontSize: responsiveSize(22),
     color: "#FF9A6C",
     marginBottom: 6,
     marginLeft: 8,
@@ -198,7 +198,7 @@ const b = StyleSheet.create({
   },
   improvText: {
     fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     color: "#34C759",
     letterSpacing: 0.5,
   },
@@ -211,7 +211,7 @@ const b = StyleSheet.create({
   brandMarkLogo: { width: 22, height: 22 },
   brandMarkName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 13,
+    fontSize: responsiveSize(13),
     color: "#E6EDF3",
     letterSpacing: 0,
   },
@@ -231,7 +231,7 @@ function GoldSticker({ data }: { data: PRStickerData }) {
 
       {/* ── Centered body ── */}
       <View style={g.center}>
-        <Ionicons name="trophy" size={46} color="#FF6B2C" />
+        <Ionicons name="trophy" size={responsiveSize(46)} color="#FF6B2C" />
         <Text style={g.newPrText}>NEW PERSONAL RECORD</Text>
         <View style={g.brandMark}>
           <Image
@@ -249,7 +249,7 @@ function GoldSticker({ data }: { data: PRStickerData }) {
         <Text style={g.unit}>{unit}</Text>
         {improvement !== null && improvement > 0 && (
           <View style={g.improvBadge}>
-            <Ionicons name="arrow-up" size={13} color="#34C759" />
+            <Ionicons name="arrow-up" size={responsiveSize(13)} color="#34C759" />
             <Text style={g.improvText}>
               +{improvement} {improvementUnit} IMPROVEMENT
             </Text>
@@ -301,7 +301,7 @@ const g = StyleSheet.create({
   brandMarkLogo: { width: 22, height: 22 },
   brandMarkName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 13,
+    fontSize: responsiveSize(13),
     color: "#FF6B2C",
     letterSpacing: 0,
   },
@@ -313,19 +313,19 @@ const g = StyleSheet.create({
   },
   newPrText: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: "#FF6B2C",
     letterSpacing: 2.5,
     marginTop: 6,
   },
   exerciseName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     color: "#F0E0D6",
     letterSpacing: 0.5,
     textAlign: "center",
     marginTop: 4,
-    lineHeight: 22,
+    lineHeight: responsiveSize(22),
   },
   centerDivider: {
     height: 1,
@@ -335,15 +335,15 @@ const g = StyleSheet.create({
   },
   value: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 72,
+    fontSize: responsiveSize(72),
     color: "#FFFFFF",
     letterSpacing: -2,
-    lineHeight: 72,
+    lineHeight: responsiveSize(72),
     includeFontPadding: false,
   },
   unit: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 20,
+    fontSize: responsiveSize(20),
     color: "#FF6B2C",
     letterSpacing: 2,
     marginTop: 2,
@@ -362,7 +362,7 @@ const g = StyleSheet.create({
   },
   improvText: {
     fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: "#34C759",
   },
   bottomBar: { height: 4, backgroundColor: "#FF6B2C" },
@@ -385,7 +385,7 @@ const v = StyleSheet.create({
   },
   bannerText: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: "#FFFFFF",
     letterSpacing: 2.5,
   },
@@ -397,10 +397,10 @@ const v = StyleSheet.create({
   },
   exerciseName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 28,
+    fontSize: responsiveSize(28),
     color: "#E6E0F8",
     letterSpacing: 0.5,
-    lineHeight: 32,
+    lineHeight: responsiveSize(32),
     marginBottom: 16,
   },
   divider: {
@@ -416,15 +416,15 @@ const v = StyleSheet.create({
   statsLeft: {},
   value: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 80,
+    fontSize: responsiveSize(80),
     color: "#9B5CFF",
-    lineHeight: 80,
+    lineHeight: responsiveSize(80),
     letterSpacing: -2,
     includeFontPadding: false,
   },
   unit: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 22,
+    fontSize: responsiveSize(22),
     color: "#C49EFF",
     letterSpacing: 1,
     marginTop: 2,
@@ -443,13 +443,13 @@ const v = StyleSheet.create({
   },
   improvText: {
     fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     color: "#34C759",
   },
   dateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   dateText: {
     fontFamily: FontFamilies.poppinsRegular,
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: "#8E88A0",
   },
   bottomBrand: { paddingHorizontal: 28, paddingBottom: 22 },
@@ -462,7 +462,7 @@ const v = StyleSheet.create({
   logo: { width: 22, height: 22 },
   brandName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 17,
+    fontSize: responsiveSize(17),
     color: "#9B5CFF",
     letterSpacing: 6,
     opacity: 0.9,
@@ -497,7 +497,7 @@ function FrostSticker({ data }: { data: PRStickerData }) {
         </View>
         {improvement !== null && improvement > 0 && (
           <View style={fr.improvBadge}>
-            <Ionicons name="arrow-up" size={12} color="rgba(255,255,255,0.9)" />
+            <Ionicons name="arrow-up" size={responsiveSize(12)} color="rgba(255,255,255,0.9)" />
             <Text style={fr.improvText}>
               +{improvement} {improvementUnit}
             </Text>
@@ -525,7 +525,7 @@ const fr = StyleSheet.create({
   brandMarkLogo: { width: 22, height: 22 },
   brandMarkName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 13,
+    fontSize: responsiveSize(13),
     color: "rgba(255,255,255,0.95)",
     letterSpacing: 0,
   },
@@ -537,14 +537,14 @@ const fr = StyleSheet.create({
   },
   label: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 10,
+    fontSize: responsiveSize(10),
     color: "rgba(255,255,255,0.65)",
     letterSpacing: 2.5,
     marginBottom: 6,
   },
   exerciseName: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 20,
+    fontSize: responsiveSize(20),
     color: "rgba(255,255,255,0.92)",
     letterSpacing: 0.5,
     textAlign: "center",
@@ -559,15 +559,15 @@ const fr = StyleSheet.create({
   },
   value: {
     fontFamily: FontFamilies.spartanBlack,
-    fontSize: 76,
+    fontSize: responsiveSize(76),
     color: "rgba(255,255,255,0.95)",
-    lineHeight: 76,
+    lineHeight: responsiveSize(76),
     letterSpacing: -3,
     includeFontPadding: false,
   },
   unit: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 20,
+    fontSize: responsiveSize(20),
     color: "rgba(255,255,255,0.75)",
     marginBottom: 8,
     letterSpacing: 1,
@@ -584,7 +584,7 @@ const fr = StyleSheet.create({
   },
   improvText: {
     fontFamily: FontFamilies.spartanSemiBold,
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     color: "rgba(255,255,255,0.9)",
     letterSpacing: 0.5,
   },

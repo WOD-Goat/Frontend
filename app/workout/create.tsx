@@ -2,7 +2,7 @@ import { authService, workoutsService } from "@/api/services";
 import { Button, ExerciseSearchInput, Input, Page } from "@/components";
 import { VoiceRecorderModal } from "@/components/ai";
 import { storage, useGlobalState, useToast } from "@/components/lib";
-import { Colors, Typography } from "@/constants";
+import { Colors, Typography, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import type { VoiceWorkoutResult } from "@/lib/ai/useVoiceWorkout";
 import type {
@@ -513,7 +513,7 @@ export default function CreateWorkoutScreen() {
             >
               <Ionicons
                 name="mic-outline"
-                size={22}
+                size={responsiveSize(22)}
                 color={Colors.primary[500]}
               />
             </TouchableOpacity>
@@ -748,7 +748,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   removeButtonText: {
     color: "#FFFFFF",
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     fontWeight: "600",
   } as TextStyle,
   section: {
@@ -793,16 +793,16 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   removeExerciseText: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     fontWeight: "bold",
-    lineHeight: 20,
+    lineHeight: responsiveSize(20),
   } as TextStyle,
   inputGroup: {
     marginBottom: 12,
   } as ViewStyle,
   inputLabel: {
     color: Colors.text.secondary,
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     marginBottom: 4,
     fontWeight: "500",
   } as TextStyle,
@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   addButtonText: {
     color: Colors.primary[500],
-    fontSize: 14,
+    fontSize: responsiveSize(14),
     fontWeight: "600",
   } as TextStyle,
   addWodButton: {
@@ -829,7 +829,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   addWodButtonText: {
     color: Colors.text.primary,
-    fontSize: 16,
+    fontSize: responsiveSize(16),
     fontWeight: "700",
   } as TextStyle,
   detailsSection: {
@@ -857,7 +857,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary[500],
   } as ViewStyle,
   trackingTypeText: {
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     fontWeight: "600",
     color: Colors.text.secondary,
     textTransform: "capitalize",
@@ -875,13 +875,13 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   } as ViewStyle,
   trackingTypeDisplayText: {
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     fontWeight: "600",
     color: Colors.primary[500],
     textTransform: "capitalize",
   } as TextStyle,
   exerciseErrorText: {
-    fontSize: 11,
+    fontSize: responsiveSize(11),
     color: Colors.error[500],
     marginTop: 4,
     fontWeight: "500",
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   dateText: {
     color: Colors.text.primary,
-    fontSize: 16,
+    fontSize: responsiveSize(16),
   } as TextStyle,
   doneButton: {
     backgroundColor: Colors.primary[500],
@@ -908,7 +908,7 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   doneButtonText: {
     color: Colors.text.primary,
-    fontSize: 16,
+    fontSize: responsiveSize(16),
     fontWeight: "600",
   } as TextStyle,
   footerActions: {

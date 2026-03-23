@@ -7,7 +7,7 @@
 
 import { Gap } from "@/components";
 import Page from "@/components/ui/Page";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useTimer } from "@/lib/timer/hooks/useTimer";
 import type { WODConfig, WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
@@ -59,7 +59,7 @@ export default function TimerSetupScreen() {
       <View style={styles.sectionHeader}>
         <Ionicons
           name="settings-outline"
-          size={16}
+          size={responsiveSize(16)}
           color={Colors.neutral[500]}
         />
         <Text style={styles.sectionLabel}>SETTINGS</Text>
@@ -85,7 +85,7 @@ export default function TimerSetupScreen() {
       >
         <Ionicons
           name="play"
-          size={22}
+          size={responsiveSize(22)}
           color="#FFF"
           style={{ marginRight: 8 }}
         />
@@ -110,6 +110,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
     marginBottom: 4,
+    lineHeight: 28,
   },
   headerSubtitle: {
     fontFamily: FontFamilies.spartanMedium,
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     color: Colors.neutral[500],
     letterSpacing: 2.5,
   },
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   },
   confirmLabel: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     color: "#FFFFFF",
     letterSpacing: 3,
   },
