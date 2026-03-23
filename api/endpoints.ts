@@ -27,4 +27,8 @@ export const API_ENDPOINTS = {
     DELETE: (id: string) => `/api/personal-records/${id}`,
   },
 
+  NOTIFICATIONS: {
+    REGISTER_TOKEN: "/api/notifications/token",
+    DELETE_TOKEN: "/api/notifications/token",
+  },
 } as const;

@@ -8,9 +8,11 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
 import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
+import { useZustandGlobalState } from "../components/lib/global-state/useGlobalState";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
 import { auth } from "../config/firebase";
+import { useNotifications } from "../hooks/useNotifications";
 import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
@@ -22,6 +24,14 @@ export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { get: getStorage } = useStorage();
   const globalState = useGlobalState();
+  const user = useZustandGlobalState((state) => state.user);
+  const { registerForPushNotifications } = useNotifications();
+
+  useEffect(() => {
+    if (user?.uid) {
+      registerForPushNotifications(user.uid);
+    }
+  }, [user?.uid, registerForPushNotifications]);
 
   const [loaded, error] = useFonts({
     // League Spartan fonts

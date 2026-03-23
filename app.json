@@ -13,7 +13,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.wodgoat",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserNotificationUsageDescription": "WODGoat would like to send you push notifications for workout reminders, personal record milestones, and important fitness updates."
       }
     },
     "android": {
@@ -47,7 +48,16 @@
       "expo-asset",
       "expo-font",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "iosDisplayInForeground": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
