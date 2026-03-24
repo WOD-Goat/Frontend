@@ -337,7 +337,7 @@ export default function WorkoutResultsScreen() {
           globalState.set("user", res.user);
         });
         router.dismissAll();
-        router.replace("/(tabs)/workouts");
+        router.replace("/(tabs)/");
         showToast({
           type: "success",
           label: "Workout results submitted successfully!",

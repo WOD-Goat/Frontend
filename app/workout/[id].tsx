@@ -164,7 +164,7 @@ export default function WorkoutDetailScreen() {
 
               if (response.success) {
                 router.dismissAll();
-                router.replace("/(tabs)/workouts");
+                router.replace("/(tabs)/");
                 showToast({
                   type: "success",
                   label: "Workout deleted successfully!",
@@ -210,7 +210,7 @@ export default function WorkoutDetailScreen() {
       if (response.success) {
         setIsEditingResults(false);
         router.dismissAll();
-        router.replace("/(tabs)/workouts");
+        router.replace("/(tabs)/");
         showToast({
           type: "success",
           label: "Workout results updated successfully!",
@@ -274,7 +274,7 @@ export default function WorkoutDetailScreen() {
 
       if (response.success) {
         router.dismissAll();
-        router.replace("/(tabs)/workouts");
+        router.replace("/(tabs)/");
         showToast({
           type: "success",
           label: "Workout updated successfully!",

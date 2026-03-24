@@ -74,6 +74,11 @@ export interface TimerStore {
   saveSnapshot: () => Promise<void>;
   restoreSnapshot: () => Promise<boolean>;
   clearSnapshot: () => Promise<void>;
+
+  // ─── FAB trigger (tab bar → setup screen) ───────────────────────────────────
+  pendingConfirm: boolean;
+  requestConfirm: () => void;
+  clearConfirm: () => void;
 }
 
 // ─── Initial display ──────────────────────────────────────────────────────────
@@ -121,6 +126,9 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   isComplete: false,
   display: initialDisplay,
   accumulatedMs: 0,
+  pendingConfirm: false,
+  requestConfirm: () => set({ pendingConfirm: true }),
+  clearConfirm: () => set({ pendingConfirm: false }),
 
   // ─── Configure a new WOD ──────────────────────────────────────────────────
 
