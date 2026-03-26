@@ -3,7 +3,8 @@ import { BottomSheetSelect, Button, Input, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
-import type { AssignedWorkoutData, ResultData, WODData } from "@/types";
+import standardExercises from "@/constants/standardExercises.json";
+import type { AssignedWorkoutData, ExerciseData, ResultData, StandardExercise, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
@@ -134,6 +135,15 @@ export default function WorkoutResultsScreen() {
     return wods[wodIndex]?.exercises[exerciseIndex];
   };
 
+  const exerciseMap = new Map(
+    (standardExercises as StandardExercise[]).map((e) => [e.id, e]),
+  );
+
+  const isTrackable = (exercise: ExerciseData) => {
+    const std = exerciseMap.get(exercise.exerciseId);
+    return std?.trackResults !== false;
+  };
+
   // Get available exercises for a specific result entry, excluding already selected ones
   const getAvailableExercises = (currentResultId: string, wodIndex: number) => {
     const wod = wods[wodIndex];
@@ -144,26 +154,26 @@ export default function WorkoutResultsScreen() {
       .filter((r) => r.id !== currentResultId && r.wodIndex === wodIndex)
       .map((r) => r.exerciseIndex);
 
-    // Filter out already selected exercises
+    // Filter out already selected and non-trackable exercises
     return wod.exercises
       .map((exercise, idx) => ({
         exercise,
         index: idx,
       }))
-      .filter(({ index }) => !selectedExercises.includes(index))
+      .filter(({ exercise, index }) => !selectedExercises.includes(index) && isTrackable(exercise))
       .map(({ exercise, index }) => ({
         label: exercise.name,
         value: index,
       }));
   };
 
-  // Check if there are any exercises available across all WODs
+  // Check if there are any trackable exercises available across all WODs
   const hasAvailableExercises = () => {
-    const totalExercises = wods.reduce(
-      (sum, wod) => sum + wod.exercises.length,
+    const totalTrackable = wods.reduce(
+      (sum, wod) => sum + wod.exercises.filter(isTrackable).length,
       0,
     );
-    return results.length < totalExercises;
+    return results.length < totalTrackable;
   };
 
   const handleSubmit = async () => {
@@ -180,6 +190,8 @@ export default function WorkoutResultsScreen() {
           setSubmitting(false);
           return;
         }
+
+        if (!isTrackable(exercise)) continue;
 
         // Validate based on tracking type
         switch (exercise.trackingType) {

@@ -13,6 +13,7 @@ export interface StandardExercise {
   name: string;
   category: string;
   trackingType: TrackingType;
+  trackResults?: boolean; // false = no result input / no PR (e.g. AMRAP, EMOM). Omitted means true.
   description: string;
   muscleGroups: string[];
   aliases?: string[];
