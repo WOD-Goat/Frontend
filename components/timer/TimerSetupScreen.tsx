@@ -10,10 +10,11 @@ import Page from "@/components/ui/Page";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useTimer } from "@/lib/timer/hooks/useTimer";
 import type { WODConfig, WODMode } from "@/lib/timer/types";
+import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useCallback, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import { TimerModeSelector } from "./TimerModeSelector";
 import type { WODConfigFormHandle } from "./WODConfigForm";
 import { WODConfigForm } from "./WODConfigForm";
@@ -22,6 +23,17 @@ export default function TimerSetupScreen() {
   const timer = useTimer();
   const [selectedMode, setSelectedMode] = useState<WODMode>("FOR_TIME");
   const formRef = useRef<WODConfigFormHandle>(null);
+
+  const pendingConfirm = useTimerStore((s) => s.pendingConfirm);
+  const clearConfirm = useTimerStore((s) => s.clearConfirm);
+
+  // When the FAB in the tab bar fires, trigger the form confirm
+  useEffect(() => {
+    if (pendingConfirm) {
+      clearConfirm();
+      formRef.current?.confirm();
+    }
+  }, [pendingConfirm]);
 
   const handleModeChange = useCallback((mode: WODMode) => {
     setSelectedMode(mode);
@@ -38,7 +50,7 @@ export default function TimerSetupScreen() {
 
   return (
     <Page showBackButton={false}>
-      {/* ── Header (same as PRHeader) ── */}
+      {/* ── Header ── */}
       <View style={styles.headerContainer}>
         <View style={styles.headerTextContainer}>
           <Text style={styles.headerTitle}>WOD Timer</Text>
@@ -73,30 +85,12 @@ export default function TimerSetupScreen() {
         />
       </View>
 
-      <Gap size={24} />
-
-      {/* ── Confirm Button ── */}
-      <Pressable
-        onPress={() => formRef.current?.confirm()}
-        style={({ pressed }) => [
-          styles.confirmButton,
-          pressed && styles.confirmButtonPressed,
-        ]}
-      >
-        <Ionicons
-          name="play"
-          size={responsiveSize(22)}
-          color="#FFF"
-          style={{ marginRight: 8 }}
-        />
-        <Text style={styles.confirmLabel}>START TIMER</Text>
-      </Pressable>
+      <Gap size={100} />
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  /* Header — matches PRHeader */
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -118,8 +112,6 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     lineHeight: 20,
   },
-
-  /* Section headers */
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -131,31 +123,9 @@ const styles = StyleSheet.create({
     color: Colors.neutral[500],
     letterSpacing: 2.5,
   },
-
-  /* Settings card */
   settingsCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 20,
     overflow: "hidden",
-  },
-
-  /* CTA Button */
-  confirmButton: {
-    height: 58,
-    borderRadius: 28,
-    backgroundColor: Colors.primary[500],
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  confirmButtonPressed: {
-    opacity: 0.85,
-    transform: [{ scale: 0.97 }],
-  },
-  confirmLabel: {
-    fontFamily: FontFamilies.spartanBold,
-    fontSize: responsiveSize(18),
-    color: "#FFFFFF",
-    letterSpacing: 3,
   },
 });

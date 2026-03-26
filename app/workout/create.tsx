@@ -12,7 +12,7 @@ import type {
 } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -239,8 +239,16 @@ export default function CreateWorkoutScreen() {
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
+  const { voice } = useLocalSearchParams<{ voice?: string }>();
   const globalState = useGlobalState();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (voice === "true") {
+      const t = setTimeout(() => setVoiceModalVisible(true), 300);
+      return () => clearTimeout(t);
+    }
+  }, [voice]);
 
   const handleVoiceResult = (result: VoiceWorkoutResult) => {
     const data = result.data as CreateWorkoutData;
@@ -455,7 +463,7 @@ export default function CreateWorkoutScreen() {
         });
         showToast({ type: "success", label: "Workout created successfully!" });
         router.dismissAll();
-        router.replace("/(tabs)/workouts");
+        router.replace("/(tabs)");
       } else {
         showToast({
           type: "error",

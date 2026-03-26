@@ -10,6 +10,8 @@ export const tabIcons = {
   profileSelected: require("./profile-selected.png"),
   timer: require("./timer.png"),
   timerSelected: require("./timer-selected.png"),
+  groups: require("./group.png"),
+  groupsSelected: require("./group-selected.png"),
 };
 
 // App Icons

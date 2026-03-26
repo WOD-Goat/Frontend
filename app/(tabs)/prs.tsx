@@ -253,27 +253,53 @@ export default function PRsScreen() {
 
   if (prs.length === 0) {
     return (
-      <Page
-        showBackButton={false}
-        contentStyle={{ flex: 1 }}
-        scrollable={false}
-      >
+      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={false}>
         <PRHeader />
-        <Gap size={26} />
-        <View style={styles.centerContainer}>
-          <View style={styles.emptyIconContainer}>
-            <Ionicons
-              name="trophy-outline"
-              size={responsiveSize(56)}
-              color={Colors.primary[500]}
-            />
+        <Gap size={24} />
+
+        <View style={styles.emptyHeroCard}>
+          <View style={styles.emptyHeroGlow} />
+          <View style={styles.emptyHeroRing}>
+            <Ionicons name="trophy-outline" size={48} color={Colors.primary[500]} />
           </View>
-          <Gap size={20} />
-          <Text style={styles.emptyTitle}>No Personal Records Yet</Text>
-          <Text style={styles.emptyText}>
-            Complete workouts to start tracking your PRs!
+          <Gap size={18} />
+          <Text style={styles.emptyHeroTitle}>No Records Yet</Text>
+          <Text style={styles.emptyHeroSubtitle}>
+            Your personal bests will appear here as you complete workouts.
           </Text>
         </View>
+
+        <Gap size={24} />
+
+        {([
+          { icon: "barbell-outline", label: "Complete a workout", desc: "Log any exercise through a WOD" },
+          { icon: "checkmark-circle-outline", label: "Record gets saved", desc: "Your best effort is tracked automatically" },
+          { icon: "trending-up-outline", label: "Watch it grow", desc: "See your improvements over time" },
+        ] as const).map((step, i) => (
+          <View key={i} style={styles.emptyStepRow}>
+            <View style={styles.emptyStepIcon}>
+              <Ionicons name={step.icon} size={18} color={Colors.primary[500]} />
+            </View>
+            <View style={styles.emptyStepText}>
+              <Text style={styles.emptyStepLabel}>{step.label}</Text>
+              <Text style={styles.emptyStepDesc}>{step.desc}</Text>
+            </View>
+          </View>
+        ))}
+
+        <Gap size={32} />
+
+        <TouchableOpacity
+          style={styles.emptyCtaButton}
+          onPress={() => router.push("/(tabs)/" as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.emptyCtaGlow} />
+          <Ionicons name="barbell-outline" size={20} color="#0D0D14" />
+          <Text style={styles.emptyCtaText}>Go to Workouts</Text>
+        </TouchableOpacity>
+
+        <Gap size={160} />
       </Page>
     );
   }
@@ -655,6 +681,107 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsRegular,
     color: Colors.text.secondary,
     textAlign: "center",
+  },
+
+  // ── PR Empty state ────────────────────────────────────
+  emptyHeroCard: {
+    backgroundColor: Colors.secondary[600],
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "25",
+    overflow: "hidden",
+  },
+  emptyHeroGlow: {
+    position: "absolute",
+    top: -40,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: Colors.primary[500] + "18",
+  },
+  emptyHeroRing: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: Colors.primary[500] + "15",
+    borderWidth: 1.5,
+    borderColor: Colors.primary[500] + "40",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyHeroTitle: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: FontSizes.headingXL,
+    color: Colors.text.primary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  emptyHeroSubtitle: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 22,
+  },
+  emptyStepRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "60",
+  },
+  emptyStepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.primary[500] + "15",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  emptyStepText: {
+    flex: 1,
+  },
+  emptyStepLabel: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    marginBottom: 2,
+  },
+  emptyStepDesc: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+  },
+  emptyCtaButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 16,
+    paddingVertical: 16,
+    overflow: "hidden",
+  },
+  emptyCtaGlow: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 30,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  emptyCtaText: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: FontSizes.bodyMD,
+    color: "#0D0D14",
   },
 
   // ── Stats Row ─────────────────────────────────────────
