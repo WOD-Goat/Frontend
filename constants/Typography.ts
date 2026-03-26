@@ -11,7 +11,8 @@ const baseHeight = 844;
 // Calculate responsive multipliers
 const widthMultiplier = screenWidth / baseWidth;
 const heightMultiplier = screenHeight / baseHeight;
-const fontMultiplier = Math.min(widthMultiplier, heightMultiplier);
+const MAX_FONT_SCALE = 1.15; // Prevent fonts from growing too large on big screens
+const fontMultiplier = Math.min(widthMultiplier, heightMultiplier, MAX_FONT_SCALE);
 
 // Responsive font size function
 export const responsiveSize = (size: number): number => {

@@ -2,16 +2,20 @@ import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
 import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
+import { useZustandGlobalState } from "../components/lib/global-state/useGlobalState";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
 import "../config/firebase";
 import { REVENUECAT_CONFIG } from "../config/revenuecat";
+import { auth } from "../config/firebase";
+import { useNotifications } from "../hooks/useNotifications";
 import { preloadImages } from "../utils/imagePreloader";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
@@ -23,6 +27,14 @@ export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { get: getStorage } = useStorage();
   const globalState = useGlobalState();
+  const user = useZustandGlobalState((state) => state.user);
+  const { registerForPushNotifications } = useNotifications();
+
+  useEffect(() => {
+    if (user?.uid) {
+      registerForPushNotifications(user.uid);
+    }
+  }, [user?.uid, registerForPushNotifications]);
 
   const [loaded, error] = useFonts({
     // League Spartan fonts
@@ -93,6 +105,21 @@ export default function RootLayout() {
             console.log(
               "✅ Layout: Refresh token valid, access token refreshed",
             );
+
+            // Check Firebase email verification status
+            const firebaseUser = await new Promise<any>((resolve) => {
+              const unsubscribe = onAuthStateChanged(auth, (user) => {
+                unsubscribe();
+                resolve(user);
+              });
+            });
+            if (firebaseUser && !firebaseUser.emailVerified) {
+              console.log("⚠️ Layout: Email not verified, logging out");
+              await apiClient.clearTokens();
+              setIsAuthenticated(false);
+              setAuthChecked(true);
+              return;
+            }
 
             // Load user data from storage and set in global state
             const userData = await getStorage("user");
@@ -169,6 +196,7 @@ export default function RootLayout() {
             name="paywall"
             options={{ presentation: "fullScreenModal" }}
           />
+          <Stack.Screen name="timer" options={{ headerShown: false }} />
         </Stack>
       </ToastProvider>
     </SafeAreaProvider>

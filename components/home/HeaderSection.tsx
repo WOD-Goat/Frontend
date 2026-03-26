@@ -23,7 +23,6 @@ const getMotivation = (): string => {
     "Your only limit is you.",
     "Make today count.",
   ];
-  // Pick one based on day-of-year so it changes daily but stays stable
   const dayOfYear = Math.floor(
     (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
       86400000,
@@ -37,36 +36,22 @@ export default function HeaderSection({
 }: HeaderSectionProps) {
   return (
     <View style={styles.container}>
-      <View style={styles.greetingSection}>
-        <Text style={styles.greetingLabel}>{getGreeting()}</Text>
-        <Text style={styles.userName}>{userName}</Text>
-        <Text style={styles.motivation}>{getMotivation()}</Text>
-      </View>
+      <View style={styles.topRow}>
+        <View style={styles.greetingSection}>
+          <Text style={styles.greetingLabel}>{getGreeting()}</Text>
+          <Text style={styles.userName}>{userName}</Text>
+          <Text style={styles.motivation}>{getMotivation()}</Text>
+        </View>
 
-      {/* Streak Badge */}
-      <View
-        style={[
-          styles.streakCard,
-          streakDays > 0 ? styles.streakActive : styles.streakInactive,
-        ]}
-      >
-        <Image
-          source={
-            streakDays > 0 ? images["active-streak"] : images["inactive-streak"]
-          }
-          style={styles.streakIcon}
-        />
-        <Text
-          style={[
-            styles.streakValue,
-            streakDays > 0 && { color: Colors.primary[500] },
-          ]}
-        >
-          {streakDays}
-        </Text>
-        <Text style={styles.streakLabel}>
-          {streakDays === 1 ? "Day" : "Days"}
-        </Text>
+        <View style={[styles.streakChip, streakDays > 0 ? styles.streakActive : styles.streakInactive]}>
+          <Image
+            source={streakDays > 0 ? images["active-streak"] : images["inactive-streak"]}
+            style={styles.streakIcon}
+          />
+          <Text style={[styles.streakNumber, streakDays > 0 && { color: Colors.primary[500] }]}>
+            {streakDays}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -74,14 +59,16 @@ export default function HeaderSection({
 
 const styles = StyleSheet.create({
   container: {
+    paddingVertical: 16,
+  },
+  topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 16,
+    alignItems: "flex-start",
   },
   greetingSection: {
     flex: 1,
-    marginRight: 16,
+    marginRight: 12,
   },
   greetingLabel: {
     fontFamily: FontFamilies.spartanMedium,
@@ -95,6 +82,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.heading2XL,
     color: Colors.text.inverse,
+    lineHeight: 28,
     marginBottom: 4,
   },
   motivation: {
@@ -104,19 +92,21 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Streak card
-  streakCard: {
+  // Streak chip
+  streakChip: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    width: 68,
-    paddingVertical: 10,
-    borderRadius: 16,
-    gap: 2,
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+    marginTop: 2,
   },
   streakActive: {
     backgroundColor: Colors.primary[500] + "18",
     borderWidth: 1,
-    borderColor: Colors.primary[500] + "50",
+    borderColor: Colors.primary[500] + "45",
   },
   streakInactive: {
     backgroundColor: Colors.secondary[600],
@@ -124,19 +114,13 @@ const styles = StyleSheet.create({
     borderColor: Colors.neutral[700],
   },
   streakIcon: {
-    width: 24,
-    height: 24,
+    width: 18,
+    height: 18,
   },
-  streakValue: {
+  streakNumber: {
     fontFamily: FontFamilies.spartanBold,
-    fontSize: FontSizes.headingLG,
+    fontSize: FontSizes.headingMD,
     color: Colors.text.secondary,
-    lineHeight: 22,
-  },
-  streakLabel: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: 10,
-    color: Colors.text.secondary,
-    marginTop: -2,
+    lineHeight: FontSizes.headingMD * 1.1,
   },
 });

@@ -1,5 +1,5 @@
 import { Button } from "@/components";
-import { Colors, Typography } from "@/constants";
+import { Colors, Typography, responsiveSize } from "@/constants";
 import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -31,7 +31,7 @@ export default function OnboardingScreen() {
       image: mascotAssets.coach,
       title: "Meet WODGoat",
       subtitle:
-        "Your personal AI gym buddy, here to track every WOD, PR, and push you to your best.",
+        "Your personal AI Fitness Buddy, here to track every WOD, PR, and push you to your best.",
     },
     {
       image: mascotAssets.track,
@@ -41,7 +41,7 @@ export default function OnboardingScreen() {
     {
       image: mascotAssets.help,
       title: "AI Guidance Anytime",
-      subtitle: "Record PRs with your voice, ask questions, and get AI tips with WODGoat A",
+        subtitle: "Log PRs hands-free and get workout guidance using WODGoat AI voice integration.",
     },
   ];
 
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: Colors.text.primary,
-    fontSize: 18,
+    fontSize: responsiveSize(18),
     fontWeight: "bold",
     textAlign: "center",
   },

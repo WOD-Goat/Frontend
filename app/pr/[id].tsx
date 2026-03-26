@@ -1,12 +1,19 @@
 import { personalRecordsService } from "@/api/services";
-import { Gap, Page } from "@/components";
+import type { PRStickerData } from "@/components";
+import { Gap, Page, PRShareModal } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { formatDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type TrackingType =
   | "weight_reps"
@@ -85,6 +92,18 @@ const getImprovementUnit = (trackingType: TrackingType): string => {
   }
 };
 
+const PERCENTAGES = [95, 90, 85, 80, 75, 70, 65, 60, 55, 50];
+
+const computePercentageValue = (
+  prValue: number,
+  pct: number,
+  type: TrackingType,
+): number => {
+  const raw = prValue * (pct / 100);
+  if (type === "weight_reps") return Math.round(raw / 2.5) * 2.5;
+  return Math.round(raw);
+};
+
 export default function PRDetailScreen() {
   const params = useLocalSearchParams();
   const { id, name } = params;
@@ -92,6 +111,10 @@ export default function PRDetailScreen() {
   const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shareModalVisible, setShareModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState<"history" | "percentages">(
+    "history",
+  );
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -136,6 +159,20 @@ export default function PRDetailScreen() {
   );
   const improvementUnit = getImprovementUnit(trackingType);
 
+  const stickerData: PRStickerData | null = useMemo(() => {
+    if (!latestPR) return null;
+    const formatted = formatPRValue(latestPR.actualPR, trackingType);
+    return {
+      exerciseName:
+        typeof name === "string" ? name : (latestPR.exerciseName ?? "Exercise"),
+      value: formatted.display,
+      unit: formatted.unit,
+      improvement: latestPR.improvement ?? null,
+      improvementUnit,
+      date: getFormattedDate(latestPR.date),
+    };
+  }, [latestPR, trackingType, name, improvementUnit]);
+
   if (loading) {
     return (
       <Page title="Personal Record" showBackButton contentStyle={{ flex: 1 }}>
@@ -163,6 +200,21 @@ export default function PRDetailScreen() {
       showBackButton
       scrollable
       contentStyle={styles.content}
+      headerRight={
+        <TouchableOpacity
+          style={styles.shareBtn}
+          onPress={() => setShareModalVisible(true)}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="share-social-outline"
+            size={20}
+            color={Colors.primary[500]}
+          />
+          <Text style={styles.shareBtnText}>Share PR</Text>
+        </TouchableOpacity>
+      }
     >
       {/* Main PR Card */}
       <View style={styles.prCard}>
@@ -189,7 +241,8 @@ export default function PRDetailScreen() {
           </Text>
         </View>
         {latestPR.estimatedPR !== null &&
-          latestPR.estimatedPR !== undefined && (
+          latestPR.estimatedPR !== undefined &&
+          latestPR.estimatedPR !== latestPR.actualPR && (
             <View style={styles.estimatedBadge}>
               <Ionicons name="sparkles" size={16} color={Colors.primary[500]} />
               <Text style={styles.estimatedLabel}>Next Estimated 1RM</Text>
@@ -203,14 +256,105 @@ export default function PRDetailScreen() {
 
       <Gap size={24} />
 
-      {/* History Section */}
-      <View style={styles.sectionHeader}>
-        <Ionicons name="time-outline" size={24} color={Colors.primary[500]} />
-        <Text style={styles.sectionTitle}>History</Text>
-      </View>
-      <Gap size={16} />
+      {/* Tab Switcher — only shown for weight_reps */}
+      {trackingType === "weight_reps" && (
+        <>
+          <View style={styles.tabSwitcher}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === "history" && styles.tabActive]}
+              onPress={() => setActiveTab("history")}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="time-outline"
+                size={16}
+                color={
+                  activeTab === "history"
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "history" && styles.tabTextActive,
+                ]}
+              >
+                History
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === "percentages" && styles.tabActive,
+              ]}
+              onPress={() => setActiveTab("percentages")}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name="analytics-outline"
+                size={16}
+                color={
+                  activeTab === "percentages"
+                    ? Colors.primary[500]
+                    : Colors.text.secondary
+                }
+              />
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === "percentages" && styles.tabTextActive,
+                ]}
+              >
+                % Calculator
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <Gap size={16} />
+        </>
+      )}
+      {trackingType !== "weight_reps" && <Gap size={16} />}
 
-      {historyPRs.length === 0 ? (
+      {activeTab === "percentages" && trackingType === "weight_reps" ? (
+        <View style={styles.percentagesList}>
+          <View style={styles.percentagesNote}>
+            <Ionicons
+              name="information-circle-outline"
+              size={14}
+              color={Colors.text.tertiary}
+            />
+            <Text style={styles.percentagesNoteText}>
+              Values rounded to nearest 2.5 kg (1.25 kg plate)
+            </Text>
+          </View>
+          {PERCENTAGES.map((pct) => {
+            const val = computePercentageValue(
+              latestPR.actualPR,
+              pct,
+              trackingType,
+            );
+            const formatted = formatPRValue(val, trackingType);
+            return (
+              <View key={pct} style={styles.percentageRow}>
+                <View style={styles.percentageLabelContainer}>
+                  <Text style={styles.percentageLabel}>{pct}%</Text>
+                  <View style={styles.percentageBarTrack}>
+                    <View
+                      style={[styles.percentageBarFill, { width: `${pct}%` }]}
+                    />
+                  </View>
+                </View>
+                <View style={styles.percentageValueContainer}>
+                  <Text style={styles.percentageValue}>
+                    {formatted.display}
+                  </Text>
+                  <Text style={styles.percentageUnit}>{formatted.unit}</Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ) : historyPRs.length === 0 ? (
         <View style={styles.emptyHistory}>
           <Ionicons
             name="barbell-outline"
@@ -228,12 +372,14 @@ export default function PRDetailScreen() {
           {historyPRs.map((pr: any, idx: number) => (
             <View key={idx} style={styles.timelineRow}>
               {/* Timeline connector */}
-              <View style={styles.timelineConnector}>
-                <View style={styles.timelineDot} />
-                {idx < historyPRs.length - 1 && (
-                  <View style={styles.timelineLine} />
-                )}
-              </View>
+              {historyPRs.length > 1 && (
+                <View style={styles.timelineConnector}>
+                  <View style={styles.timelineDot} />
+                  {idx < historyPRs.length - 1 && (
+                    <View style={styles.timelineLine} />
+                  )}
+                </View>
+              )}
               {/* History card */}
               <View style={styles.historyCard}>
                 <View style={styles.historyCardRow}>
@@ -277,6 +423,14 @@ export default function PRDetailScreen() {
           ))}
         </View>
       )}
+      {/* PR Share Modal */}
+      {stickerData && (
+        <PRShareModal
+          visible={shareModalVisible}
+          onClose={() => setShareModalVisible(false)}
+          data={stickerData}
+        />
+      )}
     </Page>
   );
 }
@@ -319,6 +473,27 @@ const styles = StyleSheet.create({
   },
   cardTopLeft: {
     flex: 1,
+  },
+  cardTopRight: {
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.primary[500] + "1A",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  shareBtnText: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: FontSizes.labelXS,
+    color: Colors.primary[500],
+    letterSpacing: 0.3,
   },
   exerciseName: {
     fontSize: FontSizes.headingLG,
@@ -497,5 +672,98 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.bodySM,
     fontFamily: FontFamilies.poppinsRegular,
     color: Colors.text.secondary,
+  },
+  // Tab switcher
+  tabSwitcher: {
+    flexDirection: "row",
+    backgroundColor: Colors.secondary[500],
+    borderRadius: 12,
+    padding: 4,
+    gap: 4,
+  },
+  tab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  tabActive: {
+    backgroundColor: Colors.primary[500] + "20",
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+  },
+  tabText: {
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsMedium,
+    color: Colors.text.secondary,
+  },
+  tabTextActive: {
+    color: Colors.primary[500],
+    fontFamily: FontFamilies.spartanBold,
+  },
+  // Percentages
+  percentagesList: {
+    gap: 8,
+  },
+  percentagesNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 4,
+    paddingBottom: 4,
+  },
+  percentagesNoteText: {
+    fontSize: FontSizes.labelXS,
+    fontFamily: FontFamilies.poppinsRegular,
+    color: Colors.text.tertiary,
+  },
+  percentageRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: Colors.secondary[500],
+    borderRadius: 14,
+    padding: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  percentageLabelContainer: {
+    flex: 1,
+    gap: 6,
+    marginRight: 16,
+  },
+  percentageLabel: {
+    fontSize: FontSizes.headingLG,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.primary[500],
+  },
+  percentageBarTrack: {
+    height: 4,
+    width: "100%",
+    backgroundColor: Colors.primary[500] + "25",
+    borderRadius: 2,
+  },
+  percentageBarFill: {
+    height: "100%",
+    backgroundColor: Colors.primary[500],
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  percentageValueContainer: {
+    width: 100,
+    alignItems: "flex-end",
+  },
+  percentageValue: {
+    fontSize: FontSizes.display2XL,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.text.inverse,
+  },
+  percentageUnit: {
+    fontSize: FontSizes.headingMD,
+    fontFamily: FontFamilies.poppinsBold,
+    color: Colors.text.inverse,
   },
 });

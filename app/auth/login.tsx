@@ -1,7 +1,9 @@
 import { Button, Input, Page } from "@/components";
-import { Colors, FontFamilies, FontSizes, Typography } from "@/constants";
+import { auth } from "@/config/firebase";
+import { Colors, FontFamilies, FontSizes, Typography, responsiveSize } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
+import { signInWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -60,32 +62,29 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    console.log('📱 LoginScreen: handleLogin called');
-    console.log('📱 LoginScreen: Email valid:', isEmailValid, 'Password valid:', isPasswordValid);
-    
-    // Only proceed if both fields are already valid
-    if (!isEmailValid || !isPasswordValid) {
-      console.log('📱 LoginScreen: Validation failed, not proceeding with login');
+    if (!isEmailValid || !isPasswordValid) return;
+
+    const success = await login(email, password);
+
+    if (!success) {
+      Alert.alert("Login Failed", error || "Please check your credentials and try again");
       return;
     }
 
-    console.log('📱 LoginScreen: Calling login with:', { email, password: '***' });
-    const success = await login(email, password);
-    
-    console.log('📱 LoginScreen: Login result:', success);
-
-    if (success) {
-      console.log('📱 LoginScreen: Login successful, navigating to tabs');
+    try {
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      if (!credential.user.emailVerified) {
+        router.push("/auth/signup/verify");
+        return;
+      }
       router.replace("/(tabs)");
-    } else {
-      console.log('📱 LoginScreen: Login failed, error:', error);
+    } catch (firebaseError) {
       Alert.alert("Login Failed", error || "Please check your credentials and try again");
     }
   };
 
   const handleForgotPassword = () => {
-    // Handle forgot password logic
-    console.log("Forgot password pressed");
+    router.push("/auth/forgot-password");
   };
 
   const handleRegister = () => {
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
   // Error Text
   errorText: {
     color: Colors.error[500],
-    fontSize: 12,
+    fontSize: responsiveSize(12),
     marginTop: 4,
   },
 });

@@ -1,6 +1,7 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import { useStorage } from "@/components/lib";
+import { notificationsService } from "@/api/services/notifications";
 import type {
   AuthResponse,
   LogoutResponse,
@@ -8,6 +9,7 @@ import type {
   RegisterUserData,
   User,
 } from "@/types/auth";
+import { Alert } from "react-native";
 
 export const authService = {
   /**
@@ -33,6 +35,7 @@ export const authService = {
       return registerResponse;
     } catch (error) {
       console.error("🔐 AuthService: Register error:", error);
+      Alert.alert("Registration Failed", error instanceof Error ? error.message : "Registration failed. Please try again.");
       throw error;
     }
   },
@@ -55,6 +58,7 @@ export const authService = {
       console.log("🔄 API Client: Response data:", response);
       console.log("🔐 AuthService: Login response:", response);
 
+      
       // The response IS the auth response, not wrapped in ApiResponse
       const authResponse = response as unknown as AuthResponse;
 
@@ -102,6 +106,7 @@ export const authService = {
         console.log(
           "🔐 AuthService: Clearing tokens and user data after logout",
         );
+        await notificationsService.deleteToken();
         await apiClient.clearTokens();
         await removeFromStorage("user");
       }
@@ -110,6 +115,7 @@ export const authService = {
     } catch (error) {
       console.error("🔐 AuthService: Logout error:", error);
       // Clear tokens and user data even if logout request fails
+      await notificationsService.deleteToken();
       await apiClient.clearTokens();
       await removeFromStorage("user");
       throw error;

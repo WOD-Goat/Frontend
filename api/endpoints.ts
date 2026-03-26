@@ -1,4 +1,7 @@
 export const API_ENDPOINTS = {
+  AI: {
+    PARSE_WORKOUT: "/api/ai/parse-workout",
+  },
   AUTH: {
     REGISTER: "/api/users/register",
     LOGIN: "/api/users/login",
@@ -22,5 +25,26 @@ export const API_ENDPOINTS = {
       `/api/personal-records/${exerciseId}`,
     UPDATE: (id: string) => `/api/personal-records/${id}`,
     DELETE: (id: string) => `/api/personal-records/${id}`,
+  },
+
+  NOTIFICATIONS: {
+    REGISTER_TOKEN: "/api/notifications/token",
+    DELETE_TOKEN: "/api/notifications/token",
+  },
+  GROUPS: {
+    CREATE: "/api/groups",
+    GET_MY_GROUPS: "/api/groups/my-groups",
+    GET_MEMBER_GROUPS: "/api/groups/member-groups",
+    GET_BY_ID: (id: string) => `/api/groups/${id}`,
+    JOIN: "/api/groups/join",
+    GENERATE_CODE: (id: string) => `/api/groups/${id}/generate-code`,
+    GET_WORKOUTS: (id: string) => `/api/groups/${id}/workouts`,
+    CREATE_WORKOUT: (id: string) => `/api/groups/${id}/workouts`,
+    GET_WORKOUT: (groupId: string, workoutId: string) =>
+      `/api/groups/${groupId}/workouts/${workoutId}`,
+    SUBMIT_WORKOUT: (groupId: string, workoutId: string) =>
+      `/api/groups/${groupId}/workouts/${workoutId}/submit`,
+    LEADERBOARD: (groupId: string, workoutId: string) =>
+      `/api/groups/${groupId}/workouts/${workoutId}/leaderboard`,
   },
 } as const;

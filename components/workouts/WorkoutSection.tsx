@@ -19,6 +19,10 @@ interface WorkoutSectionProps {
   wods: WOD[];
   workoutType?: string;
   workoutId: string;
+  source?: "personal" | "group";
+  groupId?: string;
+  groupName?: string;
+  hasSubmitted?: boolean;
 }
 
 const STATUS_CONFIG = {
@@ -42,26 +46,44 @@ const STATUS_CONFIG = {
   },
 };
 
+
 export default function WorkoutSection({
   date,
   status,
   wods,
   workoutId,
+  source = "personal",
+  groupId,
+  groupName,
+  hasSubmitted,
 }: WorkoutSectionProps) {
   const config = STATUS_CONFIG[status];
+  const isGroup = source === "group";
+  const isGroupDone = isGroup && hasSubmitted;
+  const isGroupMissed = isGroup && status === "missed";
+  const accentColor = isGroupDone
+    ? Colors.success[500]
+    : isGroupMissed
+    ? Colors.error[500]
+    : isGroup
+    ? Colors.primary[500]
+    : config.color;
 
   const navigateToWorkout = () => {
-    console.log("Navigating to workout with ID:", workoutId);
-    router.push(`/workout/${workoutId}`);
+    if (isGroup && groupId) {
+      router.push(`/group/workout/${workoutId}?groupId=${groupId}`);
+    } else {
+      router.push(`/workout/${workoutId}`);
+    }
   };
 
   return (
     <View style={[styles.container]}>
       {/* Left accent */}
-      <View style={[styles.accent, { backgroundColor: config.color }]} />
+      <View style={[styles.accent, { backgroundColor: accentColor }]} />
 
       <View style={styles.body}>
-        {/* Top row: date + status badge — tappable */}
+        {/* Top row: date + status badge + optional group badge — tappable */}
         <Pressable onPress={navigateToWorkout}>
           <View style={styles.topRow}>
             <View style={styles.dateRow}>
@@ -71,13 +93,21 @@ export default function WorkoutSection({
                 color={Colors.text.secondary}
               />
               <Text style={styles.date}>{date}</Text>
+              {isGroup && groupName && (
+                <View style={[styles.groupPill, { backgroundColor: (isGroupDone ? Colors.success[500] : Colors.primary[500]) + "20" }]}>
+                  <Ionicons name="people" size={10} color={isGroupDone ? Colors.success[500] : Colors.primary[500]} />
+                  <Text style={[styles.groupPillText, { color: isGroupDone ? Colors.success[500] : Colors.primary[500] }]}>{groupName}</Text>
+                </View>
+              )}
             </View>
-            <View
-              style={[styles.statusBadge, { backgroundColor: config.bgColor }]}
-            >
-              <Ionicons name={config.icon} size={12} color={config.color} />
-              <Text style={[styles.statusText, { color: config.color }]}>
-                {config.label}
+            <View style={[styles.statusBadge, { backgroundColor: isGroupDone ? Colors.success[500] + "18" : isGroup ? Colors.primary[500] + "18" : config.bgColor }]}>
+              <Ionicons
+                name={isGroupDone ? "checkmark-circle" : isGroup ? "people" : config.icon}
+                size={12}
+                color={isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color}
+              />
+              <Text style={[styles.statusText, { color: isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color }]}>
+                {isGroup ? "Group" : config.label}
               </Text>
             </View>
           </View>
@@ -160,6 +190,21 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    flexWrap: "wrap",
+    flex: 1,
+  },
+  groupPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  groupPillText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: 9,
+    color: Colors.primary[500],
   },
   date: {
     fontFamily: FontFamilies.poppinsSemiBold,

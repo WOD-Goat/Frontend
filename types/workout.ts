@@ -13,8 +13,10 @@ export interface StandardExercise {
   name: string;
   category: string;
   trackingType: TrackingType;
+  trackResults?: boolean; // false = no result input / no PR (e.g. AMRAP, EMOM). Omitted means true.
   description: string;
   muscleGroups: string[];
+  aliases?: string[];
 }
 
 export interface ExerciseData {
@@ -43,9 +45,12 @@ export interface AssignedWorkoutData {
   id?: string;
   assignedBy: string; // userId of creator (self/friend)
   groupId: string | null; // optional if assigned to a group
+  groupName?: string | null; // name of the group if this is a group workout
+  source?: "personal" | "group"; // source of the workout
   assignedAt: Date;
   scheduledFor: Date; // day user is expected to do it
   completed: boolean;
+  hasSubmitted?: boolean;
   completedAt: Date | null;
   notes: string | null;
   wods: WODData[]; // Today's session contains multiple WODs
@@ -62,6 +67,7 @@ export interface WorkoutResponse {
 export interface WorkoutsResponse {
   success: boolean;
   data: AssignedWorkoutData[];
+  nextCursor?: string | null;
   message?: string;
 }
 

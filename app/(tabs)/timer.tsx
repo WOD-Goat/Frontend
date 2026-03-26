@@ -1,0 +1,1 @@
+export { TimerSetupScreen as default } from "@/components/timer";

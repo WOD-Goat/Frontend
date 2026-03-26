@@ -4,35 +4,59 @@
     "slug": "wodgoat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/appicon.png",
     "scheme": "wodgoat",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "buildNumber": "10",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.wodgoat",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSMicrophoneUsageDescription": "WODGoat needs microphone access to log workouts using your voice.",
+        "NSUserNotificationUsageDescription": "WODGoat would like to send you push notifications for workout reminders, personal record milestones, and important fitness updates."
+      }
     },
     "android": {
+      "versionCode": 10,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#242426"
+        "backgroundColor": "#1c0e00"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.yahiaanas.wodgoat"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/logo.png"
+      "package": "com.wodgoat"
     },
     "plugins": [
       "expo-router",
       [
+        "expo-audio",
+        {
+          "enableBackgroundPlayback": true,
+          "microphonePermission": "WODGoat needs microphone access to create workouts using your voice."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/logo.png",
-          "imageWidth": 200,
+          "imageWidth": 300,
           "contentFit": "contain",
-          "backgroundColor": "#242426"
+          "backgroundColor": "#1c0e00"
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-asset",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/logo.png",
+          "color": "#ffffff",
+          "defaultChannel": "default",
+          "iosDisplayInForeground": true
         }
       ]
     ],

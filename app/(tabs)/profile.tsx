@@ -1,7 +1,7 @@
 import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
-import { Gap, Page } from "@/components";
+import { Gap, Page, ProfileSkeleton } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { ENTITLEMENTS } from "@/config/revenuecat";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
@@ -11,6 +11,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo } from "react";
+import { Linking } from "react-native";
 import {
   Alert,
   Dimensions,
@@ -131,6 +132,10 @@ export default function ProfileScreen() {
       );
     }
   };
+  // Show skeleton while user data hasn't loaded yet
+  if (!user) {
+    return <ProfileSkeleton />;
+  }
 
   const handleDeleteAccount = async () => {
     Alert.alert(
@@ -357,13 +362,19 @@ export default function ProfileScreen() {
         <PressableDetailRow
           icon="shield-checkmark-outline"
           label="Privacy Policy"
-          onPress={() => Alert.alert("Privacy Policy", "Coming soon")}
+          onPress={() => Linking.openURL("https://www.wodgoat.com/privacy")}
         />
         <View style={styles.detailDivider} />
         <PressableDetailRow
           icon="document-text-outline"
+          label="Terms & Conditions"
+          onPress={() => Linking.openURL("https://www.wodgoat.com/terms")}
+        />
+        <View style={styles.detailDivider} />
+        <PressableDetailRow
+          icon="mail-outline"
           label="Contact Us"
-          onPress={() => Alert.alert("Contact Us", "Coming soon")}
+          onPress={() => Linking.openURL("mailto:wodgoat@gmail.com")}
         />
         <View style={styles.detailDivider} />
         <PressableDetailRow

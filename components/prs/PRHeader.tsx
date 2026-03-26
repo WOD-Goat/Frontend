@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
     marginBottom: 4,
+    lineHeight: 28,
   },
   subtitle: {
     fontFamily: FontFamilies.spartanMedium,

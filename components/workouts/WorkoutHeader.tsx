@@ -1,5 +1,6 @@
-import { Colors, FontFamilies, FontSizes } from "@/constants";
-import { Ionicons } from "@expo/vector-icons";
+import { icons } from "@/assets/images";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
@@ -7,6 +8,9 @@ export default function WorkoutHeader() {
   const handleAddWorkout = () => {
     router.push("/workout/create");
   };
+  //   const handleGroupWorkoutPress = () => {
+  //   router.push("/groups");
+  // };
 
   return (
     <View style={styles.container}>
@@ -16,9 +20,14 @@ export default function WorkoutHeader() {
           It's your turn, show me what you can do
         </Text>
       </View>
-      <Pressable onPress={handleAddWorkout} style={styles.addButton}>
-        <Ionicons name="add" size={22} color={Colors.text.inverse} />
-      </Pressable>
+      <View style={{ flexDirection: "row", gap: 16 }}>
+        {/* <Pressable onPress={handleGroupWorkoutPress}>
+            <Image source={icons.groups} style={{ width: 28, height: 28 }} />
+          </Pressable> */}
+        <Pressable onPress={handleAddWorkout}>
+          <Image source={icons.add} style={{ width: 28, height: 28 }} />
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -26,19 +35,18 @@ export default function WorkoutHeader() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 16,
   },
   textContainer: {
     flex: 1,
-    marginRight: 16,
   },
   title: {
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.heading2XL,
     color: Colors.text.primary,
     marginBottom: 4,
+    lineHeight: 28,
   },
   subtitle: {
     fontFamily: FontFamilies.spartanMedium,
@@ -46,9 +54,10 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     lineHeight: 20,
   },
+
   addButton: {
-    width: 44,
-    height: 44,
+    width: responsiveSize(44),
+    height: responsiveSize(44),
     borderRadius: 14,
     backgroundColor: Colors.primary[500],
     alignItems: "center",

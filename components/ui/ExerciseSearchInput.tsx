@@ -1,32 +1,33 @@
-import { BottomSheet } from "@/components";
 import { Colors, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import type { StandardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextStyle,
-  TouchableOpacity,
-  View,
-  ViewStyle,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextStyle,
+    TouchableOpacity,
+    View,
+    ViewStyle,
 } from "react-native";
+import { BottomSheet } from "./BottomSheet";
 
 interface ExerciseSearchInputProps {
   value: string;
   onSelectExercise: (exercise: StandardExercise) => void;
   placeholder?: string;
+  error?: boolean;
 }
 
 export default function ExerciseSearchInput({
   value,
   onSelectExercise,
   placeholder = "Search for an exercise",
+  error = false,
 }: ExerciseSearchInputProps) {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,6 +44,9 @@ export default function ExerciseSearchInput({
           exercise.category.toLowerCase().includes(query) ||
           exercise.muscleGroups.some((group) =>
             group.toLowerCase().includes(query),
+          ) ||
+          (exercise.aliases ?? []).some((alias) =>
+            alias.toLowerCase().includes(query),
           ),
       );
       setFilteredExercises(filtered);
@@ -70,7 +74,10 @@ export default function ExerciseSearchInput({
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.input} onPress={handleOpenModal}>
+      <TouchableOpacity
+        style={[styles.input, error && styles.inputError]}
+        onPress={handleOpenModal}
+      >
         <Text style={[styles.inputText, !value && styles.placeholderText]}>
           {value || placeholder}
         </Text>
@@ -186,6 +193,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  } as ViewStyle,
+  inputError: {
+    borderColor: Colors.error[500],
+    borderWidth: 2,
   } as ViewStyle,
   inputText: {
     fontSize: FontSizes.bodyMD,
