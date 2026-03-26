@@ -9,13 +9,22 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "channel": "preview"
     },
     "production": {
-      "autoIncrement": true
+      "distribution": "store",
+      "autoIncrement": false,
+      "channel": "production"
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "nemoshromb@icloud.com",
+        "ascAppId": "6761220753",
+        "appleTeamId": "7V7S9W647B"
+      }
+    }
   }
 }
