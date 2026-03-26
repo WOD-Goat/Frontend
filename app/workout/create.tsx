@@ -463,7 +463,7 @@ export default function CreateWorkoutScreen() {
         });
         showToast({ type: "success", label: "Workout created successfully!" });
         router.dismissAll();
-        router.replace("/(tabs)/");
+        router.replace("/(tabs)");
       } else {
         showToast({
           type: "error",

@@ -6,7 +6,6 @@ import { BlurView } from "expo-blur";
 import { router } from "expo-router";
 import { useEffect, useRef } from "react";
 import {
-  Alert,
   Animated,
   Image,
   Platform,
@@ -123,7 +122,7 @@ export default function FloatingTabBar({
     if (iconRoute === "index") {
       router.push("/workout/create?voice=true");
     } else if (iconRoute === "groups") {
-      Alert.alert("Coming Soon", "Group creation is coming in a future update.");
+      router.push("/group/create");
     } else if (iconRoute === "timer") {
       requestConfirm();
     }

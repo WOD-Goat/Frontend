@@ -34,6 +34,10 @@ interface WorkoutSectionData {
   workoutId: string;
   wods: { id: string; title: string; exercises: string[] }[];
   workoutType: string;
+  source?: "personal" | "group";
+  groupId?: string;
+  groupName?: string;
+  hasSubmitted?: boolean;
 }
 
 const TABS: { key: FilterTab; label: string; color: string; icon: any }[] = [
@@ -65,7 +69,7 @@ export default function WorkoutsScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [startAfter, setStartAfter] = useState<string | null>(null);
+  const [cursor, setCursor] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
@@ -101,27 +105,23 @@ export default function WorkoutsScreen() {
   };
 
   const loadWorkouts = async (
-    startAfter: string | null,
+    cursorParam: string | null,
     isLoadMore: boolean,
   ) => {
     try {
       isLoadMore ? setLoadingMore(true) : setLoading(true);
       setError(null);
-      const response = await workoutsService.getAllWorkouts(
-        PAGE_SIZE,
-        startAfter,
-      );
+      const response = await workoutsService.getAllWorkouts(PAGE_SIZE, cursorParam);
       if (response.success && response.data) {
         const newSections = transformWorkoutsToSections(response.data);
         setWorkoutSections((prev) =>
           isLoadMore ? [...prev, ...newSections] : newSections,
         );
-        if (response.data.length >= PAGE_SIZE) {
-          const last = response.data[response.data.length - 1];
-          setStartAfter(parseFirebaseDate(last.scheduledFor).toISOString());
+        if (response.nextCursor) {
+          setCursor(response.nextCursor);
           setHasMore(true);
         } else {
-          setStartAfter(null);
+          setCursor(null);
           setHasMore(false);
         }
       } else {
@@ -142,7 +142,7 @@ export default function WorkoutsScreen() {
       const dateObj = parseFirebaseDate(workout.scheduledFor);
       return {
         date: formatShortDate(dateObj),
-        status: workout.completed
+        status: (workout.source === "group" ? workout.hasSubmitted : workout.completed)
           ? "completed"
           : dateObj.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)
             ? "missed"
@@ -154,6 +154,10 @@ export default function WorkoutsScreen() {
           title: wod.name || "Untitled WOD",
           exercises: wod.exercises.map((ex) => ex.name),
         })),
+        source: workout.source ?? "personal",
+        groupId: workout.groupId ?? undefined,
+        groupName: workout.groupName ?? undefined,
+        hasSubmitted: workout.hasSubmitted ?? false,
       };
     });
 
@@ -401,6 +405,10 @@ export default function WorkoutsScreen() {
                 wods={section.wods}
                 workoutType={section.workoutType}
                 workoutId={section.workoutId}
+                source={section.source}
+                groupId={section.groupId}
+                groupName={section.groupName}
+                hasSubmitted={section.hasSubmitted}
               />
               {index < filteredSections.length - 1 && <Gap size={10} />}
             </View>
@@ -411,7 +419,7 @@ export default function WorkoutsScreen() {
               <Gap size={16} />
               <TouchableOpacity
                 style={styles.loadMoreButton}
-                onPress={() => loadWorkouts(startAfter, true)}
+                onPress={() => loadWorkouts(cursor, true)}
                 disabled={loadingMore}
                 activeOpacity={0.75}
               >
