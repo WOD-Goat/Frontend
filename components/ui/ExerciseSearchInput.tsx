@@ -44,6 +44,9 @@ export default function ExerciseSearchInput({
           exercise.category.toLowerCase().includes(query) ||
           exercise.muscleGroups.some((group) =>
             group.toLowerCase().includes(query),
+          ) ||
+          (exercise.aliases ?? []).some((alias) =>
+            alias.toLowerCase().includes(query),
           ),
       );
       setFilteredExercises(filtered);

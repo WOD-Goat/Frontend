@@ -2,6 +2,7 @@ import { personalRecordsService } from "@/api/services";
 import { Gap, Page, PRHeader, PRsSkeleton } from "@/components";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
+import type { StandardExercise } from "@/types";
 import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -55,11 +56,18 @@ export default function PRsScreen() {
       console.log("PRsScreen: Load PRs response:", response.data);
       if (response.success && response.data) {
         const data = response.data as any[];
-        const sortedPRs = data.sort((a, b) => {
-          const dateA = a.date?._seconds || 0;
-          const dateB = b.date?._seconds || 0;
-          return dateB - dateA;
-        });
+        const trackableIds = new Set(
+          (standardExercises as StandardExercise[])
+            .filter((e) => e.trackResults !== false)
+            .map((e) => e.id),
+        );
+        const sortedPRs = data
+          .filter((pr) => trackableIds.has(pr.exerciseId))
+          .sort((a, b) => {
+            const dateA = a.date?._seconds || 0;
+            const dateB = b.date?._seconds || 0;
+            return dateB - dateA;
+          });
         setPrs(sortedPRs);
       } else {
         setError(response.message || "Failed to load personal records");
