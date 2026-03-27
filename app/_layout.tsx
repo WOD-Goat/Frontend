@@ -4,6 +4,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
+import Purchases from "react-native-purchases";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
 import { authService } from "../api/services/auth";
@@ -11,6 +12,8 @@ import { useGlobalState } from "../components/lib/global-state";
 import { useZustandGlobalState } from "../components/lib/global-state/useGlobalState";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
+import "../config/firebase";
+import { REVENUECAT_CONFIG } from "../config/revenuecat";
 import { auth } from "../config/firebase";
 import { useNotifications } from "../hooks/useNotifications";
 import { preloadImages } from "../utils/imagePreloader";
@@ -56,6 +59,15 @@ export default function RootLayout() {
     "Poppins-ExtraBold": require("../assets/fonts/Poppins (1)/Poppins-ExtraBold.ttf"),
     "Poppins-Black": require("../assets/fonts/Poppins (1)/Poppins-Black.ttf"),
   });
+
+  // Configure RevenueCat as early as possible
+  useEffect(() => {
+    try {
+      Purchases.configure({ apiKey: REVENUECAT_CONFIG.apiKey });
+    } catch (error) {
+      console.error("❌ RevenueCat: Failed to configure SDK", error);
+    }
+  }, []);
 
   // Preload images when component mounts
   useEffect(() => {
@@ -148,6 +160,16 @@ export default function RootLayout() {
         authService.getProfile().then(async (res) => {
           await Promise.all([storage.set("user", res.user)]);
           globalState.set("user", res.user);
+
+          // Log the authenticated user into RevenueCat so their purchases
+          // are tied to their app account (use a stable, non-PII identifier).
+          if (res.user?.uid) {
+            try {
+              await Purchases.logIn(String(res.user.uid));
+            } catch (rcErr) {
+              console.warn("⚠️ RevenueCat: logIn failed", rcErr);
+            }
+          }
         });
         router.replace("/(tabs)");
       } else {
@@ -170,6 +192,10 @@ export default function RootLayout() {
           <Stack.Screen name="auth/login" />
           <Stack.Screen name="auth/signup" />
           <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+          <Stack.Screen
+            name="paywall"
+            options={{ presentation: "fullScreenModal" }}
+          />
           <Stack.Screen name="timer" options={{ headerShown: false }} />
         </Stack>
       </ToastProvider>

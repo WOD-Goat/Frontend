@@ -2,9 +2,11 @@ import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
 import { Gap, Page, ProfileSkeleton } from "@/components";
-import { storage, useGlobalState } from "@/components/lib";
+import { useGlobalState } from "@/components/lib";
+import { ENTITLEMENTS } from "@/config/revenuecat";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
+import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -18,6 +20,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RevenueCatUI, { PAYWALL_RESULT } from "react-native-purchases-ui";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -29,7 +32,6 @@ const getAge = (birthYear?: number) => {
 
 // ── Helper: member since label ─────────────────────────
 const getMemberSince = (createdAt?: Date | any) => {
-  console.log("CreatedAt value:", createdAt);
   if (!createdAt) return null;
   const d =
     createdAt._seconds != null
@@ -57,9 +59,7 @@ export default function ProfileScreen() {
   const { logout, loading } = useAuth();
   const globalState = useGlobalState();
   const user = globalState.get("user");
-  const userStorage = storage.get("user") || {};
-  console.log("User from global state:", user);
-  console.log("User from storage:", userStorage);
+  const { plan } = useRevenueCat();
 
   const displayName = useMemo(() => {
     if (!user?.name) return "Athlete";
@@ -73,6 +73,24 @@ export default function ProfileScreen() {
   const memberSince = getMemberSince(user?.createdAt);
   const stats = user?.statsSummary;
 
+  const handleShowPaywall = async () => {
+    try {
+      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        Alert.alert("You're all set!", "Your subscription is now active.");
+      }
+    } catch {
+      Alert.alert("Error", "Unable to open the paywall. Please try again.");
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    try {
+      await RevenueCatUI.presentCustomerCenter({ callbacks: {} });
+    } catch {
+      Alert.alert("Error", "Unable to open subscription management. Please try again.");
+    }
+  };
   // Show skeleton while user data hasn't loaded yet
   if (!user) {
     return <ProfileSkeleton />;
@@ -236,7 +254,11 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
-        <DetailRow icon="sparkles" label="Plan" value={"Free"} />
+        <DetailRow
+          icon="sparkles"
+          label="Plan"
+          value={plan === "coach" ? "Coach Pro ✨" : plan === "athlete" ? "Athlete Pro ✨" : "Free"}
+        />
         <View style={styles.detailDivider} />
         <DetailRow
           icon="mail-outline"
@@ -270,11 +292,35 @@ export default function ProfileScreen() {
           onPress={() => Alert.alert("What's New", "Coming soon")}
         />
         <View style={styles.detailDivider} />
-        <PressableDetailRow
-          icon="rocket-outline"
-          label="Upgrade to Pro"
-          onPress={() => Alert.alert("Upgrade to Pro", "Coming soon")}
-        />
+        {plan === "free" && (
+          <PressableDetailRow
+            icon="rocket-outline"
+            label="Upgrade to Pro"
+            onPress={handleShowPaywall}
+          />
+        )}
+        {plan === "athlete" && (
+          <>
+            <PressableDetailRow
+              icon="trophy-outline"
+              label="Upgrade to Coach Pro"
+              onPress={handleShowPaywall}
+            />
+            <View style={styles.detailDivider} />
+            <PressableDetailRow
+              icon="card-outline"
+              label="Manage Subscription"
+              onPress={handleManageSubscription}
+            />
+          </>
+        )}
+        {plan === "coach" && (
+          <PressableDetailRow
+            icon="card-outline"
+            label="Manage Subscription"
+            onPress={handleManageSubscription}
+          />
+        )}
       </View>
       <Gap size={24} />
       {/* ── About App ─────────────────────────────── */}
