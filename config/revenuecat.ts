@@ -10,21 +10,24 @@ export const REVENUECAT_CONFIG = {
   // Platform-specific API keys from the RevenueCat dashboard
   // Swap these for your production keys when going live
   apiKey: Platform.select({
-    ios: "test_xefpyQqkDiXYOIKrmCzlRWLzJRb",
+    ios: "appl_dxhZNxnTIDRBkSNzIjAwLWPggBc",
     android: "test_xefpyQqkDiXYOIKrmCzlRWLzJRb",
     default: "test_xefpyQqkDiXYOIKrmCzlRWLzJRb",
   }) as string,
 } as const;
 
-/** Entitlement identifier configured in the RevenueCat dashboard */
+/** Entitlement identifiers configured in the RevenueCat dashboard */
 export const ENTITLEMENTS = {
-  PRO: "WODGoat Pro",
+  ATHLETE_PRO: "Athlete Pro",
+  COACH_PRO: "Coach Pro",
 } as const;
 
 /** Product identifiers as configured in App Store Connect / Google Play Console */
 export const PRODUCT_IDS = {
-  MONTHLY: "subscription_monthly",
-  YEARLY: "subscription_yearly",
+  ATHLETE_MONTHLY: "athlete_pro_monthly",
+  ATHLETE_YEARLY: "athlete_pro_annually",
+  COACH_MONTHLY: "coach_pro_monthly",
+  COACH_YEARLY: "coach_pro_annually",
 } as const;
 
 /** Offering identifier configured in the RevenueCat dashboard */

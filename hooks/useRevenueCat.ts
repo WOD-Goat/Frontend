@@ -12,13 +12,21 @@ const toErrorMessage = (err: unknown): string => {
   return String(err);
 };
 
+export type Plan = "free" | "athlete" | "coach";
+
 export interface RevenueCatState {
   /** Whether the SDK is ready to use */
   isConfigured: boolean;
   /** Whether a network/SDK operation is in progress */
   isLoading: boolean;
-  /** Whether the current user has an active "WODGoat Pro" entitlement */
+  /** Whether the user has any paid plan (athlete or coach) */
   isPro: boolean;
+  /** Whether the user has an active Athlete Pro entitlement */
+  isAthletePro: boolean;
+  /** Whether the user has an active Coach Pro entitlement */
+  isCoachPro: boolean;
+  /** Current plan tier */
+  plan: Plan;
   /** Full CustomerInfo object from RevenueCat */
   customerInfo: CustomerInfo | null;
   /** All available offerings fetched from RevenueCat */
@@ -59,14 +67,20 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
     isConfigured: false,
     isLoading: false,
     isPro: false,
+    isAthletePro: false,
+    isCoachPro: false,
+    plan: "free",
     customerInfo: null,
     offerings: null,
     error: null,
   });
 
-  // ── Helper to derive isPro from CustomerInfo ─────────────────────────────
-  const deriveIsPro = (info: CustomerInfo): boolean => {
-    return info.entitlements.active[ENTITLEMENTS.PRO] !== undefined;
+  // ── Helper to derive plan from CustomerInfo ───────────────────────────────
+  const derivePlan = (info: CustomerInfo): Pick<RevenueCatState, "isPro" | "isAthletePro" | "isCoachPro" | "plan"> => {
+    const isCoachPro = info.entitlements.active[ENTITLEMENTS.COACH_PRO] !== undefined;
+    const isAthletePro = isCoachPro || info.entitlements.active[ENTITLEMENTS.ATHLETE_PRO] !== undefined;
+    const plan: Plan = isCoachPro ? "coach" : isAthletePro ? "athlete" : "free";
+    return { isPro: isAthletePro || isCoachPro, isAthletePro, isCoachPro, plan };
   };
 
   // ── Subscribe to CustomerInfo updates ────────────────────────────────────
@@ -78,7 +92,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
           ...prev,
           isConfigured: true,
           customerInfo: info,
-          isPro: deriveIsPro(info),
+          ...derivePlan(info),
         }));
       } catch {
         // SDK not yet configured – _layout.tsx configures it
@@ -93,7 +107,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
         ...prev,
         isConfigured: true,
         customerInfo: info,
-        isPro: deriveIsPro(info),
+        ...derivePlan(info),
       }));
     };
 
@@ -118,7 +132,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
         ...prev,
         isLoading: false,
         customerInfo: info,
-        isPro: deriveIsPro(info),
+        ...derivePlan(info),
       }));
     } catch (err) {
       setState((prev) => ({
@@ -155,7 +169,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
           ...prev,
           isLoading: false,
           customerInfo: info,
-          isPro: deriveIsPro(info),
+          ...derivePlan(info),
         }));
         return info;
       } catch (err) {
@@ -176,7 +190,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
         ...prev,
         isLoading: false,
         customerInfo,
-        isPro: deriveIsPro(customerInfo),
+        ...derivePlan(customerInfo),
       }));
     } catch (err) {
       setState((prev) => ({
@@ -195,7 +209,7 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
         ...prev,
         isLoading: false,
         customerInfo: info,
-        isPro: deriveIsPro(info),
+        ...derivePlan(info),
       }));
     } catch (err) {
       setState((prev) => ({

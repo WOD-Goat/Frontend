@@ -2,7 +2,7 @@ import { apiClient } from "@/api/client";
 import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
 import { Gap, Page, ProfileSkeleton } from "@/components";
-import { storage, useGlobalState } from "@/components/lib";
+import { useGlobalState } from "@/components/lib";
 import { ENTITLEMENTS } from "@/config/revenuecat";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
@@ -32,7 +32,6 @@ const getAge = (birthYear?: number) => {
 
 // ── Helper: member since label ─────────────────────────
 const getMemberSince = (createdAt?: Date | any) => {
-  console.log("CreatedAt value:", createdAt);
   if (!createdAt) return null;
   const d =
     createdAt._seconds != null
@@ -60,10 +59,7 @@ export default function ProfileScreen() {
   const { logout, loading } = useAuth();
   const globalState = useGlobalState();
   const user = globalState.get("user");
-  const userStorage = storage.get("user") || {};
-  const { isPro, isLoading: rcLoading } = useRevenueCat();
-  console.log("User from global state:", user);
-  console.log("User from storage:", userStorage);
+  const { plan } = useRevenueCat();
 
   const displayName = useMemo(() => {
     if (!user?.name) return "Athlete";
@@ -77,59 +73,22 @@ export default function ProfileScreen() {
   const memberSince = getMemberSince(user?.createdAt);
   const stats = user?.statsSummary;
 
-  const handleUpgradeToPro = async () => {
+  const handleShowPaywall = async () => {
     try {
-      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywallIfNeeded({
-        requiredEntitlementIdentifier: ENTITLEMENTS.PRO,
-      });
-      if (
-        result === PAYWALL_RESULT.PURCHASED ||
-        result === PAYWALL_RESULT.RESTORED
-      ) {
-        Alert.alert(
-          "Welcome to Pro! 🎉",
-          "Your WODGoat Pro subscription is now active.",
-        );
+      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+        Alert.alert("You're all set!", "Your subscription is now active.");
       }
-    } catch (error) {
-      console.error("❌ Paywall error:", error);
+    } catch {
       Alert.alert("Error", "Unable to open the paywall. Please try again.");
     }
   };
 
   const handleManageSubscription = async () => {
     try {
-      await RevenueCatUI.presentCustomerCenter({
-        callbacks: {
-          onShowingManageSubscriptions: () => {
-            console.log("📋 Customer Center: manage subscriptions shown");
-          },
-          onRestoreStarted: () => {
-            console.log("🔄 Customer Center: restore started");
-          },
-          onRestoreCompleted: ({ customerInfo }) => {
-            console.log(
-              "✅ Customer Center: restore completed",
-              Object.keys(customerInfo.entitlements.active),
-            );
-          },
-          onRestoreFailed: ({ error }) => {
-            console.error("❌ Customer Center: restore failed", error);
-          },
-          onFeedbackSurveyCompleted: ({ feedbackSurveyOptionId }) => {
-            console.log(
-              "📝 Customer Center: feedback submitted",
-              feedbackSurveyOptionId,
-            );
-          },
-        },
-      });
-    } catch (error) {
-      console.error("❌ Customer Center error:", error);
-      Alert.alert(
-        "Error",
-        "Unable to open subscription management. Please try again.",
-      );
+      await RevenueCatUI.presentCustomerCenter({ callbacks: {} });
+    } catch {
+      Alert.alert("Error", "Unable to open subscription management. Please try again.");
     }
   };
   // Show skeleton while user data hasn't loaded yet
@@ -298,7 +257,7 @@ export default function ProfileScreen() {
         <DetailRow
           icon="sparkles"
           label="Plan"
-          value={isPro ? "WODGoat Pro ✨" : "Free"}
+          value={plan === "coach" ? "Coach Pro ✨" : plan === "athlete" ? "Athlete Pro ✨" : "Free"}
         />
         <View style={styles.detailDivider} />
         <DetailRow
@@ -333,17 +292,33 @@ export default function ProfileScreen() {
           onPress={() => Alert.alert("What's New", "Coming soon")}
         />
         <View style={styles.detailDivider} />
-        {isPro ? (
+        {plan === "free" && (
+          <PressableDetailRow
+            icon="rocket-outline"
+            label="Upgrade to Pro"
+            onPress={handleShowPaywall}
+          />
+        )}
+        {plan === "athlete" && (
+          <>
+            <PressableDetailRow
+              icon="trophy-outline"
+              label="Upgrade to Coach Pro"
+              onPress={handleShowPaywall}
+            />
+            <View style={styles.detailDivider} />
+            <PressableDetailRow
+              icon="card-outline"
+              label="Manage Subscription"
+              onPress={handleManageSubscription}
+            />
+          </>
+        )}
+        {plan === "coach" && (
           <PressableDetailRow
             icon="card-outline"
             label="Manage Subscription"
             onPress={handleManageSubscription}
-          />
-        ) : (
-          <PressableDetailRow
-            icon="rocket-outline"
-            label="Upgrade to Pro"
-            onPress={handleUpgradeToPro}
           />
         )}
       </View>
