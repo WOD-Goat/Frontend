@@ -8,5 +8,5 @@ export function isUpdateRequired(current: string, minimum: string): boolean {
   const [mMaj, mMin, mPatch] = parse(minimum);
   if (cMaj !== mMaj) return cMaj < mMaj;
   if (cMin !== mMin) return cMin < mMin;
-  return true;
+  return cPatch < mPatch;
 }
