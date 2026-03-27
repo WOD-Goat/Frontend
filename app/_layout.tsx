@@ -7,16 +7,20 @@ import { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
+import { appService } from "../api/services/app";
 import { authService } from "../api/services/auth";
 import { useGlobalState } from "../components/lib/global-state";
 import { useZustandGlobalState } from "../components/lib/global-state/useGlobalState";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
+import UpdateModal from "../components/ui/UpdateModal";
 import "../config/firebase";
 import { REVENUECAT_CONFIG } from "../config/revenuecat";
 import { auth } from "../config/firebase";
 import { useNotifications } from "../hooks/useNotifications";
 import { preloadImages } from "../utils/imagePreloader";
+import { isUpdateRequired } from "../utils/version";
+import Constants from "expo-constants";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete
 SplashScreen.preventAutoHideAsync();
@@ -25,6 +29,7 @@ export default function RootLayout() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const { get: getStorage } = useStorage();
   const globalState = useGlobalState();
   const user = useZustandGlobalState((state) => state.user);
@@ -67,6 +72,22 @@ export default function RootLayout() {
     } catch (error) {
       console.error("❌ RevenueCat: Failed to configure SDK", error);
     }
+  }, []);
+
+  // Check if a store update is required
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const minimumVersion = await appService.getMinimumVersion();
+        const currentVersion = Constants.expoConfig?.version ?? "0.0.0";
+        if (isUpdateRequired(currentVersion, minimumVersion)) {
+          setShowUpdateModal(true);
+        }
+      } catch {
+        // Silently ignore — never block the user due to a network failure
+      }
+    };
+    checkVersion();
   }, []);
 
   // Preload images when component mounts
@@ -186,6 +207,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ToastProvider>
         <StatusBar style="light" />
+        <UpdateModal visible={showUpdateModal} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="onboarding" />
