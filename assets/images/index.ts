@@ -17,7 +17,7 @@ export const tabIcons = {
 // App Icons
 export const appIcons = {
   logo: require("./logo.png"),
-  appicon: require("./appicon.png")
+  applogo: require("./applogo.png")
 };
 
 export const mascotAssets = {

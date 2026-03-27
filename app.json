@@ -4,7 +4,7 @@
     "slug": "wodgoat",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/appicon.png",
+    "icon": "./assets/images/applogo.png",
     "scheme": "wodgoat",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -25,7 +25,13 @@
         "backgroundColor": "#1c0e00"
       },
       "edgeToEdgeEnabled": false,
-      "package": "com.wodgoat"
+      "package": "com.wodgoat",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -69,6 +75,12 @@
         "projectId": "fa719d32-832a-4738-987a-4744b1759dbe"
       }
     },
-    "owner": "yahiaanas"
+    "owner": "yahiaanas",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fa719d32-832a-4738-987a-4744b1759dbe"
+    }
   }
 }
