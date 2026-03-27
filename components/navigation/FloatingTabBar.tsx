@@ -120,7 +120,7 @@ export default function FloatingTabBar({
   // ─── + button action ───────────────────────────────────────────────────────
   const handlePlusPress = () => {
     if (iconRoute === "index") {
-      router.push("/workout/create?voice=true");
+      router.push("/workout/create");
     } else if (iconRoute === "groups") {
       router.push("/group/create");
     } else if (iconRoute === "timer") {
@@ -149,14 +149,14 @@ export default function FloatingTabBar({
             ]}
             accessibilityRole="button"
             accessibilityLabel={
-              iconRoute === "index" ? "Record Workout with Voice"
+              iconRoute === "index" ? "Create Workout"
               : iconRoute === "timer" ? "Start Timer"
               : "Create Group"
             }
           >
             <Ionicons
-              name={iconRoute === "index" ? "mic" : iconRoute === "timer" ? "play" : "add"}
-              size={iconRoute === "index" ? 26 : iconRoute === "timer" ? 26 : 30}
+              name={iconRoute === "timer" ? "play" : "add"}
+              size={iconRoute === "timer" ? 26 : 30}
               color="#FFFFFF"
             />
           </Pressable>

@@ -577,8 +577,8 @@ export default function GroupWorkoutDetailScreen() {
           workoutId={workoutId}
           onSubmitSuccess={() => {
             setSubmitted(true);
-            setShowLogResults(false);
-            loadWorkout();
+            router.dismissAll();
+            router.replace("/(tabs)");
           }}
         />
       )}

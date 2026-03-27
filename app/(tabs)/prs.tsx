@@ -195,15 +195,23 @@ export default function PRsScreen() {
     [],
   );
 
-  // Filter PRs by search query using exerciseId.includes (id is close to name)
+  // Filter PRs by search query using exerciseId, exerciseName, and aliases
   const filteredPRs = useMemo(() => {
     if (!searchQuery.trim()) return prs;
     const q = searchQuery.toLowerCase();
-    return prs.filter(
-      (pr) =>
+    return prs.filter((pr) => {
+      if (
         pr.exerciseId?.toLowerCase().includes(q) ||
-        pr.exerciseName?.toLowerCase().includes(q),
-    );
+        pr.exerciseName?.toLowerCase().includes(q)
+      )
+        return true;
+      const exercise = (standardExercises as StandardExercise[]).find(
+        (e) => e.id === pr.exerciseId,
+      );
+      return (exercise?.aliases ?? []).some((alias) =>
+        alias.toLowerCase().includes(q),
+      );
+    });
   }, [prs, searchQuery]);
 
   // Paginated slice of filtered results
