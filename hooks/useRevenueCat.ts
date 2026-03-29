@@ -95,7 +95,8 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
           ...derivePlan(info),
         }));
       } catch {
-        // SDK not yet configured – _layout.tsx configures it
+        // SDK not configured (e.g. Expo Go) — mark ready with free-plan defaults
+        setState((prev) => ({ ...prev, isConfigured: true }));
       }
     };
 
