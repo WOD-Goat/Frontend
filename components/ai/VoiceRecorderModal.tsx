@@ -292,10 +292,6 @@ export function VoiceRecorderModal({
                 {isProcessing && "Reading your workout"}
                 {isError && (errorMessage ?? "Something went wrong.")}
               </Text>
-
-              {isProcessing && (
-                <Text style={styles.poweredBy}>Powered by Gemini AI</Text>
-              )}
             </View>
 
             {/* Waveform (always mounted so animations don't remount; isActive controls height) */}
