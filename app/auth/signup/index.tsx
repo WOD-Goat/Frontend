@@ -8,6 +8,7 @@ import {
   sendEmailVerification,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import Purchases from "react-native-purchases";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -140,7 +141,11 @@ export default function SignupScreen() {
         );
         await sendEmailVerification(userCredential.user);
         console.log("Verification email sent to:", userData.email);
-
+        try {
+          await Purchases.logIn(userCredential.user.uid);
+        } catch (e) {
+          console.warn("RevenueCat logIn failed:", e);
+        }
         router.replace("/auth/signup/verify");
       }
     } catch (error) {

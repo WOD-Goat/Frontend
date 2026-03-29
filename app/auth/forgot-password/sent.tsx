@@ -40,6 +40,14 @@ export default function ForgotPasswordSentScreen() {
           in 1 hour.
         </Text>
 
+        <View style={styles.spamNote}>
+          <Text style={[styles.spamNoteText, Typography.bodyMedium]}>
+            Can't find the email? Check your{" "}
+            <Text style={styles.spamNoteHighlight}>spam or junk folder</Text>
+            {" "}and mark it as "Not Spam" to ensure you receive all future emails from us.
+          </Text>
+        </View>
+
         {message ? <Text style={styles.messageText}>{message}</Text> : null}
 
         <Button
@@ -84,6 +92,19 @@ const styles = StyleSheet.create({
   instructions: {
     color: Colors.text.secondary,
     marginBottom: 24,
+  },
+  spamNote: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  spamNoteText: {
+    color: Colors.text.secondary,
+  },
+  spamNoteHighlight: {
+    color: Colors.primary[500],
   },
   messageText: {
     color: Colors.primary[500],

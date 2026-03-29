@@ -42,7 +42,7 @@ export const FEATURE_CONFIG: Record<Plan, PlanFeatures> = {
   },
   coach: {
     voiceWorkoutMaxCountPerMonth: null,
-    voiceWorkoutMaxDurationSeconds: null,
+    voiceWorkoutMaxDurationSeconds: 90,
     groupJoinMax: null,
     createGroup: true,
     leaderboard: true,

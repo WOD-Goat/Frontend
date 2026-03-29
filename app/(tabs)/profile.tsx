@@ -59,7 +59,7 @@ export default function ProfileScreen() {
   const { logout, loading } = useAuth();
   const globalState = useGlobalState();
   const user = globalState.get("user");
-  const { plan } = useRevenueCat();
+  const { plan, logoutUser } = useRevenueCat();
 
   const displayName = useMemo(() => {
     if (!user?.name) return "Athlete";
@@ -109,6 +109,7 @@ export default function ProfileScreen() {
             try {
               await apiClient.delete(API_ENDPOINTS.AUTH.DELETE_PROFILE);
               await logout();
+              await logoutUser();
               router.replace("/auth/login");
             } catch (error) {
               console.error("Delete account error:", error);
@@ -132,6 +133,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             await logout();
+            await logoutUser();
             router.replace("/auth/login");
           } catch (error) {
             console.error("Logout error:", error);

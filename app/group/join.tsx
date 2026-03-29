@@ -22,7 +22,7 @@ export default function JoinGroupScreen() {
       setLoading(true);
       const response = await groupsService.joinGroup(code.trim().toUpperCase());
       if (response.success && response.data) {
-        showToast({ type: "success", label: `Joined ${response.data.name}!` });
+        showToast({ type: "success", label: `Joined Group Successfully!` });
         router.dismissAll();
         router.replace("/(tabs)/groups");
       } else {

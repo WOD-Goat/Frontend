@@ -33,7 +33,6 @@ export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [networkChecked, setNetworkChecked] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const { get: getStorage } = useStorage();
@@ -105,22 +104,19 @@ export default function RootLayout() {
     loadImages();
   }, []);
 
-  // Combined network + auth initialization — runs on mount and on retry
+  // Check network + authentication on mount and on retry
   const initializeApp = async () => {
     try {
-      // 1. Check network connectivity
       const netState = await NetInfo.fetch();
-      const online =
-        !!netState.isConnected && netState.isInternetReachable !== false;
+      const online = !!netState.isConnected && netState.isInternetReachable !== false;
       setIsOnline(online);
       setNetworkChecked(true);
 
       if (!online) {
-        setAuthChecked(true); // skip auth check when offline
+        setAuthChecked(true);
         return;
       }
 
-      // 2. Auth check
       try {
         await apiClient.waitForInitialization();
         const hasTokens = authService.isAuthenticated();
@@ -138,9 +134,7 @@ export default function RootLayout() {
           const refreshed = await apiClient.refreshAccessToken();
 
           if (refreshed) {
-            console.log(
-              "✅ Layout: Refresh token valid, access token refreshed",
-            );
+            console.log("✅ Layout: Refresh token valid, access token refreshed");
 
             const firebaseUser = await new Promise<any>((resolve) => {
               const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -187,22 +181,10 @@ export default function RootLayout() {
     }
   };
 
-  // Run initialization on mount
   useEffect(() => {
     initializeApp();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Monitor connectivity changes after app is fully initialized (mid-session)
-  useEffect(() => {
-    if (!isInitialized) return;
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      const online =
-        !!state.isConnected && state.isInternetReachable !== false;
-      setIsOnline(online);
-    });
-    return () => unsubscribe();
-  }, [isInitialized]);
 
   const handleRetry = async () => {
     setIsRetrying(true);
@@ -217,9 +199,8 @@ export default function RootLayout() {
   useEffect(() => {
     if ((loaded || error) && imagesLoaded && authChecked && networkChecked) {
       SplashScreen.hideAsync();
-      setIsInitialized(true);
 
-      if (!isOnline) return; // offline — NoInternetScreen overlay will show
+      if (!isOnline) return;
 
       if (isAuthenticated) {
         authService.getProfile().then(async (res) => {
@@ -239,8 +220,6 @@ export default function RootLayout() {
         router.replace("/onboarding");
       }
     }
-    // isOnline intentionally omitted — mid-session changes must not re-trigger navigation
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loaded, error, imagesLoaded, authChecked, networkChecked, isAuthenticated]);
 
   if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked) {

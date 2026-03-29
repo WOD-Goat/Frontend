@@ -92,26 +92,3 @@ export async function presentPaywall(offering?: object): Promise<boolean> {
   );
 }
 
-/**
- * Presents the paywall ONLY if the user does not have the given entitlement.
- * Returns `true` if the user purchased, restored, or already had access.
- * @param requiredEntitlementIdentifier - defaults to "WODGoat Pro"
- */
-export async function presentPaywallIfNeeded(
-  requiredEntitlementIdentifier = "WODGoat Pro",
-  offering?: object,
-): Promise<boolean> {
-  const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywallIfNeeded({
-    requiredEntitlementIdentifier,
-    ...(offering ? { offering: offering as any } : {}),
-  });
-
-  switch (result) {
-    case PAYWALL_RESULT.PURCHASED:
-    case PAYWALL_RESULT.RESTORED:
-    case PAYWALL_RESULT.NOT_PRESENTED: // user already has the entitlement
-      return true;
-    default:
-      return false;
-  }
-}

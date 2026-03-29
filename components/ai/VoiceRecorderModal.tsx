@@ -148,6 +148,7 @@ export function VoiceRecorderModal({
   const {
     recordingState,
     elapsedSeconds,
+    maxDurationSeconds,
     result,
     errorMessage,
     startRecording,
@@ -189,12 +190,6 @@ export function VoiceRecorderModal({
       handleClose();
     }
   }, [recordingState, result]);
-  // Stop recording automatically at 1:00 (60 seconds)
-  useEffect(() => {
-    if (recordingState === "recording" && elapsedSeconds >= 60) {
-      stopAndProcess();
-    }
-  }, [recordingState, elapsedSeconds]);
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseScale.value }],
     opacity: pulseOpacity.value,
@@ -283,7 +278,7 @@ export function VoiceRecorderModal({
               {isRecording && (
                 <Text
                   style={styles.timer}
-                >{`${formatTime(elapsedSeconds)}/1:00`}</Text>
+                >{`${formatTime(elapsedSeconds)}/${formatTime(maxDurationSeconds ?? 0)}`}</Text>
               )}
 
               <Text style={styles.statusText}>

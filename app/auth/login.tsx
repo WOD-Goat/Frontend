@@ -1,5 +1,6 @@
 import { Button, Input, Page } from "@/components";
 import { auth } from "@/config/firebase";
+import Purchases from "react-native-purchases";
 import { Colors, FontFamilies, FontSizes, Typography, responsiveSize } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { router } from "expo-router";
@@ -76,6 +77,11 @@ export default function LoginScreen() {
       if (!credential.user.emailVerified) {
         router.push("/auth/signup/verify");
         return;
+      }
+      try {
+        await Purchases.logIn(credential.user.uid);
+      } catch (e) {
+        console.warn("RevenueCat logIn failed:", e);
       }
       router.replace("/(tabs)");
     } catch (firebaseError) {

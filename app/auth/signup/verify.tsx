@@ -64,6 +64,14 @@ export default function VerifyScreen() {
           come back and press Continue.
         </Text>
 
+        <View style={styles.spamNote}>
+          <Text style={[styles.spamNoteText, Typography.bodyMedium]}>
+            Can't find the email? Check your{" "}
+            <Text style={styles.spamNoteHighlight}>spam or junk folder</Text>
+            {" "}and mark it as "Not Spam" to ensure you receive all future emails from us.
+          </Text>
+        </View>
+
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <Button
@@ -101,6 +109,19 @@ const styles = StyleSheet.create({
   subtitle: {
     color: Colors.text.secondary,
     marginBottom: 24,
+  },
+  spamNote: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  spamNoteText: {
+    color: Colors.text.secondary,
+  },
+  spamNoteHighlight: {
+    color: Colors.primary[500],
   },
   errorText: {
     color: Colors.text.error,
