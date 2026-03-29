@@ -1,6 +1,8 @@
 import { groupsService } from "@/api/services";
 import { Gap, Page } from "@/components";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import { presentPaywall } from "@/app/paywall";
 import type { LeaderboardData, LeaderboardEntry, LeaderboardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -11,6 +13,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -156,9 +159,7 @@ export default function LeaderboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (groupId && workoutId) loadLeaderboard();
-  }, [groupId, workoutId]);
+  const { canAccess } = useEntitlements();
 
   const loadLeaderboard = async () => {
     try {
@@ -176,6 +177,32 @@ export default function LeaderboardScreen() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (groupId && workoutId && canAccess("leaderboard")) loadLeaderboard();
+  }, [groupId, workoutId, canAccess]);
+
+  if (!canAccess("leaderboard")) {
+    return (
+      <Page showBackButton={true} title="Leaderboard">
+        <View style={styles.centerContainer}>
+          <View style={styles.lockRing}>
+            <Ionicons name="lock-closed" size={32} color={Colors.primary[500]} />
+          </View>
+          <Gap size={16} />
+          <Text style={styles.lockTitle}>Coach Pro Feature</Text>
+          <Text style={styles.lockMessage}>
+            Leaderboards are available on Coach Pro.
+          </Text>
+          <Gap size={20} />
+          <TouchableOpacity style={styles.upgradeBtn} onPress={() => presentPaywall()} activeOpacity={0.8}>
+            <Ionicons name="sparkles" size={14} color="#000" />
+            <Text style={styles.upgradeBtnText}>Upgrade Now</Text>
+          </TouchableOpacity>
+        </View>
+      </Page>
+    );
+  }
 
   if (loading) {
     return (
@@ -364,5 +391,43 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
+  },
+  lockRing: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.primary[500] + "15",
+    borderWidth: 1.5,
+    borderColor: Colors.primary[500] + "40",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  lockTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.primary,
+    textAlign: "center",
+  },
+  lockMessage: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 32,
+  },
+  upgradeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  upgradeBtnText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: "#000000",
   },
 });

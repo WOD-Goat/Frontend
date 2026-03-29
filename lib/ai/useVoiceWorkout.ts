@@ -1,4 +1,9 @@
 import { aiService } from "@/api/services/ai";
+import { useEntitlements } from "@/hooks/useEntitlements";
+import {
+  getVoiceUsage,
+  incrementVoiceUsage,
+} from "@/lib/voiceUsageStorage";
 import type { CreateWorkoutData } from "@/types";
 import { AudioModule, RecordingPresets, useAudioRecorder } from "expo-audio";
 import { File } from "expo-file-system";
@@ -25,13 +30,18 @@ export function useVoiceWorkout() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoStopRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRecordingRef = useRef(false);
+  // Ref to always call the latest stopAndProcess (avoids stale closure in auto-stop timeout)
+  const stopAndProcessRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const { features } = useEntitlements();
 
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (autoStopRef.current) clearTimeout(autoStopRef.current);
     };
   }, []);
 
@@ -47,6 +57,19 @@ export function useVoiceWorkout() {
         );
         setRecordingState("error");
         return;
+      }
+
+      // ── Monthly usage check ────────────────────────────────────────────────
+      const maxCount = features.voiceWorkoutMaxCountPerMonth;
+      if (maxCount !== null) {
+        const usage = await getVoiceUsage();
+        if (usage.count >= maxCount) {
+          setErrorMessage(
+            `You've used all ${maxCount} voice workouts for this month. Upgrade for unlimited access.`,
+          );
+          setRecordingState("error");
+          return;
+        }
       }
 
       await AudioModule.setAudioModeAsync({
@@ -65,11 +88,21 @@ export function useVoiceWorkout() {
       timerRef.current = setInterval(() => {
         setElapsedSeconds((s) => s + 1);
       }, 1000);
+
+      // ── Duration cap ──────────────────────────────────────────────────────
+      const maxDuration = features.voiceWorkoutMaxDurationSeconds;
+      if (maxDuration !== null) {
+        autoStopRef.current = setTimeout(async () => {
+          if (isRecordingRef.current) {
+            await stopAndProcessRef.current();
+          }
+        }, maxDuration * 1000);
+      }
     } catch (e: any) {
       setErrorMessage(e?.message ?? "Failed to start recording.");
       setRecordingState("error");
     }
-  }, [recorder]);
+  }, [recorder, features]);
 
   const stopAndProcess = useCallback(async () => {
     if (!isRecordingRef.current) return;
@@ -77,6 +110,10 @@ export function useVoiceWorkout() {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
     }
 
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -116,6 +153,12 @@ export function useVoiceWorkout() {
       audioFile.delete();
 
       if (response.success && response.data) {
+        // ── Increment usage counter on success ────────────────────────────
+        const maxCount = features.voiceWorkoutMaxCountPerMonth;
+        if (maxCount !== null) {
+          await incrementVoiceUsage();
+        }
+
         setResult({
           transcript: response.data.transcript,
           data: response.data.parsedWorkout,
@@ -134,12 +177,16 @@ export function useVoiceWorkout() {
       setRecordingState("error");
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, [recorder]);
+  }, [recorder, features]);
 
   const reset = useCallback(async () => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
+    }
+    if (autoStopRef.current) {
+      clearTimeout(autoStopRef.current);
+      autoStopRef.current = null;
     }
     if (isRecordingRef.current) {
       try {
@@ -153,9 +200,16 @@ export function useVoiceWorkout() {
     setErrorMessage(null);
   }, [recorder]);
 
+  // Keep ref current so the auto-stop timeout always calls the latest version
+  stopAndProcessRef.current = stopAndProcess;
+
+  /** The max duration in seconds for the current plan (null = unlimited). */
+  const maxDurationSeconds = features.voiceWorkoutMaxDurationSeconds;
+
   return {
     recordingState,
     elapsedSeconds,
+    maxDurationSeconds,
     result,
     errorMessage,
     startRecording,

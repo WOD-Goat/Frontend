@@ -106,6 +106,7 @@ export default function GroupDetailScreen() {
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const currentUserId = globalState.get("user")?.uid ?? "";
+
   useEffect(() => {
     if (id) loadData();
   }, [id]);
