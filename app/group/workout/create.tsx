@@ -1,8 +1,11 @@
 import { groupsService } from "@/api/services";
 import { Button, ExerciseSearchInput, Input, Page } from "@/components";
+import { VoiceRecorderModal } from "@/components/ai";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, Typography, responsiveSize } from "@/constants";
-import type { StandardExercise, TrackingType } from "@/types";
+import standardExercises from "@/constants/standardExercises.json";
+import type { VoiceWorkoutResult } from "@/lib/ai/useVoiceWorkout";
+import type { CreateWorkoutData, StandardExercise, TrackingType } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -114,6 +117,23 @@ function AnimatedExerciseSection({
   );
 }
 
+function resolveExercise(aiId: string, aiName: string): StandardExercise | null {
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  let match = (standardExercises as StandardExercise[]).find((e) => e.id === aiId);
+  if (match) return match;
+  const normAiName = normalize(aiName);
+  match = (standardExercises as StandardExercise[]).find((e) => normalize(e.name) === normAiName);
+  if (match) return match;
+  match = (standardExercises as StandardExercise[]).find((e) =>
+    (e.aliases ?? []).some((alias) => normalize(alias) === normAiName),
+  );
+  if (match) return match;
+  match = (standardExercises as StandardExercise[]).find(
+    (e) => normalize(e.name).includes(normAiName) || normAiName.includes(normalize(e.name)),
+  );
+  return match ?? null;
+}
+
 export default function CreateGroupWorkoutScreen() {
   const { groupId } = useLocalSearchParams<{ groupId: string }>();
   const [wods, setWods] = useState<WOD[]>([
@@ -128,7 +148,38 @@ export default function CreateGroupWorkoutScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const { showToast } = useToast();
+
+  const handleVoiceResult = (result: VoiceWorkoutResult) => {
+    const data = result.data as CreateWorkoutData;
+    const filled = data.wods.map((w, i) => ({
+      id: `wod-voice-${i}-${Date.now()}`,
+      name: w.name,
+      exercises: w.exercises.map((ex, j) => {
+        const matched = resolveExercise(ex.exerciseId ?? "", ex.name);
+        return {
+          id: `exercise-voice-${i}-${j}-${Date.now()}`,
+          exerciseId: matched?.id ?? "",
+          name: matched?.name ?? ex.name,
+          instructions: ex.instructions ?? "",
+          trackingType: matched?.trackingType ?? ex.trackingType,
+          unresolved: matched === null,
+        };
+      }),
+    }));
+    setWods(filled);
+    if (data.scheduledFor) setScheduledFor(new Date(data.scheduledFor));
+    if (data.notes) setNotes(data.notes);
+    setVoiceModalVisible(false);
+    const unresolvedCount = filled.flatMap((w) => w.exercises).filter((ex) => ex.unresolved).length;
+    showToast({
+      type: unresolvedCount > 0 ? "error" : "success",
+      label: unresolvedCount > 0
+        ? `${unresolvedCount} exercise(s) not found — please search manually.`
+        : "Workout filled from voice! Review and save.",
+    });
+  };
 
   const handleAddWod = () => {
     setWods([...wods, {
@@ -201,7 +252,7 @@ export default function CreateGroupWorkoutScreen() {
     const finalWods = wods
       .filter((w) => !w.removing)
       .map((w) => ({
-        name: w.name || "Untitled WOD",
+        name: w.name || "Workout Of The Day",
         exercises: w.exercises
           .filter((ex) => !ex.removing)
           .map(({ exerciseId, name, instructions, trackingType }) => ({ exerciseId, name, instructions, trackingType })),
@@ -230,18 +281,35 @@ export default function CreateGroupWorkoutScreen() {
   };
 
   return (
+    <>
+    <VoiceRecorderModal
+      visible={voiceModalVisible}
+      onClose={() => setVoiceModalVisible(false)}
+      onResult={handleVoiceResult}
+    />
     <Page
       title="Post Workout"
       showBackButton={true}
       footer={
-        <Button
-          title={loading ? "Posting..." : "Post Workout"}
-          onPress={handleSave}
-          variant="primary"
-          size="large"
-          fullWidth
-          disabled={!isValid() || loading}
-        />
+        <View style={styles.footerActions}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title={loading ? "Posting..." : "Post Workout"}
+              onPress={handleSave}
+              variant="primary"
+              size="large"
+              fullWidth
+              disabled={!isValid() || loading}
+            />
+          </View>
+          <TouchableOpacity
+            style={styles.voiceFooterButton}
+            onPress={() => setVoiceModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="mic-outline" size={responsiveSize(22)} color={Colors.primary[500]} />
+          </TouchableOpacity>
+        </View>
       }
     >
       <View style={styles.container}>
@@ -407,6 +475,7 @@ export default function CreateGroupWorkoutScreen() {
         </TouchableOpacity>
       </View>
     </Page>
+    </>
   );
 }
 
@@ -446,4 +515,15 @@ const styles = StyleSheet.create({
   dateText: { color: Colors.text.primary, fontSize: responsiveSize(16) } as TextStyle,
   doneButton: { backgroundColor: Colors.primary[500], borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, alignItems: "center", marginTop: 8 } as ViewStyle,
   doneButtonText: { color: "#fff", fontSize: responsiveSize(16), fontWeight: "600" } as TextStyle,
+  footerActions: { flexDirection: "row", gap: 10, alignItems: "center" } as ViewStyle,
+  voiceFooterButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.primary[500],
+    backgroundColor: Colors.primary[500] + "25",
+  } as ViewStyle,
 });

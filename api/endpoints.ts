@@ -47,4 +47,7 @@ export const API_ENDPOINTS = {
     LEADERBOARD: (groupId: string, workoutId: string) =>
       `/api/groups/${groupId}/workouts/${workoutId}/leaderboard`,
   },
+  APP: {
+    VERSION: '/api/app/version',
+  },
 } as const;
