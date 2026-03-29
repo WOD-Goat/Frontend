@@ -23,6 +23,8 @@ interface WorkoutSectionProps {
   groupId?: string;
   groupName?: string;
   hasSubmitted?: boolean;
+  locked?: boolean;
+  onLockedPress?: () => void;
 }
 
 const STATUS_CONFIG = {
@@ -56,12 +58,16 @@ export default function WorkoutSection({
   groupId,
   groupName,
   hasSubmitted,
+  locked = false,
+  onLockedPress,
 }: WorkoutSectionProps) {
   const config = STATUS_CONFIG[status];
   const isGroup = source === "group";
   const isGroupDone = isGroup && hasSubmitted;
   const isGroupMissed = isGroup && status === "missed";
-  const accentColor = isGroupDone
+  const accentColor = locked
+    ? Colors.primary[500]
+    : isGroupDone
     ? Colors.success[500]
     : isGroupMissed
     ? Colors.error[500]
@@ -70,6 +76,10 @@ export default function WorkoutSection({
     : config.color;
 
   const navigateToWorkout = () => {
+    if (locked) {
+      onLockedPress?.();
+      return;
+    }
     if (isGroup && groupId) {
       router.push(`/group/workout/${workoutId}?groupId=${groupId}`);
     } else {
@@ -78,7 +88,7 @@ export default function WorkoutSection({
   };
 
   return (
-    <View style={[styles.container]}>
+    <View style={[styles.container, locked && styles.containerLocked]}>
       {/* Left accent */}
       <View style={[styles.accent, { backgroundColor: accentColor }]} />
 
@@ -94,20 +104,23 @@ export default function WorkoutSection({
               />
               <Text style={styles.date}>{date}</Text>
               {isGroup && groupName && (
-                <View style={[styles.groupPill, { backgroundColor: (isGroupDone ? Colors.success[500] : Colors.primary[500]) + "20" }]}>
-                  <Ionicons name="people" size={10} color={isGroupDone ? Colors.success[500] : Colors.primary[500]} />
-                  <Text style={[styles.groupPillText, { color: isGroupDone ? Colors.success[500] : Colors.primary[500] }]}>{groupName}</Text>
+                <View style={[styles.groupPill, { backgroundColor: Colors.primary[500] + "20" }]}>
+                  {locked
+                    ? <Ionicons name="lock-closed" size={10} color={Colors.primary[400]} />
+                    : <Ionicons name="people" size={10} color={isGroupDone ? Colors.success[500] : Colors.primary[500]} />
+                  }
+                  <Text style={[styles.groupPillText, { color: locked ? Colors.primary[400] : isGroupDone ? Colors.success[500] : Colors.primary[500] }]}>{groupName}</Text>
                 </View>
               )}
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: isGroupDone ? Colors.success[500] + "18" : isGroup ? Colors.primary[500] + "18" : config.bgColor }]}>
+            <View style={[styles.statusBadge, { backgroundColor: locked ? Colors.primary[500] + "18" : isGroupDone ? Colors.success[500] + "18" : isGroup ? Colors.primary[500] + "18" : config.bgColor }]}>
               <Ionicons
-                name={isGroupDone ? "checkmark-circle" : isGroup ? "people" : config.icon}
+                name={locked ? "lock-closed" : isGroupDone ? "checkmark-circle" : isGroup ? "people" : config.icon}
                 size={12}
-                color={isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color}
+                color={locked ? Colors.primary[400] : isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color}
               />
-              <Text style={[styles.statusText, { color: isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color }]}>
-                {isGroup ? "Group" : config.label}
+              <Text style={[styles.statusText, { color: locked ? Colors.primary[400] : isGroupDone ? Colors.success[500] : isGroup ? Colors.primary[500] : config.color }]}>
+                {locked ? "Locked" : isGroup ? "Group" : config.label}
               </Text>
             </View>
           </View>
@@ -142,9 +155,11 @@ export default function WorkoutSection({
               </Text>
             </View>
             <View style={styles.viewRow}>
-              <Text style={styles.viewText}>View Details</Text>
+              <Text style={styles.viewText}>
+                {locked ? "Upgrade to unlock" : "View Details"}
+              </Text>
               <Ionicons
-                name="chevron-forward"
+                name={locked ? "star" : "chevron-forward"}
                 size={16}
                 color={Colors.primary[500]}
               />
@@ -168,6 +183,9 @@ const styles = StyleSheet.create({
   },
   containerCompleted: {
     opacity: 0.75,
+  },
+  containerLocked: {
+    opacity: 0.55,
   },
   accent: {
     width: 4,

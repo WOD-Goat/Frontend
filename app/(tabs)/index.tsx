@@ -1,4 +1,4 @@
-import { workoutsService } from "@/api/services";
+import { groupsService, workoutsService } from "@/api/services";
 import {
   Gap,
   HeaderSection,
@@ -8,6 +8,7 @@ import {
 } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { AssignedWorkoutData } from "@/types";
 import { formatShortDate, parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -38,6 +39,8 @@ interface WorkoutSectionData {
   groupId?: string;
   groupName?: string;
   hasSubmitted?: boolean;
+  isLocked?: boolean;
+  lockType?: "join" | "create";
 }
 
 const TABS: { key: FilterTab; label: string; color: string; icon: any }[] = [
@@ -77,6 +80,7 @@ export default function WorkoutsScreen() {
   const user = globalState.get("user");
   const rawUserName = user?.nickname ?? "User";
   const userName = rawUserName.charAt(0).toUpperCase() + rawUserName.slice(1);
+  const { canAccess, withinLimit, guard, guardLimit, isReady } = useFeatureGuard();
 
   const navigation = useNavigation();
   useEffect(() => {
@@ -88,9 +92,12 @@ export default function WorkoutsScreen() {
     TABS.map((_, i) => new Animated.Value(i === 0 ? 1 : 0.95)),
   ).current;
 
+  // Wait for RevenueCat to initialize so canAccess/withinLimit reflect the real plan
+  // before computing group lock states. isReady goes false→true exactly once.
   useEffect(() => {
-    loadWorkouts(null, false);
-  }, []);
+    if (isReady) loadWorkouts(null, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReady]);
 
   const handleTabPress = (key: FilterTab, index: number) => {
     setActiveTab(key);
@@ -111,9 +118,37 @@ export default function WorkoutsScreen() {
     try {
       isLoadMore ? setLoadingMore(true) : setLoading(true);
       setError(null);
-      const response = await workoutsService.getAllWorkouts(PAGE_SIZE, cursorParam);
+
+      // On initial load, fetch groups in parallel to determine locked group IDs
+      const workoutsPromise = workoutsService.getAllWorkouts(PAGE_SIZE, cursorParam);
+      const groupsPromise = !isLoadMore
+        ? Promise.all([groupsService.getMyGroups(), groupsService.getMemberGroups()])
+        : Promise.resolve(null);
+
+      const [response, groupsResult] = await Promise.all([workoutsPromise, groupsPromise]);
+
+      let locked = new Map<string, "join" | "create">();
+      if (groupsResult) {
+        const [myRes, memberRes] = groupsResult;
+        const currentUid = user?.uid;
+        const myGroups = myRes.success ? myRes.data ?? [] : [];
+        const myGroupIds = new Set(myGroups.map((g) => g.id));
+        const joinedGroups = (memberRes.success ? memberRes.data ?? [] : [])
+          .filter((g) => g.createdBy !== currentUid)
+          .sort((a, b) => {
+            const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
+            const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
+            return aDate - bDate;
+          });
+        if (!canAccess("createGroup")) {
+          myGroupIds.forEach((id) => locked.set(id, "create"));
+        }
+        joinedGroups.forEach((g, i) => {
+          if (!withinLimit("groupJoinMax", i)) locked.set(g.id, "join");
+        });
+      }
       if (response.success && response.data) {
-        const newSections = transformWorkoutsToSections(response.data);
+        const newSections = transformWorkoutsToSections(response.data, locked);
         setWorkoutSections((prev) =>
           isLoadMore ? [...prev, ...newSections] : newSections,
         );
@@ -137,6 +172,7 @@ export default function WorkoutsScreen() {
 
   const transformWorkoutsToSections = (
     workouts: AssignedWorkoutData[],
+    locked: Map<string, "join" | "create"> = new Map(),
   ): WorkoutSectionData[] =>
     workouts.map((workout) => {
       const dateObj = parseFirebaseDate(workout.scheduledFor);
@@ -157,6 +193,8 @@ export default function WorkoutsScreen() {
         source: workout.source ?? "personal",
         groupId: workout.groupId ?? undefined,
         groupName: workout.groupName ?? undefined,
+        isLocked: workout.groupId ? locked.has(workout.groupId) : false,
+        lockType: workout.groupId ? locked.get(workout.groupId) : undefined,
         hasSubmitted: workout.hasSubmitted ?? false,
       };
     });
@@ -409,6 +447,15 @@ export default function WorkoutsScreen() {
                 groupId={section.groupId}
                 groupName={section.groupName}
                 hasSubmitted={section.hasSubmitted}
+                locked={section.isLocked}
+                onLockedPress={section.isLocked ? () => {
+                  const dest = `/group/workout/${section.workoutId}?groupId=${section.groupId}`;
+                  if (section.lockType === "create") {
+                    guard("createGroup", () => router.push(dest as any));
+                  } else {
+                    guardLimit("groupJoinMax", Number.MAX_SAFE_INTEGER, () => router.push(dest as any));
+                  }
+                } : undefined}
               />
               {index < filteredSections.length - 1 && <Gap size={10} />}
             </View>

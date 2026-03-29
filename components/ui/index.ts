@@ -1,4 +1,6 @@
 // UI Components
+export { FeatureGate } from "./FeatureGate";
+export { default as NoInternetScreen } from "./NoInternetScreen";
 export { BottomSheet } from "./BottomSheet";
 export { BottomSheetSelect } from "./BottomSheetSelect";
 export type { SelectOption } from "./BottomSheetSelect";
