@@ -3,6 +3,7 @@ import { BottomSheetSelect, Button, Gap, Input, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { GroupWorkout, ResultData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -444,6 +445,7 @@ export default function GroupWorkoutDetailScreen() {
   const [showLogResults, setShowLogResults] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
+  const { guard } = useFeatureGuard();
 
   useEffect(() => {
     if (workoutId && groupId) loadWorkout();
@@ -515,7 +517,13 @@ export default function GroupWorkoutDetailScreen() {
 
   const headerRight = isAdmin ? (
     <TouchableOpacity
-      onPress={() => router.push(`/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`)}
+      onPress={() =>
+        guard("leaderboard", () =>
+          router.push(
+            `/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`,
+          ),
+        )
+      }
       style={styles.headerIconBtn}
     >
       <Ionicons name="trophy-outline" size={22} color={Colors.primary[500]} />

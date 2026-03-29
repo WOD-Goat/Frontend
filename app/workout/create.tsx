@@ -4,6 +4,8 @@ import { VoiceRecorderModal } from "@/components/ai";
 import { storage, useGlobalState, useToast } from "@/components/lib";
 import { Colors, Typography, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { getVoiceUsage } from "@/lib/voiceUsageStorage";
 import type { VoiceWorkoutResult } from "@/lib/ai/useVoiceWorkout";
 import type {
   CreateWorkoutData,
@@ -242,10 +244,18 @@ export default function CreateWorkoutScreen() {
   const { voice } = useLocalSearchParams<{ voice?: string }>();
   const globalState = useGlobalState();
   const { showToast } = useToast();
+  const { guardLimit } = useFeatureGuard();
+
+  const handleVoiceMicPress = async () => {
+    const { count } = await getVoiceUsage();
+    await guardLimit("voiceWorkoutMaxCountPerMonth", count, () =>
+      setVoiceModalVisible(true),
+    );
+  };
 
   useEffect(() => {
     if (voice === "true") {
-      const t = setTimeout(() => setVoiceModalVisible(true), 300);
+      const t = setTimeout(() => handleVoiceMicPress(), 300);
       return () => clearTimeout(t);
     }
   }, [voice]);
@@ -516,7 +526,7 @@ export default function CreateWorkoutScreen() {
             </View>
             <TouchableOpacity
               style={styles.voiceFooterButton}
-              onPress={() => setVoiceModalVisible(true)}
+              onPress={handleVoiceMicPress}
               activeOpacity={0.8}
             >
               <Ionicons

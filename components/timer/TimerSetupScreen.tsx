@@ -8,6 +8,7 @@
 import { Gap } from "@/components";
 import Page from "@/components/ui/Page";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useTimer } from "@/lib/timer/hooks/useTimer";
 import type { WODConfig, WODMode } from "@/lib/timer/types";
 import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
@@ -23,6 +24,7 @@ export default function TimerSetupScreen() {
   const timer = useTimer();
   const [selectedMode, setSelectedMode] = useState<WODMode>("FOR_TIME");
   const formRef = useRef<WODConfigFormHandle>(null);
+  const { guard } = useFeatureGuard();
 
   const pendingConfirm = useTimerStore((s) => s.pendingConfirm);
   const clearConfirm = useTimerStore((s) => s.clearConfirm);
@@ -35,9 +37,16 @@ export default function TimerSetupScreen() {
     }
   }, [pendingConfirm]);
 
-  const handleModeChange = useCallback((mode: WODMode) => {
-    setSelectedMode(mode);
-  }, []);
+  const handleModeChange = useCallback(
+    (mode: WODMode) => {
+      if (mode === "CUSTOM") {
+        guard("customTimerIntervals", () => setSelectedMode(mode));
+        return;
+      }
+      setSelectedMode(mode);
+    },
+    [guard],
+  );
 
   const handleConfigConfirm = useCallback(
     (config: WODConfig) => {

@@ -1,3 +1,4 @@
+import NetInfo from "@react-native-community/netinfo";
 import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -13,6 +14,7 @@ import { useGlobalState } from "../components/lib/global-state";
 import { useZustandGlobalState } from "../components/lib/global-state/useGlobalState";
 import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
+import NoInternetScreen from "../components/ui/NoInternetScreen";
 import UpdateModal from "../components/ui/UpdateModal";
 import "../config/firebase";
 import { REVENUECAT_CONFIG } from "../config/revenuecat";
@@ -29,6 +31,10 @@ export default function RootLayout() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [networkChecked, setNetworkChecked] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const { get: getStorage } = useStorage();
   const globalState = useGlobalState();
@@ -99,14 +105,24 @@ export default function RootLayout() {
     loadImages();
   }, []);
 
-  // Check authentication when component mounts
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Wait for auth service to initialize and load tokens
-        await apiClient.waitForInitialization();
+  // Combined network + auth initialization — runs on mount and on retry
+  const initializeApp = async () => {
+    try {
+      // 1. Check network connectivity
+      const netState = await NetInfo.fetch();
+      const online =
+        !!netState.isConnected && netState.isInternetReachable !== false;
+      setIsOnline(online);
+      setNetworkChecked(true);
 
-        // Check if tokens exist in storage
+      if (!online) {
+        setAuthChecked(true); // skip auth check when offline
+        return;
+      }
+
+      // 2. Auth check
+      try {
+        await apiClient.waitForInitialization();
         const hasTokens = authService.isAuthenticated();
 
         if (!hasTokens) {
@@ -118,7 +134,6 @@ export default function RootLayout() {
 
         console.log("🔐 Layout: Tokens found, validating refresh token...");
 
-        // Try to refresh the access token to validate refresh token
         try {
           const refreshed = await apiClient.refreshAccessToken();
 
@@ -127,7 +142,6 @@ export default function RootLayout() {
               "✅ Layout: Refresh token valid, access token refreshed",
             );
 
-            // Check Firebase email verification status
             const firebaseUser = await new Promise<any>((resolve) => {
               const unsubscribe = onAuthStateChanged(auth, (user) => {
                 unsubscribe();
@@ -142,7 +156,6 @@ export default function RootLayout() {
               return;
             }
 
-            // Load user data from storage and set in global state
             const userData = await getStorage("user");
             if (userData) {
               console.log("👤 Layout: User data loaded from storage");
@@ -166,24 +179,53 @@ export default function RootLayout() {
       } finally {
         setAuthChecked(true);
       }
-    };
+    } catch (err) {
+      console.error("❌ Layout initialization error:", err);
+      setIsOnline(false);
+      setNetworkChecked(true);
+      setAuthChecked(true);
+    }
+  };
 
-    checkAuth();
+  // Run initialization on mount
+  useEffect(() => {
+    initializeApp();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Monitor connectivity changes after app is fully initialized (mid-session)
+  useEffect(() => {
+    if (!isInitialized) return;
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      const online =
+        !!state.isConnected && state.isInternetReachable !== false;
+      setIsOnline(online);
+    });
+    return () => unsubscribe();
+  }, [isInitialized]);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    setNetworkChecked(false);
+    setAuthChecked(false);
+    setIsAuthenticated(false);
+    await initializeApp();
+    setIsRetrying(false);
+  };
 
   // Hide splash screen and navigate when everything is ready
   useEffect(() => {
-    if ((loaded || error) && imagesLoaded && authChecked) {
+    if ((loaded || error) && imagesLoaded && authChecked && networkChecked) {
       SplashScreen.hideAsync();
+      setIsInitialized(true);
 
-      // Navigate to appropriate screen
+      if (!isOnline) return; // offline — NoInternetScreen overlay will show
+
       if (isAuthenticated) {
         authService.getProfile().then(async (res) => {
           await Promise.all([storage.set("user", res.user)]);
           globalState.set("user", res.user);
 
-          // Log the authenticated user into RevenueCat so their purchases
-          // are tied to their app account (use a stable, non-PII identifier).
           if (res.user?.uid) {
             try {
               await Purchases.logIn(String(res.user.uid));
@@ -197,9 +239,11 @@ export default function RootLayout() {
         router.replace("/onboarding");
       }
     }
-  }, [loaded, error, imagesLoaded, authChecked, isAuthenticated]);
+    // isOnline intentionally omitted — mid-session changes must not re-trigger navigation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, error, imagesLoaded, authChecked, networkChecked, isAuthenticated]);
 
-  if ((!loaded && !error) || !imagesLoaded || !authChecked) {
+  if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked) {
     return null;
   }
 
@@ -220,6 +264,9 @@ export default function RootLayout() {
           />
           <Stack.Screen name="timer" options={{ headerShown: false }} />
         </Stack>
+        {!isOnline && (
+          <NoInternetScreen onRetry={handleRetry} loading={isRetrying} />
+        )}
       </ToastProvider>
     </SafeAreaProvider>
   );

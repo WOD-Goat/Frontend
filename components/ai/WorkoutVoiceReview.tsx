@@ -88,7 +88,7 @@ export function WorkoutVoiceReview({
             size={15}
             color={Colors.text.secondary}
           />
-          <Text style={styles.transcriptLabel}>What Gemini heard</Text>
+          <Text style={styles.transcriptLabel}>What WODGoat AI heard</Text>
         </View>
         <Text style={styles.transcriptText}>"{transcript}"</Text>
       </View>

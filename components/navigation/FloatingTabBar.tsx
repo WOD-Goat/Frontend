@@ -1,5 +1,6 @@
 import { tabIcons } from "@/assets/images";
 import { Colors, responsiveSize } from "@/constants";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
@@ -42,6 +43,7 @@ export default function FloatingTabBar({
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const requestConfirm = useTimerStore((s) => s.requestConfirm);
+  const { guard } = useFeatureGuard();
   const bottomPadding =
     Platform.OS === "ios" ? Math.max(insets.bottom, 8) : 12;
 
@@ -122,7 +124,7 @@ export default function FloatingTabBar({
     if (iconRoute === "index") {
       router.push("/workout/create");
     } else if (iconRoute === "groups") {
-      router.push("/group/create");
+      guard("createGroup", () => router.push("/group/create"));
     } else if (iconRoute === "timer") {
       requestConfirm();
     }

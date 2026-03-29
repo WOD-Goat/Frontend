@@ -3,6 +3,7 @@ import type { PRStickerData } from "@/components";
 import { Gap, Page, PRShareModal } from "@/components";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { formatDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
@@ -112,6 +113,7 @@ export default function PRDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareModalVisible, setShareModalVisible] = useState(false);
+  const { guard } = useFeatureGuard();
   const [activeTab, setActiveTab] = useState<"history" | "percentages">(
     "history",
   );
@@ -203,7 +205,7 @@ export default function PRDetailScreen() {
       headerRight={
         <TouchableOpacity
           style={styles.shareBtn}
-          onPress={() => setShareModalVisible(true)}
+          onPress={() => guard("prShareSticker", () => setShareModalVisible(true))}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.7}
         >

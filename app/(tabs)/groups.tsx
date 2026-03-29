@@ -3,9 +3,10 @@ import { Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { Group } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import { parseFirebaseDate } from "@/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -133,6 +134,44 @@ function GroupCard({ group }: { group: Group & { isAdmin: boolean } }) {
   );
 }
 
+function LockedGroupCard({
+  group,
+  hint,
+  onUpgrade,
+}: {
+  group: Group & { isAdmin: boolean };
+  hint: string;
+  onUpgrade: () => void;
+}) {
+  const initials = group.name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 3);
+
+  return (
+    <Pressable style={[styles.groupCard, styles.lockedCard]} onPress={onUpgrade}>
+      <View style={[styles.groupAvatar, styles.lockedAvatar]}>
+        <Text style={[styles.groupAvatarText, styles.lockedAvatarText]}>{initials}</Text>
+      </View>
+      <View style={styles.groupCardContent}>
+        <View style={styles.groupCardNameRow}>
+          <Text style={[styles.groupCardName, styles.lockedText]} numberOfLines={1}>
+            {group.name}
+          </Text>
+          <View style={styles.lockedBadge}>
+            <Ionicons name="lock-closed" size={10} color={Colors.primary[400]} />
+            <Text style={styles.lockedBadgeText}>Locked</Text>
+          </View>
+        </View>
+        <Text style={styles.lockedHint}>{hint}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={Colors.neutral[700]} />
+    </Pressable>
+  );
+}
+
 function EmptyState() {
   return (
     <View style={styles.emptyState}>
@@ -163,6 +202,7 @@ export default function GroupsScreen() {
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const currentUid = globalState.get("user")?.uid;
+  const { guard, guardLimit, canAccess, withinLimit } = useFeatureGuard();
 
   const filterScales = useRef(
     FILTER_TABS.map((_, i) => new Animated.Value(i === 0 ? 1 : 0.95)),
@@ -216,17 +256,24 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
             Train together, compete together
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.joinButton}
-          onPress={() => router.push("/group/join")}
-        >
-          <Ionicons
-            name="enter-outline"
-            size={16}
-            color={Colors.primary[500]}
-          />
-          <Text style={styles.joinButtonText}>Join</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.joinButton}
+            onPress={() => {
+              const joinedCount = allGroups.filter((g) => !g.isAdmin).length;
+              guardLimit("groupJoinMax", joinedCount, () =>
+                router.push("/group/join"),
+              );
+            }}
+          >
+            <Ionicons
+              name="enter-outline"
+              size={16}
+              color={Colors.primary[500]}
+            />
+            <Text style={styles.joinButtonText}>Join</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <Gap size={16} />
@@ -278,11 +325,53 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
         <EmptyState />
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
-          {allGroups
-            .filter((g) => filter === "all" || (filter === "admin" ? g.isAdmin : !g.isAdmin))
-            .map((group) => (
-              <GroupCard key={group.id} group={group} />
-            ))}
+          {(() => {
+            // Determine which joined groups are over the plan limit.
+            // Sort by createdAt ascending so the oldest (first joined) stays accessible.
+            const joinedGroups = allGroups.filter((g) => !g.isAdmin);
+            const sortedJoined = [...joinedGroups].sort((a, b) => {
+              const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
+              const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
+              return aDate - bDate;
+            });
+            const lockedJoinedIds = new Set(
+              sortedJoined
+                .filter((_, i) => !withinLimit("groupJoinMax", i))
+                .map((g) => g.id),
+            );
+
+            return allGroups
+              .filter((g) => filter === "all" || (filter === "admin" ? g.isAdmin : !g.isAdmin))
+              .map((group) => {
+                if (!group.isAdmin && lockedJoinedIds.has(group.id)) {
+                  return (
+                    <LockedGroupCard
+                      key={group.id}
+                      group={group}
+                      hint="Upgrade to Athlete Pro to access"
+                      onUpgrade={() =>
+                        guardLimit("groupJoinMax", joinedGroups.length, () =>
+                          router.push(`/group/${group.id}`),
+                        )
+                      }
+                    />
+                  );
+                }
+                if (group.isAdmin && !canAccess("createGroup")) {
+                  return (
+                    <LockedGroupCard
+                      key={group.id}
+                      group={group}
+                      hint="Upgrade to Coach Pro to access"
+                      onUpgrade={() =>
+                        guard("createGroup", () => router.push(`/group/${group.id}`))
+                      }
+                    />
+                  );
+                }
+                return <GroupCard key={group.id} group={group} />;
+              });
+          })()}
           <Gap size={160} />
         </ScrollView>
       )}
@@ -329,6 +418,11 @@ const styles = StyleSheet.create({
   filterPillText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodySM,
+  },
+  headerActions: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
   },
   joinButton: {
     flexDirection: "row",
@@ -457,6 +551,40 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: Colors.neutral[700],
     width: "40%",
+  },
+  lockedCard: {
+    opacity: 0.55,
+  },
+  lockedAvatar: {
+    backgroundColor: Colors.neutral[700] + "40",
+    borderColor: Colors.neutral[600] + "40",
+  },
+  lockedAvatarText: {
+    color: Colors.neutral[500],
+  },
+  lockedText: {
+    color: Colors.text.secondary,
+  },
+  lockedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.primary[500] + "18",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "50",
+  },
+  lockedBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(10),
+    color: Colors.primary[400],
+  },
+  lockedHint: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(11),
+    color: Colors.primary[400],
   },
   emptyState: {
     alignItems: "center",
