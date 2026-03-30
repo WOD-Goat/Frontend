@@ -7,7 +7,7 @@ import {
   WorkoutsSkeleton,
 } from "@/components";
 import { useGlobalState } from "@/components/lib";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { AssignedWorkoutData } from "@/types";
 import { formatShortDate, parseFirebaseDate } from "@/utils";
@@ -273,11 +273,11 @@ export default function WorkoutsScreen() {
           <View style={styles.heroIconRing}>
             <Ionicons
               name="barbell-outline"
-              size={48}
+              size={responsiveSize(48)}
               color={Colors.primary[500]}
             />
           </View>
-          <Gap size={18} />
+          <Gap size={responsiveSize(18)} />
           <Text style={styles.heroTitle}>Your training starts here</Text>
           <Text style={styles.heroSubtitle}>
             No workouts yet — let's change that. Tap the mic and describe your
@@ -285,7 +285,7 @@ export default function WorkoutsScreen() {
           </Text>
         </View>
 
-        <Gap size={24} />
+        <Gap size={responsiveSize(24)} />
 
         {/* How it works steps */}
         {(
@@ -322,7 +322,7 @@ export default function WorkoutsScreen() {
           </View>
         ))}
 
-        <Gap size={32} />
+        <Gap size={responsiveSize(32)} />
 
         {/* CTA */}
         <TouchableOpacity
@@ -497,8 +497,8 @@ const styles = StyleSheet.create({
   // ── Onboarding empty state ─────────────────────────────
   heroCard: {
     backgroundColor: Colors.secondary[600],
-    borderRadius: 24,
-    padding: 28,
+    borderRadius: responsiveSize(24),
+    padding: responsiveSize(28),
     alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.primary[500] + "25",
@@ -513,8 +513,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[500] + "18",
   },
   heroIconRing: {
-    width: 88,
-    height: 88,
+    width: responsiveSize(88),
+    height: responsiveSize(88),
     borderRadius: 44,
     backgroundColor: Colors.primary[500] + "15",
     borderWidth: 1.5,
@@ -534,21 +534,21 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: responsiveSize(22),
   },
   stepRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    gap: responsiveSize(14),
+    paddingVertical: responsiveSize(12),
+    paddingHorizontal: responsiveSize(4),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[700] + "60",
   },
   stepIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: responsiveSize(40),
+    height: responsiveSize(40),
+    borderRadius: responsiveSize(20),
     backgroundColor: Colors.primary[500] + "15",
     alignItems: "center",
     justifyContent: "center",
@@ -567,16 +567,16 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
-    lineHeight: 18,
+    lineHeight: responsiveSize(18),
   },
   ctaButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: responsiveSize(10),
     backgroundColor: Colors.primary[500],
-    borderRadius: 16,
-    paddingVertical: 16,
+    borderRadius: responsiveSize(16),
+    paddingVertical: responsiveSize(16),
     overflow: "hidden",
   },
   ctaGlow: {
@@ -584,10 +584,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 30,
+    height: responsiveSize(30),
     backgroundColor: "rgba(255,255,255,0.08)",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: responsiveSize(16),
+    borderTopRightRadius: responsiveSize(16),
   },
   ctaText: {
     fontFamily: FontFamilies.poppinsBold,

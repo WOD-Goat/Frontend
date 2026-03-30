@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "5",
+      "buildNumber": "11",
       "supportsTablet": true,
       "bundleIdentifier": "com.wodgoat",
       "infoPlist": {
@@ -19,7 +19,7 @@
       }
     },
     "android": {
-      "versionCode": 5,
+      "versionCode": 11,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#1c0e00"

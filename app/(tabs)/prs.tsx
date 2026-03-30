@@ -271,21 +271,21 @@ export default function PRsScreen() {
     return (
       <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={false}>
         <PRHeader />
-        <Gap size={24} />
+        <Gap size={responsiveSize(24)} />
 
         <View style={styles.emptyHeroCard}>
           <View style={styles.emptyHeroGlow} />
           <View style={styles.emptyHeroRing}>
-            <Ionicons name="trophy-outline" size={48} color={Colors.primary[500]} />
+            <Ionicons name="trophy-outline" size={responsiveSize(48)} color={Colors.primary[500]} />
           </View>
-          <Gap size={18} />
+          <Gap size={responsiveSize(18)} />
           <Text style={styles.emptyHeroTitle}>No Records Yet</Text>
           <Text style={styles.emptyHeroSubtitle}>
             Your personal bests will appear here as you complete workouts.
           </Text>
         </View>
 
-        <Gap size={24} />
+        <Gap size={responsiveSize(24)} />
 
         {([
           { icon: "barbell-outline", label: "Complete a workout", desc: "Log any exercise through a WOD" },
@@ -294,7 +294,7 @@ export default function PRsScreen() {
         ] as const).map((step, i) => (
           <View key={i} style={styles.emptyStepRow}>
             <View style={styles.emptyStepIcon}>
-              <Ionicons name={step.icon} size={18} color={Colors.primary[500]} />
+              <Ionicons name={step.icon} size={responsiveSize(18)} color={Colors.primary[500]} />
             </View>
             <View style={styles.emptyStepText}>
               <Text style={styles.emptyStepLabel}>{step.label}</Text>
@@ -303,7 +303,7 @@ export default function PRsScreen() {
           </View>
         ))}
 
-        <Gap size={32} />
+        <Gap size={responsiveSize(32)} />
 
         <TouchableOpacity
           style={styles.emptyCtaButton}
@@ -311,11 +311,11 @@ export default function PRsScreen() {
           activeOpacity={0.85}
         >
           <View style={styles.emptyCtaGlow} />
-          <Ionicons name="barbell-outline" size={20} color="#0D0D14" />
+          <Ionicons name="barbell-outline" size={responsiveSize(20)} color="#0D0D14" />
           <Text style={styles.emptyCtaText}>Go to Workouts</Text>
         </TouchableOpacity>
 
-        <Gap size={160} />
+        <Gap size={responsiveSize(160)} />
       </Page>
     );
   }
@@ -703,7 +703,7 @@ const styles = StyleSheet.create({
   emptyHeroCard: {
     backgroundColor: Colors.secondary[600],
     borderRadius: 24,
-    padding: 28,
+    padding: responsiveSize(28),
     alignItems: "center",
     borderWidth: 1,
     borderColor: Colors.primary[500] + "25",
@@ -712,14 +712,14 @@ const styles = StyleSheet.create({
   emptyHeroGlow: {
     position: "absolute",
     top: -40,
-    width: 200,
-    height: 200,
+    width: responsiveSize(200),
+    height: responsiveSize(200),
     borderRadius: 100,
     backgroundColor: Colors.primary[500] + "18",
   },
   emptyHeroRing: {
-    width: 88,
-    height: 88,
+    width: responsiveSize(88),
+    height: responsiveSize(88),
     borderRadius: 44,
     backgroundColor: Colors.primary[500] + "15",
     borderWidth: 1.5,
@@ -739,20 +739,20 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: responsiveSize(22),
   },
   emptyStepRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    gap: responsiveSize(14),
+    paddingVertical: responsiveSize(12),
+    paddingHorizontal: responsiveSize(4),
     borderBottomWidth: 1,
     borderBottomColor: Colors.neutral[700] + "60",
   },
   emptyStepIcon: {
-    width: 40,
-    height: 40,
+    width: responsiveSize(40),
+    height: responsiveSize(40),
     borderRadius: 20,
     backgroundColor: Colors.primary[500] + "15",
     alignItems: "center",
@@ -772,7 +772,7 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
-    lineHeight: 18,
+    lineHeight: responsiveSize(18),
   },
   emptyCtaButton: {
     flexDirection: "row",
@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
     gap: 10,
     backgroundColor: Colors.primary[500],
     borderRadius: 16,
-    paddingVertical: 16,
+    paddingVertical: responsiveSize(16),
     overflow: "hidden",
   },
   emptyCtaGlow: {
@@ -789,7 +789,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 30,
+    height: responsiveSize(30),
     backgroundColor: "rgba(255,255,255,0.08)",
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,

@@ -1,14 +1,20 @@
-import { authService, workoutsService } from "@/api/services";
-import { BottomSheetSelect, Button, Input, Page } from "@/components";
+import { authService, groupsService, workoutsService } from "@/api/services";
+import { BottomSheetSelect, Button, Gap, Input, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
-import type { AssignedWorkoutData, ExerciseData, ResultData, StandardExercise, WODData } from "@/types";
+import type { ExerciseData, ResultData, StandardExercise, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface ResultEntry {
   id: string;
@@ -22,12 +28,27 @@ interface ResultEntry {
   calories: string;
 }
 
-export default function WorkoutResultsScreen() {
-  const params = useLocalSearchParams();
-  const workoutData: AssignedWorkoutData = JSON.parse(
-    params.workoutData as string,
-  );
-  const wods: WODData[] = workoutData.wods;
+const exerciseMap = new Map(
+  (standardExercises as StandardExercise[]).map((e) => [e.id, e]),
+);
+
+const isTrackable = (exercise: ExerciseData) =>
+  exerciseMap.get(exercise.exerciseId)?.trackResults !== false;
+
+export default function PostWorkoutScreen() {
+  const params = useLocalSearchParams<{
+    workoutData: string;
+    type?: string;
+    workoutId?: string;
+    groupId?: string;
+  }>();
+
+  const type = params.type ?? "personal";
+  const parsed = JSON.parse(params.workoutData);
+  const wods: WODData[] = parsed.wods;
+  const resolvedWorkoutId: string =
+    type === "group" ? (params.workoutId ?? "") : (parsed.id ?? "");
+  const groupId = params.groupId ?? "";
 
   const [results, setResults] = useState<ResultEntry[]>([
     {
@@ -43,33 +64,71 @@ export default function WorkoutResultsScreen() {
     },
   ]);
   const [submitting, setSubmitting] = useState(false);
+
   const globalState = useGlobalState();
   const { showToast } = useToast();
+
+  const getExercise = (wodIndex: number, exerciseIndex: number) =>
+    wods[wodIndex]?.exercises[exerciseIndex];
+
+  const getAvailableExercises = (currentId: string, wodIndex: number) => {
+    const wod = wods[wodIndex];
+    if (!wod) return [];
+    const selected = results
+      .filter((r) => r.id !== currentId && r.wodIndex === wodIndex)
+      .map((r) => r.exerciseIndex);
+    return wod.exercises
+      .map((ex, idx) => ({ ex, idx }))
+      .filter(({ ex, idx }) => !selected.includes(idx) && isTrackable(ex))
+      .map(({ ex, idx }) => ({ label: ex.name, value: idx }));
+  };
+
+  const hasAvailableExercises = () => {
+    const total = wods.reduce(
+      (s, w) => s + w.exercises.filter(isTrackable).length,
+      0,
+    );
+    return results.length < total;
+  };
+
+  const updateResult = (
+    id: string,
+    field: keyof ResultEntry,
+    value: string | number,
+  ) => {
+    setResults((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r;
+        if (field === "wodIndex") {
+          const newWodIndex = value as number;
+          const selected = prev
+            .filter((res) => res.id !== id && res.wodIndex === newWodIndex)
+            .map((res) => res.exerciseIndex);
+          const first = (wods[newWodIndex]?.exercises ?? []).findIndex(
+            (_, idx) => !selected.includes(idx),
+          );
+          return { ...r, wodIndex: newWodIndex, exerciseIndex: first !== -1 ? first : 0 };
+        }
+        return { ...r, [field]: field === "exerciseIndex" ? value : value.toString() };
+      }),
+    );
+  };
+
   const addResultEntry = () => {
-    // Find first WOD and exercise combination that hasn't been selected yet
+    const selected = results.map((r) => `${r.wodIndex}-${r.exerciseIndex}`);
     let newWodIndex = 0;
     let newExerciseIndex = 0;
-
-    // Get all currently selected WOD+exercise combinations
-    const selectedCombinations = results.map(
-      (r) => `${r.wodIndex}-${r.exerciseIndex}`,
-    );
-
-    // Find first available combination
-    found: for (let wodIdx = 0; wodIdx < wods.length; wodIdx++) {
-      const wod = wods[wodIdx];
-      for (let exIdx = 0; exIdx < wod.exercises.length; exIdx++) {
-        const combo = `${wodIdx}-${exIdx}`;
-        if (!selectedCombinations.includes(combo)) {
-          newWodIndex = wodIdx;
-          newExerciseIndex = exIdx;
-          break found;
+    outer: for (let w = 0; w < wods.length; w++) {
+      for (let e = 0; e < wods[w].exercises.length; e++) {
+        if (!selected.includes(`${w}-${e}`)) {
+          newWodIndex = w;
+          newExerciseIndex = e;
+          break outer;
         }
       }
     }
-
-    setResults([
-      ...results,
+    setResults((prev) => [
+      ...prev,
       {
         id: `result-${Date.now()}`,
         wodIndex: newWodIndex,
@@ -85,287 +144,92 @@ export default function WorkoutResultsScreen() {
   };
 
   const removeResultEntry = (id: string) => {
-    if (results.length === 1) return; // Keep at least one entry
-    setResults(results.filter((r) => r.id !== id));
+    if (results.length === 1) return;
+    setResults((prev) => prev.filter((r) => r.id !== id));
   };
 
-  const updateResult = (
-    id: string,
-    field: keyof ResultEntry,
-    value: string | number,
-  ) => {
-    setResults(
-      results.map((r) => {
-        if (r.id === id) {
-          // Keep wodIndex and exerciseIndex as numbers, others as strings
-          const updatedValue =
-            field === "wodIndex" || field === "exerciseIndex"
-              ? value
-              : value.toString();
+  const formatResults = (): ResultData[] =>
+    results.map((r) => {
+      const totalSeconds =
+        parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
+      const meters = r.distanceKm
+        ? Math.round(parseFloat(r.distanceKm) * 1000)
+        : null;
+      return {
+        wodIndex: r.wodIndex,
+        exerciseIndex: r.exerciseIndex,
+        reps: r.reps ? parseInt(r.reps) : null,
+        weight: r.weight ? parseFloat(r.weight) : null,
+        timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
+        distanceMeters: meters,
+        calories: r.calories ? parseInt(r.calories) : null,
+      };
+    });
 
-          // If wodIndex changes, reset exerciseIndex to first available exercise
-          if (field === "wodIndex") {
-            const newWodIndex = value as number;
-            const selectedExercises = results
-              .filter((res) => res.id !== id && res.wodIndex === newWodIndex)
-              .map((res) => res.exerciseIndex);
-
-            // Find first available exercise index (not already selected by another result)
-            const availableExercises = wods[newWodIndex]?.exercises || [];
-            const firstAvailableIndex = availableExercises.findIndex(
-              (_, idx) => !selectedExercises.includes(idx),
-            );
-
-            return {
-              ...r,
-              wodIndex: updatedValue as number,
-              exerciseIndex:
-                firstAvailableIndex !== -1 ? firstAvailableIndex : 0,
-            };
-          }
-
-          return { ...r, [field]: updatedValue };
-        }
-        return r;
-      }),
-    );
+  const navigateHome = () => {
+    router.dismissAll();
+    router.replace(type === "group" ? "/(tabs)/groups" : "/(tabs)");
   };
 
-  const getExercise = (wodIndex: number, exerciseIndex: number) => {
-    return wods[wodIndex]?.exercises[exerciseIndex];
+  const refreshProfile = async () => {
+    const res = await authService.getProfile();
+    await storage.set("user", res.user);
+    globalState.set("user", res.user);
   };
 
-  const exerciseMap = new Map(
-    (standardExercises as StandardExercise[]).map((e) => [e.id, e]),
-  );
-
-  const isTrackable = (exercise: ExerciseData) => {
-    const std = exerciseMap.get(exercise.exerciseId);
-    return std?.trackResults !== false;
-  };
-
-  // Get available exercises for a specific result entry, excluding already selected ones
-  const getAvailableExercises = (currentResultId: string, wodIndex: number) => {
-    const wod = wods[wodIndex];
-    if (!wod) return [];
-
-    // Get all selected exercises from other result entries for this WOD
-    const selectedExercises = results
-      .filter((r) => r.id !== currentResultId && r.wodIndex === wodIndex)
-      .map((r) => r.exerciseIndex);
-
-    // Filter out already selected and non-trackable exercises
-    return wod.exercises
-      .map((exercise, idx) => ({
-        exercise,
-        index: idx,
-      }))
-      .filter(({ exercise, index }) => !selectedExercises.includes(index) && isTrackable(exercise))
-      .map(({ exercise, index }) => ({
-        label: exercise.name,
-        value: index,
-      }));
-  };
-
-  // Check if there are any trackable exercises available across all WODs
-  const hasAvailableExercises = () => {
-    const totalTrackable = wods.reduce(
-      (sum, wod) => sum + wod.exercises.filter(isTrackable).length,
-      0,
-    );
-    return results.length < totalTrackable;
-  };
-
-  const handleSubmit = async () => {
+  const handleSkip = async () => {
     try {
       setSubmitting(true);
-
-      // Validate each result entry
-      for (let i = 0; i < results.length; i++) {
-        const result = results[i];
-        const exercise = getExercise(result.wodIndex, result.exerciseIndex);
-
-        if (!exercise) {
-          showToast({ type: "error", label: `Invalid exercise selection` });
-          setSubmitting(false);
-          return;
-        }
-
-        if (!isTrackable(exercise)) continue;
-
-        // Validate based on tracking type
-        switch (exercise.trackingType) {
-          case "weight_reps":
-            if (!result.weight && !result.reps) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter weight or reps`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (parseFloat(result.weight) < 0 || parseInt(result.reps) <= 0) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Weight and reps must be greater than 0`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-
-          case "reps":
-            if (!result.reps) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter reps`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (parseInt(result.reps) <= 0) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Reps must be greater than 0`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-
-          case "time":
-            if (!result.timeMins && !result.timeSecs) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter time`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (
-              (parseInt(result.timeMins || "0") === 0 &&
-                parseInt(result.timeSecs || "0") === 0) ||
-              parseInt(result.timeSecs || "0") > 59
-            ) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter a valid time`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-
-          case "distance":
-            if (!result.distanceKm) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter distance`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (parseFloat(result.distanceKm) <= 0) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Distance must be greater than 0`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-
-          case "pace":
-            if ((!result.timeMins && !result.timeSecs) || !result.distanceKm) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter both time and distance`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (
-              (parseInt(result.timeMins || "0") === 0 &&
-                parseInt(result.timeSecs || "0") === 0) ||
-              parseInt(result.timeSecs || "0") > 59 ||
-              parseFloat(result.distanceKm) <= 0
-            ) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter valid time and distance`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-
-          case "calories":
-            if (!result.calories) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Please enter calories`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            if (parseInt(result.calories) <= 0) {
-              showToast({
-                type: "error",
-                label: `${exercise.name} : Calories must be greater than 0`,
-              });
-              setSubmitting(false);
-              return;
-            }
-            break;
-        }
-      }
-
-      // Format results for API
-      const formattedResults: ResultData[] = results.map((r) => {
-        const totalSeconds =
-          parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
-        const meters = r.distanceKm
-          ? Math.round(parseFloat(r.distanceKm) * 1000)
-          : null;
-        return {
-          wodIndex: r.wodIndex,
-          exerciseIndex: r.exerciseIndex,
-          reps: r.reps ? parseInt(r.reps) : null,
-          weight: r.weight ? parseFloat(r.weight) : null,
-          timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
-          distanceMeters: meters,
-          calories: r.calories ? parseInt(r.calories) : null,
-        };
-      });
-
-      const response = await workoutsService.completeWorkout(
-        workoutData.id!,
-        formattedResults,
-      );
-
-      if (response.success) {
-        authService.getProfile().then(async (res) => {
-          await Promise.all([storage.set("user", res.user)]);
-          globalState.set("user", res.user);
-        });
-        router.dismissAll();
-        router.replace("/(tabs)");
-        showToast({
-          type: "success",
-          label: "Workout results submitted successfully!",
-        });
+      if (type === "group") {
+        await groupsService.submitGroupWorkout(groupId, resolvedWorkoutId, []);
       } else {
-        showToast({
-          type: "error",
-          label: response.message || "Failed to submit results",
-        });
+        await workoutsService.completeWorkout(resolvedWorkoutId, []);
+        await refreshProfile();
       }
-    } catch (error: any) {
-      console.error("Error submitting results:", error);
-      showToast({
-        type: "error",
-        label: error.message || "Failed to submit results",
-      });
+      navigateHome();
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to complete workout" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const hasAnyInput = () =>
+    results.some(
+      (r) =>
+        r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories,
+    );
+
+  const handleSave = async () => {
+    if (!hasAnyInput()) {
+      handleSkip();
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const formattedResults = formatResults();
+      let response;
+      if (type === "group") {
+        response = await groupsService.submitGroupWorkout(
+          groupId,
+          resolvedWorkoutId,
+          formattedResults,
+        );
+      } else {
+        response = await workoutsService.completeWorkout(
+          resolvedWorkoutId,
+          formattedResults,
+        );
+        if (response.success) await refreshProfile();
+      }
+      if (response.success) {
+        showToast({ type: "success", label: "Results saved!" });
+        navigateHome();
+      } else {
+        showToast({ type: "error", label: (response as any).message || "Failed to save" });
+      }
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to save results" });
     } finally {
       setSubmitting(false);
     }
@@ -374,146 +238,73 @@ export default function WorkoutResultsScreen() {
   const renderInputFields = (result: ResultEntry) => {
     const exercise = getExercise(result.wodIndex, result.exerciseIndex);
     if (!exercise) return null;
-
     switch (exercise.trackingType) {
       case "weight_reps":
         return (
-          <>
-            <View style={styles.inputRow}>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Weight (KGs)</Text>
-                <Input
-                  placeholder="0"
-                  value={result.weight}
-                  onChangeText={(text) =>
-                    updateResult(result.id, "weight", text)
-                  }
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Reps</Text>
-                <Input
-                  placeholder="0"
-                  value={result.reps}
-                  onChangeText={(text) => updateResult(result.id, "reps", text)}
-                  keyboardType="numeric"
-                />
-              </View>
+          <View style={styles.inputRow}>
+            <View style={styles.inputHalf}>
+              <Text style={styles.inputLabel}>Weight (kg)</Text>
+              <Input placeholder="0" value={result.weight} onChangeText={(t) => updateResult(result.id, "weight", t)} keyboardType="numeric" />
             </View>
-          </>
+            <View style={styles.inputHalf}>
+              <Text style={styles.inputLabel}>Reps</Text>
+              <Input placeholder="0" value={result.reps} onChangeText={(t) => updateResult(result.id, "reps", t)} keyboardType="numeric" />
+            </View>
+          </View>
         );
-
       case "reps":
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Reps</Text>
-            <Input
-              placeholder="0"
-              value={result.reps}
-              onChangeText={(text) => updateResult(result.id, "reps", text)}
-              keyboardType="numeric"
-            />
+            <Input placeholder="0" value={result.reps} onChangeText={(t) => updateResult(result.id, "reps", t)} keyboardType="numeric" />
           </View>
         );
-
       case "time":
         return (
           <View style={styles.inputRow}>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Minutes</Text>
-              <Input
-                placeholder="0"
-                value={result.timeMins}
-                onChangeText={(text) =>
-                  updateResult(result.id, "timeMins", text)
-                }
-                keyboardType="numeric"
-              />
+              <Input placeholder="0" value={result.timeMins} onChangeText={(t) => updateResult(result.id, "timeMins", t)} keyboardType="numeric" />
             </View>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Seconds</Text>
-              <Input
-                placeholder="0"
-                value={result.timeSecs}
-                onChangeText={(text) =>
-                  updateResult(result.id, "timeSecs", text)
-                }
-                keyboardType="numeric"
-              />
+              <Input placeholder="0" value={result.timeSecs} onChangeText={(t) => updateResult(result.id, "timeSecs", t)} keyboardType="numeric" />
             </View>
           </View>
         );
-
       case "distance":
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Distance (km)</Text>
-            <Input
-              placeholder="0.0"
-              value={result.distanceKm}
-              onChangeText={(text) =>
-                updateResult(result.id, "distanceKm", text)
-              }
-              keyboardType="decimal-pad"
-            />
+            <Input placeholder="0.0" value={result.distanceKm} onChangeText={(t) => updateResult(result.id, "distanceKm", t)} keyboardType="decimal-pad" />
           </View>
         );
-
       case "pace":
         return (
           <>
             <View style={styles.inputRow}>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Minutes</Text>
-                <Input
-                  placeholder="0"
-                  value={result.timeMins}
-                  onChangeText={(text) =>
-                    updateResult(result.id, "timeMins", text)
-                  }
-                  keyboardType="numeric"
-                />
+                <Input placeholder="0" value={result.timeMins} onChangeText={(t) => updateResult(result.id, "timeMins", t)} keyboardType="numeric" />
               </View>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Seconds</Text>
-                <Input
-                  placeholder="0"
-                  value={result.timeSecs}
-                  onChangeText={(text) =>
-                    updateResult(result.id, "timeSecs", text)
-                  }
-                  keyboardType="numeric"
-                />
+                <Input placeholder="0" value={result.timeSecs} onChangeText={(t) => updateResult(result.id, "timeSecs", t)} keyboardType="numeric" />
               </View>
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Distance (km)</Text>
-              <Input
-                placeholder="0.0"
-                value={result.distanceKm}
-                onChangeText={(text) =>
-                  updateResult(result.id, "distanceKm", text)
-                }
-                keyboardType="decimal-pad"
-              />
+              <Input placeholder="0.0" value={result.distanceKm} onChangeText={(t) => updateResult(result.id, "distanceKm", t)} keyboardType="decimal-pad" />
             </View>
           </>
         );
-
       case "calories":
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Calories</Text>
-            <Input
-              placeholder="0"
-              value={result.calories}
-              onChangeText={(text) => updateResult(result.id, "calories", text)}
-              keyboardType="numeric"
-            />
+            <Input placeholder="0" value={result.calories} onChangeText={(t) => updateResult(result.id, "calories", t)} keyboardType="numeric" />
           </View>
         );
-
       default:
         return null;
     }
@@ -521,36 +312,65 @@ export default function WorkoutResultsScreen() {
 
   return (
     <Page
-      title="Log Results"
-      showBackButton={true}
+      title=""
+      showBackButton={false}
+      scrollable={true}
+      headerRight={
+        <TouchableOpacity onPress={handleSkip} disabled={submitting} style={styles.skipLink}>
+          <Text style={styles.skipLinkText}>Skip</Text>
+        </TouchableOpacity>
+      }
       footer={
-        <Button
-          title={submitting ? "Submitting..." : "Complete Workout"}
-          size="large"
-          onPress={handleSubmit}
-          disabled={submitting}
-        />
+        <View style={styles.footerRow}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title="Skip for now"
+              variant="secondary"
+              size="large"
+              onPress={handleSkip}
+              disabled={submitting}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              title={submitting ? "Saving..." : "Save Results"}
+              variant="primary"
+              size="large"
+              onPress={handleSave}
+              disabled={submitting}
+            />
+          </View>
+        </View>
       }
     >
-      <Text style={styles.subtitle}>
-        Log your results for each exercise below
-      </Text>
+      {/* Celebration header */}
+      <View style={styles.celebrationBox}>
+        <View style={styles.trophyCircle}>
+          <Ionicons name="trophy" size={36} color={Colors.primary[500]} />
+        </View>
+        <Gap size={16} />
+        <Text style={styles.celebrationTitle}>Workout Complete!</Text>
+        <Gap size={8} />
+        <Text style={styles.celebrationSubtitle}>
+          Hit any new PRs or want to log your results?{"\n"}
+          Totally optional — skip whenever you're done.
+        </Text>
+      </View>
 
+      <Gap size={24} />
+
+      {/* Result entries */}
       {results.map((result, index) => (
         <View key={result.id} style={styles.resultCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Result {index + 1}</Text>
+          <View style={styles.resultCardHeader}>
+            <Text style={styles.resultCardTitle}>Result {index + 1}</Text>
             {results.length > 1 && (
-              <TouchableOpacity
-                onPress={() => removeResultEntry(result.id)}
-                style={styles.removeButton}
-              >
-                <Ionicons name="trash" size={20} color={Colors.error[500]} />
+              <TouchableOpacity onPress={() => removeResultEntry(result.id)}>
+                <Ionicons name="trash-outline" size={18} color={Colors.error[500]} />
               </TouchableOpacity>
             )}
           </View>
 
-          {/* WOD Selector */}
           <BottomSheetSelect
             label="WOD"
             placeholder="Select WOD"
@@ -559,120 +379,122 @@ export default function WorkoutResultsScreen() {
               label: wod.name || `WOD ${idx + 1}`,
               value: idx,
             }))}
-            onValueChange={(value) =>
-              updateResult(result.id, "wodIndex", value)
-            }
+            onValueChange={(v) => updateResult(result.id, "wodIndex", v)}
           />
-
-          {/* Exercise Selector */}
           <BottomSheetSelect
             label="Exercise"
             placeholder="Select Exercise"
             value={result.exerciseIndex}
             options={getAvailableExercises(result.id, result.wodIndex)}
-            onValueChange={(value) =>
-              updateResult(result.id, "exerciseIndex", value)
-            }
+            onValueChange={(v) => updateResult(result.id, "exerciseIndex", v)}
           />
-
-          {/* Dynamic Input Fields Based on Tracking Type */}
           {renderInputFields(result)}
         </View>
       ))}
 
-      {/* Add More Button - Only show if there are available exercises */}
-      {hasAvailableExercises() ? (
-        <TouchableOpacity style={styles.addButton} onPress={addResultEntry}>
-          <Ionicons name="add-circle" size={24} color={Colors.primary[500]} />
-          <Text style={styles.addButtonText}>Add Another Result</Text>
+      {hasAvailableExercises() && (
+        <TouchableOpacity style={styles.addResultBtn} onPress={addResultEntry}>
+          <Ionicons name="add-circle" size={20} color={Colors.primary[500]} />
+          <Text style={styles.addResultBtnText}>Add Another Result</Text>
         </TouchableOpacity>
-      ) : (
-        <View style={styles.infoBox}>
-          <Ionicons
-            name="information-circle"
-            size={20}
-            color={Colors.text.secondary}
-          />
-          <Text style={styles.infoText}>All exercises have been logged</Text>
-        </View>
       )}
+
+      <Gap size={24} />
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
-  subtitle: {
+  celebrationBox: {
+    alignItems: "center",
+    paddingTop: 32,
+    paddingHorizontal: 24,
+    paddingBottom: 28,
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "30",
+    marginTop: 8,
+  },
+  trophyCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.primary[500] + "18",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: Colors.primary[500] + "40",
+  },
+  celebrationTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.primary,
+    textAlign: "center",
+  },
+  celebrationSubtitle: {
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
-    marginBottom: 20,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  skipLink: {
+    padding: 4,
+  },
+  skipLinkText: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.secondary,
   },
   resultCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
   },
-  cardHeader: {
+  resultCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  cardTitle: {
+  resultCardTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyLG,
+    fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
-  removeButton: {
-    padding: 4,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
+  inputGroup: { marginBottom: 16 },
   inputLabel: {
     fontFamily: FontFamilies.poppinsMedium,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     marginBottom: 8,
   },
-  inputRow: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 16,
-  },
-  inputHalf: {
-    flex: 1,
-  },
-  addButton: {
+  inputRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
+  inputHalf: { flex: 1 },
+  addResultBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
     backgroundColor: Colors.background.secondary,
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: Colors.primary[500],
     borderStyle: "dashed",
+    marginBottom: 8,
   },
-  addButtonText: {
+  addResultBtnText: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.primary[500],
-    marginLeft: 8,
-  },
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  infoText: {
-    fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
-    color: Colors.text.secondary,
+    color: Colors.primary[500],
+  },
+  footerRow: {
+    flexDirection: "row",
+    gap: 12,
   },
 });

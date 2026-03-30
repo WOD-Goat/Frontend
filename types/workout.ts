@@ -43,6 +43,7 @@ export interface ResultData {
 
 export interface AssignedWorkoutData {
   id?: string;
+  title?: string | null;
   assignedBy: string; // userId of creator (self/friend)
   groupId: string | null; // optional if assigned to a group
   groupName?: string | null; // name of the group if this is a group workout
@@ -74,6 +75,7 @@ export interface WorkoutsResponse {
 // Workout creation/update types
 export interface CreateWorkoutData {
   groupId?: string | null;
+  title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
   wods: WODData[];

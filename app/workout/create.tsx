@@ -236,6 +236,7 @@ export default function CreateWorkoutScreen() {
       ],
     },
   ]);
+  const [title, setTitle] = useState<string>("");
   const [scheduledFor, setScheduledFor] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
@@ -278,6 +279,7 @@ export default function CreateWorkoutScreen() {
       }),
     }));
     setWods(filled);
+    if (data.title) setTitle(data.title);
     if (data.scheduledFor) setScheduledFor(new Date(data.scheduledFor));
     if (data.notes) setNotes(data.notes);
     setVoiceModalVisible(false);
@@ -460,6 +462,7 @@ export default function CreateWorkoutScreen() {
     try {
       setLoading(true);
       const response = await workoutsService.createWorkout({
+        title: title.trim() || null,
         scheduledFor: scheduledFor,
         notes: notes.trim() || null,
         wods: finalWods,
@@ -545,10 +548,17 @@ export default function CreateWorkoutScreen() {
               Workout Details
             </Text>
 
-            <View style={styles.section}>
-              <Text style={[styles.label, Typography.bodyMedium]}>
-                Scheduled Date
-              </Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Title (optional)</Text>
+              <Input
+                placeholder='e.g., "Monday Metcon" or "Fran"'
+                value={title}
+                onChangeText={setTitle}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Scheduled Date</Text>
               <TouchableOpacity
                 style={styles.dateButton}
                 onPress={() => setShowDatePicker(true)}
@@ -570,16 +580,10 @@ export default function CreateWorkoutScreen() {
                     display={Platform.OS === "ios" ? "spinner" : "default"}
                     minimumDate={new Date()}
                     onChange={(event, selectedDate) => {
-                      // On Android, hide immediately after selection
-                      if (Platform.OS === "android") {
-                        setShowDatePicker(false);
-                      }
-                      if (selectedDate) {
-                        setScheduledFor(selectedDate);
-                      }
+                      if (Platform.OS === "android") setShowDatePicker(false);
+                      if (selectedDate) setScheduledFor(selectedDate);
                     }}
                   />
-                  {/* Done button for iOS */}
                   {Platform.OS === "ios" && (
                     <TouchableOpacity
                       style={styles.doneButton}
@@ -590,6 +594,16 @@ export default function CreateWorkoutScreen() {
                   )}
                 </>
               )}
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Notes (optional)</Text>
+              <Input
+                placeholder="Any notes for this workout..."
+                value={notes}
+                onChangeText={setNotes}
+                multiline
+              />
             </View>
           </View>
 
@@ -617,9 +631,7 @@ export default function CreateWorkoutScreen() {
 
                 {/* WOD Name */}
                 <View style={styles.section}>
-                  <Text style={[styles.label, Typography.bodyMedium]}>
-                    WOD Name
-                  </Text>
+                  <Text style={[styles.label, Typography.bodyMedium]}>WOD Name</Text>
                   <Input
                     placeholder='e.g., "WOD1" or "Fran"'
                     value={wod.name}

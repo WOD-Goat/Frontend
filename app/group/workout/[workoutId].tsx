@@ -1,33 +1,20 @@
 import { groupsService } from "@/api/services";
-import { BottomSheetSelect, Button, Gap, Input, Page } from "@/components";
+import { Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
-import type { GroupWorkout, ResultData, WODData } from "@/types";
+import type { GroupWorkout, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-
-interface ResultEntry {
-  id: string;
-  wodIndex: number;
-  exerciseIndex: number;
-  reps: string;
-  weight: string;
-  timeMins: string;
-  timeSecs: string;
-  distanceKm: string;
-  calories: string;
-}
 
 function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
   return (
@@ -57,383 +44,6 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
   );
 }
 
-function LogResultsPanel({
-  wods,
-  groupId,
-  workoutId,
-  onSubmitSuccess,
-}: {
-  wods: WODData[];
-  groupId: string;
-  workoutId: string;
-  onSubmitSuccess: () => void;
-}) {
-  const [results, setResults] = useState<ResultEntry[]>([
-    {
-      id: "result-1",
-      wodIndex: 0,
-      exerciseIndex: 0,
-      reps: "",
-      weight: "",
-      timeMins: "",
-      timeSecs: "",
-      distanceKm: "",
-      calories: "",
-    },
-  ]);
-  const [submitting, setSubmitting] = useState(false);
-  const { showToast } = useToast();
-
-  const getExercise = (wodIndex: number, exerciseIndex: number) =>
-    wods[wodIndex]?.exercises[exerciseIndex];
-
-  const getAvailableExercises = (currentId: string, wodIndex: number) => {
-    const wod = wods[wodIndex];
-    if (!wod) return [];
-    const selected = results
-      .filter((r) => r.id !== currentId && r.wodIndex === wodIndex)
-      .map((r) => r.exerciseIndex);
-    return wod.exercises
-      .map((ex, idx) => ({ label: ex.name, value: idx }))
-      .filter(({ value }) => !selected.includes(value));
-  };
-
-  const hasAvailableExercises = () => {
-    const total = wods.reduce((s, w) => s + w.exercises.length, 0);
-    return results.length < total;
-  };
-
-  const updateResult = (
-    id: string,
-    field: keyof ResultEntry,
-    value: string | number,
-  ) => {
-    setResults(
-      results.map((r) => {
-        if (r.id !== id) return r;
-        if (field === "wodIndex") {
-          const newWodIndex = value as number;
-          const selected = results
-            .filter((res) => res.id !== id && res.wodIndex === newWodIndex)
-            .map((res) => res.exerciseIndex);
-          const first = (wods[newWodIndex]?.exercises || []).findIndex(
-            (_, idx) => !selected.includes(idx),
-          );
-          return {
-            ...r,
-            wodIndex: newWodIndex,
-            exerciseIndex: first !== -1 ? first : 0,
-          };
-        }
-        return {
-          ...r,
-          [field]: field === "exerciseIndex" ? value : value.toString(),
-        };
-      }),
-    );
-  };
-
-  const addResultEntry = () => {
-    const selected = results.map((r) => `${r.wodIndex}-${r.exerciseIndex}`);
-    let newWodIndex = 0;
-    let newExerciseIndex = 0;
-    outer: for (let w = 0; w < wods.length; w++) {
-      for (let e = 0; e < wods[w].exercises.length; e++) {
-        if (!selected.includes(`${w}-${e}`)) {
-          newWodIndex = w;
-          newExerciseIndex = e;
-          break outer;
-        }
-      }
-    }
-    setResults([
-      ...results,
-      {
-        id: `result-${Date.now()}`,
-        wodIndex: newWodIndex,
-        exerciseIndex: newExerciseIndex,
-        reps: "",
-        weight: "",
-        timeMins: "",
-        timeSecs: "",
-        distanceKm: "",
-        calories: "",
-      },
-    ]);
-  };
-
-  const removeResultEntry = (id: string) => {
-    if (results.length === 1) return;
-    setResults(results.filter((r) => r.id !== id));
-  };
-
-  const renderInputFields = (result: ResultEntry) => {
-    const exercise = getExercise(result.wodIndex, result.exerciseIndex);
-    if (!exercise) return null;
-    switch (exercise.trackingType) {
-      case "weight_reps":
-        return (
-          <View style={styles.inputRow}>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Weight (KG)</Text>
-              <Input
-                placeholder="0"
-                value={result.weight}
-                onChangeText={(t) => updateResult(result.id, "weight", t)}
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Reps</Text>
-              <Input
-                placeholder="0"
-                value={result.reps}
-                onChangeText={(t) => updateResult(result.id, "reps", t)}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-        );
-      case "reps":
-        return (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Reps</Text>
-            <Input
-              placeholder="0"
-              value={result.reps}
-              onChangeText={(t) => updateResult(result.id, "reps", t)}
-              keyboardType="numeric"
-            />
-          </View>
-        );
-      case "time":
-        return (
-          <View style={styles.inputRow}>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Minutes</Text>
-              <Input
-                placeholder="0"
-                value={result.timeMins}
-                onChangeText={(t) => updateResult(result.id, "timeMins", t)}
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.inputHalf}>
-              <Text style={styles.inputLabel}>Seconds</Text>
-              <Input
-                placeholder="0"
-                value={result.timeSecs}
-                onChangeText={(t) => updateResult(result.id, "timeSecs", t)}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-        );
-      case "distance":
-        return (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Distance (km)</Text>
-            <Input
-              placeholder="0.0"
-              value={result.distanceKm}
-              onChangeText={(t) => updateResult(result.id, "distanceKm", t)}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        );
-      case "pace":
-        return (
-          <>
-            <View style={styles.inputRow}>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Minutes</Text>
-                <Input
-                  placeholder="0"
-                  value={result.timeMins}
-                  onChangeText={(t) => updateResult(result.id, "timeMins", t)}
-                  keyboardType="numeric"
-                />
-              </View>
-              <View style={styles.inputHalf}>
-                <Text style={styles.inputLabel}>Seconds</Text>
-                <Input
-                  placeholder="0"
-                  value={result.timeSecs}
-                  onChangeText={(t) => updateResult(result.id, "timeSecs", t)}
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Distance (km)</Text>
-              <Input
-                placeholder="0.0"
-                value={result.distanceKm}
-                onChangeText={(t) => updateResult(result.id, "distanceKm", t)}
-                keyboardType="decimal-pad"
-              />
-            </View>
-          </>
-        );
-      case "calories":
-        return (
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Calories</Text>
-            <Input
-              placeholder="0"
-              value={result.calories}
-              onChangeText={(t) => updateResult(result.id, "calories", t)}
-              keyboardType="numeric"
-            />
-          </View>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const validateResults = (): string | null => {
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
-      const exercise = getExercise(r.wodIndex, r.exerciseIndex);
-      if (!exercise) continue;
-      const label = `Result ${i + 1}`;
-      switch (exercise.trackingType) {
-        case "weight_reps":
-          if (!r.weight.trim() || !r.reps.trim())
-            return `${label}: weight and reps are required`;
-          break;
-        case "reps":
-          if (!r.reps.trim()) return `${label}: reps are required`;
-          break;
-        case "time":
-          if (!r.timeMins.trim() && !r.timeSecs.trim())
-            return `${label}: time is required`;
-          break;
-        case "distance":
-          if (!r.distanceKm.trim()) return `${label}: distance is required`;
-          break;
-        case "pace":
-          if (!r.distanceKm.trim()) return `${label}: distance is required`;
-          if (!r.timeMins.trim() && !r.timeSecs.trim())
-            return `${label}: time is required`;
-          break;
-        case "calories":
-          if (!r.calories.trim()) return `${label}: calories are required`;
-          break;
-      }
-    }
-    return null;
-  };
-
-  const handleSubmit = async () => {
-    const error = validateResults();
-    if (error) {
-      showToast({ type: "error", label: error });
-      return;
-    }
-    try {
-      setSubmitting(true);
-      const formattedResults: ResultData[] = results.map((r) => {
-        const totalSeconds =
-          parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
-        const meters = r.distanceKm
-          ? Math.round(parseFloat(r.distanceKm) * 1000)
-          : null;
-        return {
-          wodIndex: r.wodIndex,
-          exerciseIndex: r.exerciseIndex,
-          reps: r.reps ? parseInt(r.reps) : null,
-          weight: r.weight ? parseFloat(r.weight) : null,
-          timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
-          distanceMeters: meters,
-          calories: r.calories ? parseInt(r.calories) : null,
-        };
-      });
-
-      const response = await groupsService.submitGroupWorkout(
-        groupId,
-        workoutId,
-        formattedResults,
-      );
-      if (response.success) {
-        showToast({ type: "success", label: "Results submitted!" });
-        onSubmitSuccess();
-      } else {
-        showToast({
-          type: "error",
-          label: response.message || "Failed to submit results",
-        });
-      }
-    } catch (err: any) {
-      showToast({
-        type: "error",
-        label: err.message || "Failed to submit results",
-      });
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <View>
-      <Text style={styles.panelTitle}>Log Your Results</Text>
-      <Gap size={12} />
-      {results.map((result, index) => (
-        <View key={result.id} style={styles.resultCard}>
-          <View style={styles.resultCardHeader}>
-            <Text style={styles.resultCardTitle}>Result {index + 1}</Text>
-            {results.length > 1 && (
-              <TouchableOpacity onPress={() => removeResultEntry(result.id)}>
-                <Ionicons
-                  name="trash-outline"
-                  size={18}
-                  color={Colors.error[500]}
-                />
-              </TouchableOpacity>
-            )}
-          </View>
-          <BottomSheetSelect
-            label="WOD"
-            placeholder="Select WOD"
-            value={result.wodIndex}
-            options={wods.map((wod, idx) => ({
-              label: wod.name || `WOD ${idx + 1}`,
-              value: idx,
-            }))}
-            onValueChange={(v) => updateResult(result.id, "wodIndex", v)}
-          />
-          <BottomSheetSelect
-            label="Exercise"
-            placeholder="Select Exercise"
-            value={result.exerciseIndex}
-            options={getAvailableExercises(result.id, result.wodIndex)}
-            onValueChange={(v) => updateResult(result.id, "exerciseIndex", v)}
-          />
-          {renderInputFields(result)}
-        </View>
-      ))}
-
-      {hasAvailableExercises() && (
-        <TouchableOpacity style={styles.addResultBtn} onPress={addResultEntry}>
-          <Ionicons name="add-circle" size={20} color={Colors.primary[500]} />
-          <Text style={styles.addResultBtnText}>Add Another Result</Text>
-        </TouchableOpacity>
-      )}
-
-      <Gap size={12} />
-      <Button
-        title={submitting ? "Submitting..." : "Submit Results"}
-        variant="primary"
-        size="large"
-        fullWidth
-        disabled={submitting}
-        onPress={handleSubmit}
-      />
-    </View>
-  );
-}
-
 export default function GroupWorkoutDetailScreen() {
   const { workoutId, groupId } = useLocalSearchParams<{
     workoutId: string;
@@ -442,7 +52,6 @@ export default function GroupWorkoutDetailScreen() {
   const [workout, setWorkout] = useState<GroupWorkout | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-  const [showLogResults, setShowLogResults] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const { guard } = useFeatureGuard();
@@ -504,11 +113,21 @@ export default function GroupWorkoutDetailScreen() {
   const currentUserId = globalState.get("user")?.uid ?? "";
   const isAdmin = workout.createdBy === currentUserId;
 
-  const footer = !submitted && !showLogResults ? (
+  const footer = !submitted ? (
     <TouchableOpacity
       style={styles.footerButton}
       activeOpacity={0.85}
-      onPress={() => setShowLogResults(true)}
+      onPress={() =>
+        router.push({
+          pathname: "/workout/results",
+          params: {
+            workoutData: JSON.stringify(workout),
+            type: "group",
+            workoutId,
+            groupId,
+          },
+        })
+      }
     >
       <Ionicons name="barbell-outline" size={18} color="#fff" />
       <Text style={styles.footerButtonText}>Log Results</Text>
@@ -574,22 +193,6 @@ export default function GroupWorkoutDetailScreen() {
       {workout.wods.map((wod, i) => (
         <ExerciseCard key={i} wod={wod} wodIndex={i} />
       ))}
-
-      <Gap size={20} />
-
-      {/* Results */}
-      {showLogResults &&  (
-        <LogResultsPanel
-          wods={workout.wods}
-          groupId={groupId}
-          workoutId={workoutId}
-          onSubmitSuccess={() => {
-            setSubmitted(true);
-            router.dismissAll();
-            router.replace("/(tabs)");
-          }}
-        />
-      )}
 
       <Gap size={24} />
     </Page>
@@ -693,57 +296,6 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
     textTransform: "capitalize",
   },
-  panelTitle: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
-  },
-  resultCard: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: Colors.neutral[700],
-  },
-  resultCardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  resultCardTitle: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
-  },
-  inputGroup: { marginBottom: 16 },
-  inputLabel: {
-    fontFamily: FontFamilies.poppinsMedium,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.secondary,
-    marginBottom: 8,
-  },
-  inputRow: { flexDirection: "row", gap: 12, marginBottom: 16 },
-  inputHalf: { flex: 1 },
-  addResultBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.primary[500],
-    borderStyle: "dashed",
-    marginBottom: 8,
-  },
-  addResultBtnText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
-    color: Colors.primary[500],
-  },
   headerIconBtn: {
     padding: 4,
   },
@@ -760,21 +312,6 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
-  },
-  submittedBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: Colors.success[500] + "15",
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.success[500] + "40",
-  },
-  submittedBannerText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
-    color: Colors.success[500],
   },
   centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorText: {

@@ -1,32 +1,48 @@
 import { workoutsService } from "@/api/services";
-import { Button, Page } from "@/components";
+import { Button, Gap, Page } from "@/components";
 import { useToast } from "@/components/lib/toast/ToastProvider";
-import ResultsView from "@/components/workouts/ResultsView";
 import WorkoutView from "@/components/workouts/WorkoutView";
-import { Colors, FontFamilies, FontSizes } from "@/constants";
-import type { AssignedWorkoutData, ResultData } from "@/types";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import type { AssignedWorkoutData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { parseFirebaseDate } from "@/utils";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
-  LayoutAnimation,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  UIManager,
   View,
 } from "react-native";
 
-// Enable LayoutAnimation on Android
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
+function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
+  return (
+    <View style={styles.wodCard}>
+      <View style={styles.wodCardHeader}>
+        <Text style={styles.wodCardTitle}>
+          {wod.name || `WOD ${wodIndex + 1}`}
+        </Text>
+      </View>
+      {wod.exercises.map((ex, i) => (
+        <View key={i} style={styles.exerciseRow}>
+          <View style={styles.exerciseDot} />
+          <View style={styles.exerciseInfo}>
+            <Text style={styles.exerciseName}>{ex.name}</Text>
+            {ex.instructions ? (
+              <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
+            ) : null}
+            <View style={styles.trackingBadge}>
+              <Text style={styles.trackingBadgeText}>
+                {ex.trackingType.replace("_", " ")}
+              </Text>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 }
 
 interface Exercise {
@@ -52,20 +68,9 @@ export default function WorkoutDetailScreen() {
 
   const { showToast } = useToast();
 
-  const [expandedExercises, setExpandedExercises] = useState<{
-    [key: string]: boolean;
-  }>({});
-
-  // Edit mode state for results
-  const [isEditingResults, setIsEditingResults] = useState(false);
-  const [editedResults, setEditedResults] = useState<ResultData[]>([]);
-
   // Edit mode state for workout details
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
-
-  // Animated values for completion button transitions
-  const animatedValues = useRef<{ [key: string]: Animated.Value }>({});
 
   // Fetch workout data
   useEffect(() => {
@@ -83,7 +88,7 @@ export default function WorkoutDetailScreen() {
       if (response.success && response.data) {
         setWorkout(response.data);
 
-        // Transform workout data to WOD format for the UI
+        // Transform workout data to WOD format for edit mode
         const transformedWods: WOD[] = response.data.wods.map((wod, index) => ({
           id: `wod-${index}`,
           title: wod.name,
@@ -104,43 +109,6 @@ export default function WorkoutDetailScreen() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Initialize animated values for each WOD
-  wods.forEach((wod) => {
-    if (!animatedValues.current[wod.id]) {
-      animatedValues.current[wod.id] = new Animated.Value(
-        wod.completed ? 1 : 0,
-      );
-    }
-  });
-
-  const toggleExercise = (wodId: string, exerciseIndex: number) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    const key = `${wodId}-${exerciseIndex}`;
-    setExpandedExercises((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
-
-  const toggleWODCompletion = (wodId: string) => {
-    const wod = wods.find((w) => w.id === wodId);
-    if (!wod) return;
-
-    const toValue = wod.completed ? 0 : 1;
-
-    Animated.timing(animatedValues.current[wodId], {
-      toValue,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    setWods((prev) =>
-      prev.map((wod) =>
-        wod.id === wodId ? { ...wod, completed: !wod.completed } : wod,
-      ),
-    );
   };
 
   const handleDeleteWorkout = () => {
@@ -191,50 +159,13 @@ export default function WorkoutDetailScreen() {
   };
 
   const handleEditWorkout = () => {
-    if (workout?.completed && workout.results) {
-      setEditedResults(JSON.parse(JSON.stringify(workout.results)));
-      setIsEditingResults(true);
-    } else if (workout) {
+    if (workout) {
       setEditedWods(JSON.parse(JSON.stringify(wods)));
       setIsEditingWorkout(true);
     }
   };
 
-  const handleSaveResults = async () => {
-    try {
-      setLoading(true);
-      const response = await workoutsService.updateWorkout(id as string, {
-        results: editedResults,
-      });
-
-      if (response.success) {
-        setIsEditingResults(false);
-        router.dismissAll();
-        router.replace("/(tabs)/");
-        showToast({
-          type: "success",
-          label: "Workout results updated successfully!",
-        });
-      } else {
-        showToast({
-          type: "error",
-          label: response.message || "Failed to update results",
-        });
-      }
-    } catch (err: any) {
-      console.error("Error updating results:", err);
-      showToast({
-        type: "error",
-        label: err.message || "Failed to update results",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCancelEdit = () => {
-    setIsEditingResults(false);
-    setEditedResults([]);
     setIsEditingWorkout(false);
     setEditedWods([]);
   };
@@ -247,7 +178,6 @@ export default function WorkoutDetailScreen() {
       const updatedWods = editedWods.map((wod, wodIndex) => ({
         name: wod.title || "Untitled WOD",
         exercises: wod.exercises.map((ex, exIndex) => {
-          // Try to get original exercise data if it exists
           let trackingType = "reps";
           let exerciseId = "";
           if (
@@ -394,24 +324,6 @@ export default function WorkoutDetailScreen() {
     );
   };
 
-  const updateEditedResult = (
-    index: number,
-    field: keyof ResultData,
-    value: string,
-  ) => {
-    const numValue =
-      value === ""
-        ? null
-        : field === "weight"
-          ? parseFloat(value)
-          : parseInt(value);
-    setEditedResults((prev) =>
-      prev.map((result, i) =>
-        i === index ? { ...result, [field]: numValue } : result,
-      ),
-    );
-  };
-
   if (loading) {
     return (
       <Page
@@ -461,65 +373,14 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  const wodsToDisplay = isEditingWorkout ? editedWods : wods;
-
-  // Render completed workout view
-  if (workout?.completed) {
-    return (
-      <Page
-        title="Workout Results"
-        headerRight={
-          !isEditingResults ? (
-            <TouchableOpacity onPress={handleEditWorkout}>
-              <Ionicons
-                name="create-outline"
-                size={24}
-                color={Colors.text.primary}
-              />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={handleCancelEdit}>
-              <Ionicons name="close" size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-          )
-        }
-        footer={
-          isEditingResults ? (
-            <View style={{ flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1 }}>
-                <Button
-                  title="Cancel"
-                  size="large"
-                  onPress={handleCancelEdit}
-                  variant="secondary"
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button
-                  title="Save Changes"
-                  size="large"
-                  onPress={handleSaveResults}
-                  disabled={loading}
-                />
-              </View>
-            </View>
-          ) : undefined
-        }
-      >
-        <ResultsView
-          workout={workout}
-          isEditingResults={isEditingResults}
-          editedResults={editedResults}
-          onUpdateResult={updateEditedResult}
-        />
-      </Page>
-    );
-  }
+  const scheduledDate = parseFirebaseDate(workout.scheduledFor);
 
   // Render active workout view
   return (
     <Page
-      title="Workout Details"
+      title={workout.title || "Workout Details"}
+      showBackButton={true}
+      scrollable={true}
       headerRight={
         <View style={{ flexDirection: "row", gap: 16 }}>
           {!isEditingWorkout ? (
@@ -566,42 +427,215 @@ export default function WorkoutDetailScreen() {
               />
             </View>
           </View>
-        ) : (
-          <Button
-            title="Complete Workout"
-            size="large"
-            disabled={wods.some((wod) => !wod.completed)}
-            onPress={() => {
+        ) : workout.completed ? null : (
+          <TouchableOpacity
+            style={styles.footerButton}
+            activeOpacity={0.85}
+            onPress={() =>
               router.push({
-                pathname: `/workout/results`,
-                params: {
-                  workoutData: JSON.stringify(workout),
-                },
-              });
-            }}
-          />
+                pathname: "/workout/results",
+                params: { workoutData: JSON.stringify(workout) },
+              })
+            }
+          >
+            <Ionicons name="barbell-outline" size={18} color="#fff" />
+            <Text style={styles.footerButtonText}>Complete Workout</Text>
+          </TouchableOpacity>
         )
       }
     >
-      <WorkoutView
-        wods={wodsToDisplay}
-        isEditingWorkout={isEditingWorkout}
-        expandedExercises={expandedExercises}
-        animatedValues={animatedValues.current}
-        onToggleExercise={toggleExercise}
-        onToggleWODCompletion={toggleWODCompletion}
-        onUpdateWodTitle={updateWodTitle}
-        onUpdateExercise={updateExercise}
-        onAddWod={handleAddWod}
-        onRemoveWod={handleRemoveWod}
-        onAddExercise={handleAddExercise}
-        onRemoveExercise={handleRemoveExercise}
-      />
+      {isEditingWorkout ? (
+        <WorkoutView
+          wods={editedWods}
+          isEditingWorkout={true}
+          expandedExercises={{}}
+          animatedValues={{}}
+          onToggleExercise={() => {}}
+          onToggleWODCompletion={() => {}}
+          onUpdateWodTitle={updateWodTitle}
+          onUpdateExercise={updateExercise}
+          onAddWod={handleAddWod}
+          onRemoveWod={handleRemoveWod}
+          onAddExercise={handleAddExercise}
+          onRemoveExercise={handleRemoveExercise}
+        />
+      ) : (
+        <>
+          {/* Workout header */}
+          <View style={styles.workoutHeader}>
+            <View style={styles.workoutHeaderTop}>
+              <View style={styles.groupBadge}>
+                <Ionicons name="person" size={12} color={Colors.primary[500]} />
+                <Text style={styles.groupBadgeText}>Personal Workout</Text>
+              </View>
+              {workout.completed && (
+                <View style={styles.completedBadge}>
+                  <Ionicons name="checkmark-circle" size={12} color={Colors.success[500]} />
+                  <Text style={styles.completedBadgeText}>Completed</Text>
+                </View>
+              )}
+            </View>
+            <Text style={styles.workoutDate}>
+              {scheduledDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Text>
+            {workout.notes && (
+              <View style={styles.notesBox}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={14}
+                  color={Colors.text.secondary}
+                />
+                <Text style={styles.notesText}>{workout.notes}</Text>
+              </View>
+            )}
+          </View>
+
+          <Gap size={16} />
+
+          {/* WODs */}
+          <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
+          <Gap size={10} />
+          {workout.wods.map((wod, i) => (
+            <ExerciseCard key={i} wod={wod} wodIndex={i} />
+          ))}
+
+          <Gap size={24} />
+        </>
+      )}
     </Page>
   );
 }
 
 const styles = StyleSheet.create({
+  workoutHeader: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "30",
+    gap: 8,
+    marginTop: 8,
+  },
+  workoutHeaderTop: { flexDirection: "row", alignItems: "center", gap: 8 },
+  completedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.success[500] + "18",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  completedBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(11),
+    color: Colors.success[500],
+  },
+  groupBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.primary[500] + "18",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  groupBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(11),
+    color: Colors.primary[500],
+  },
+  workoutDate: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  notesBox: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "flex-start",
+    paddingTop: 4,
+  },
+  notesText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  sectionHeader: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  wodCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  wodCardHeader: { marginBottom: 10 },
+  wodCardTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  exerciseRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
+  exerciseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: Colors.primary[500],
+    marginTop: 7,
+  },
+  exerciseInfo: { flex: 1, gap: 4 },
+  exerciseName: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+  },
+  exerciseInstructions: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
+    lineHeight: 16,
+  },
+  trackingBadge: {
+    backgroundColor: Colors.primary[500] + "15",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  trackingBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(10),
+    color: Colors.primary[500],
+    textTransform: "capitalize",
+  },
+  footerButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  footerButtonText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: "#fff",
+  },
   centerContainer: {
     flex: 1,
     justifyContent: "center",
