@@ -128,6 +128,34 @@ export const groupsService = {
   },
 
   /**
+   * Update a group workout (admin only)
+   */
+  updateGroupWorkout: async (
+    groupId: string,
+    workoutId: string,
+    data: Partial<import("@/types").CreateGroupWorkoutData>,
+  ): Promise<GroupWorkoutResponse> => {
+    const response = await apiClient.put<GroupWorkoutResponse>(
+      API_ENDPOINTS.GROUPS.UPDATE_WORKOUT(groupId, workoutId),
+      data,
+    );
+    return response as unknown as GroupWorkoutResponse;
+  },
+
+  /**
+   * Delete a group workout (admin only)
+   */
+  deleteGroupWorkout: async (
+    groupId: string,
+    workoutId: string,
+  ): Promise<ApiResponse> => {
+    const response = await apiClient.delete<ApiResponse>(
+      API_ENDPOINTS.GROUPS.DELETE_WORKOUT(groupId, workoutId),
+    );
+    return response as unknown as ApiResponse;
+  },
+
+  /**
    * Get leaderboard for a group workout
    */
   getLeaderboard: async (

@@ -1,20 +1,36 @@
 import { groupsService } from "@/api/services";
-import { Gap, Page } from "@/components";
+import { Button, Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { GroupWorkout, WODData } from "@/types";
+import WorkoutView from "@/components/workouts/WorkoutView";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
+interface Exercise {
+  name: string;
+  instructions?: string[];
+}
+
+interface WOD {
+  id: string;
+  title: string;
+  exercises: Exercise[];
+  rawText?: string;
+  completed: boolean;
+}
 
 function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
   return (
@@ -24,22 +40,26 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
           {wod.name || `WOD ${wodIndex + 1}`}
         </Text>
       </View>
-      {wod.exercises.map((ex, i) => (
-        <View key={i} style={styles.exerciseRow}>
-          <View style={styles.exerciseDot} />
-          <View style={styles.exerciseInfo}>
-            <Text style={styles.exerciseName}>{ex.name}</Text>
-            {ex.instructions ? (
-              <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
-            ) : null}
-            <View style={styles.trackingBadge}>
-              <Text style={styles.trackingBadgeText}>
-                {ex.trackingType.replace("_", " ")}
-              </Text>
+      {wod.rawText ? (
+        <Text style={styles.wodRawText}>{wod.rawText}</Text>
+      ) : (
+        wod.exercises.map((ex, i) => (
+          <View key={i} style={styles.exerciseRow}>
+            <View style={styles.exerciseDot} />
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName}>{ex.name}</Text>
+              {ex.instructions ? (
+                <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
+              ) : null}
+              <View style={styles.trackingBadge}>
+                <Text style={styles.trackingBadgeText}>
+                  {ex.trackingType.replace("_", " ")}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      ))}
+        ))
+      )}
     </View>
   );
 }
@@ -52,6 +72,9 @@ export default function GroupWorkoutDetailScreen() {
   const [workout, setWorkout] = useState<GroupWorkout | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [wods, setWods] = useState<WOD[]>([]);
+  const [isEditingWorkout, setIsEditingWorkout] = useState(false);
+  const [editedWods, setEditedWods] = useState<WOD[]>([]);
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const { guard } = useFeatureGuard();
@@ -67,6 +90,18 @@ export default function GroupWorkoutDetailScreen() {
       if (response.success && response.data) {
         setWorkout(response.data);
         setSubmitted(response.data.hasSubmitted ?? false);
+
+        const transformedWods: WOD[] = response.data.wods.map((wod, index) => ({
+          id: `wod-${index}`,
+          title: wod.name,
+          rawText: wod.rawText ?? undefined,
+          exercises: wod.exercises.map((ex) => ({
+            name: ex.name,
+            instructions: ex.instructions ? [ex.instructions] : undefined,
+          })),
+          completed: false,
+        }));
+        setWods(transformedWods);
       } else {
         showToast({
           type: "error",
@@ -113,40 +148,242 @@ export default function GroupWorkoutDetailScreen() {
   const currentUserId = globalState.get("user")?.uid ?? "";
   const isAdmin = workout.createdBy === currentUserId;
 
-  const footer = !submitted ? (
+  const handleCompleteRaw = async () => {
+    try {
+      await groupsService.submitGroupWorkout(groupId, workoutId, []);
+      setSubmitted(true);
+      showToast({ type: "success", label: "Workout completed!" });
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to complete workout" });
+    }
+  };
+
+  const handleEditWorkout = () => {
+    setEditedWods(JSON.parse(JSON.stringify(wods)));
+    setIsEditingWorkout(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingWorkout(false);
+    setEditedWods([]);
+  };
+
+  const handleDeleteWorkout = () => {
+    Alert.alert(
+      "Delete Workout",
+      "Are you sure you want to delete this workout? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await groupsService.deleteGroupWorkout(groupId, workoutId);
+              if (response.success) {
+                router.back();
+                showToast({ type: "success", label: "Workout deleted successfully!" });
+              } else {
+                showToast({ type: "error", label: response.message || "Failed to delete workout" });
+              }
+            } catch (err: any) {
+              showToast({ type: "error", label: err.message || "Failed to delete workout" });
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleSaveWorkout = async () => {
+    try {
+      setLoading(true);
+      const updatedWods = workout.wodType === "raw"
+        ? editedWods.map((wod) => ({
+            name: wod.title || "Untitled WOD",
+            rawText: wod.rawText ?? "",
+            exercises: [],
+          }))
+        : editedWods.map((wod, wodIndex) => ({
+            name: wod.title || "Untitled WOD",
+            exercises: wod.exercises.map((ex, exIndex) => {
+              let trackingType = "reps";
+              let exerciseId = "";
+              if (workout.wods[wodIndex]?.exercises[exIndex]) {
+                const originalEx = workout.wods[wodIndex].exercises[exIndex];
+                trackingType = originalEx.trackingType;
+                exerciseId = originalEx.exerciseId || "";
+              }
+              return {
+                exerciseId,
+                name: ex.name || "Exercise",
+                instructions: ex.instructions?.[0] || "",
+                trackingType: trackingType as any,
+              };
+            }),
+          }));
+
+      const response = await groupsService.updateGroupWorkout(groupId, workoutId, { wods: updatedWods });
+      if (response.success) {
+        setIsEditingWorkout(false);
+        await loadWorkout();
+        showToast({ type: "success", label: "Workout updated successfully!" });
+      } else {
+        showToast({ type: "error", label: response.message || "Failed to update workout" });
+      }
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to update workout" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateWodTitle = (wodId: string, title: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => (wod.id === wodId ? { ...wod, title } : wod)),
+    );
+  };
+
+  const updateWodRawText = (wodId: string, rawText: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => (wod.id === wodId ? { ...wod, rawText } : wod)),
+    );
+  };
+
+  const updateExercise = (
+    wodId: string,
+    exerciseIndex: number,
+    field: "name" | "instructions",
+    value: string,
+  ) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => {
+        if (wod.id === wodId) {
+          const updatedExercises = wod.exercises.map((ex, idx) => {
+            if (idx === exerciseIndex) {
+              return field === "name" ? { ...ex, name: value } : { ...ex, instructions: [value] };
+            }
+            return ex;
+          });
+          return { ...wod, exercises: updatedExercises };
+        }
+        return wod;
+      }),
+    );
+  };
+
+  const handleAddWod = () => {
+    const newWod: WOD = {
+      id: `wod-${Date.now()}`,
+      title: "",
+      exercises: [{ name: "", instructions: [""] }],
+      completed: false,
+    };
+    setEditedWods([...editedWods, newWod]);
+  };
+
+  const handleRemoveWod = (wodId: string) => {
+    if (editedWods.length <= 1) {
+      showToast({ type: "error", label: "You must have at least one WOD" });
+      return;
+    }
+    setEditedWods(editedWods.filter((wod) => wod.id !== wodId));
+  };
+
+  const handleAddExercise = (wodId: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) =>
+        wod.id === wodId
+          ? { ...wod, exercises: [...wod.exercises, { name: "", instructions: [""] }] }
+          : wod,
+      ),
+    );
+  };
+
+  const handleRemoveExercise = (wodId: string, exerciseIndex: number) => {
+    const wod = editedWods.find((w) => w.id === wodId);
+    if (!wod) return;
+    if (wod.exercises.length <= 1) {
+      showToast({ type: "error", label: "Each WOD must have at least one exercise" });
+      return;
+    }
+    setEditedWods((prev) =>
+      prev.map((w) =>
+        w.id === wodId
+          ? { ...w, exercises: w.exercises.filter((_, idx) => idx !== exerciseIndex) }
+          : w,
+      ),
+    );
+  };
+
+  const footer = isEditingWorkout ? (
+    <View style={{ flexDirection: "row", gap: 12 }}>
+      <View style={{ flex: 1 }}>
+        <Button title="Cancel" size="large" onPress={handleCancelEdit} variant="secondary" />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Button title="Save Changes" size="large" onPress={handleSaveWorkout} disabled={loading} />
+      </View>
+    </View>
+  ) : !submitted ? (
     <TouchableOpacity
       style={styles.footerButton}
       activeOpacity={0.85}
       onPress={() =>
-        router.push({
-          pathname: "/workout/results",
-          params: {
-            workoutData: JSON.stringify(workout),
-            type: "group",
-            workoutId,
-            groupId,
-          },
-        })
+        workout.wodType === "raw"
+          ? handleCompleteRaw()
+          : router.push({
+              pathname: "/workout/results",
+              params: {
+                workoutData: JSON.stringify(workout),
+                type: "group",
+                workoutId,
+                groupId,
+              },
+            })
       }
     >
       <Ionicons name="barbell-outline" size={18} color="#fff" />
-      <Text style={styles.footerButtonText}>Log Results</Text>
+      <Text style={styles.footerButtonText}>
+        {workout.wodType === "raw" ? "Complete Workout" : "Log Results"}
+      </Text>
     </TouchableOpacity>
   ) : null;
 
   const headerRight = isAdmin ? (
-    <TouchableOpacity
-      onPress={() =>
-        guard("leaderboard", () =>
-          router.push(
-            `/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`,
-          ),
-        )
-      }
-      style={styles.headerIconBtn}
-    >
-      <Ionicons name="trophy-outline" size={22} color={Colors.primary[500]} />
-    </TouchableOpacity>
+    <View style={{ flexDirection: "row", gap: 12 }}>
+      {!isEditingWorkout ? (
+        <>
+          {!submitted && (
+            <TouchableOpacity onPress={handleEditWorkout} style={styles.headerIconBtn}>
+              <Ionicons name="create-outline" size={22} color={Colors.text.primary} />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={handleDeleteWorkout} style={styles.headerIconBtn}>
+            <Ionicons name="trash-outline" size={22} color={Colors.error[500]} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              guard("leaderboard", () =>
+                router.push(
+                  `/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`,
+                ),
+              )
+            }
+            style={styles.headerIconBtn}
+          >
+            <Ionicons name="trophy-outline" size={22} color={Colors.primary[500]} />
+          </TouchableOpacity>
+        </>
+      ) : (
+        <TouchableOpacity onPress={handleCancelEdit} style={styles.headerIconBtn}>
+          <Ionicons name="close" size={24} color={Colors.text.primary} />
+        </TouchableOpacity>
+      )}
+    </View>
   ) : null;
 
   return (
@@ -157,44 +394,108 @@ export default function GroupWorkoutDetailScreen() {
       footer={footer}
       headerRight={headerRight}
     >
-      {/* Workout header */}
-      <View style={styles.workoutHeader}>
-        <View style={styles.workoutHeaderTop}>
-          <View style={styles.groupBadge}>
-            <Ionicons name="people" size={12} color={Colors.primary[500]} />
-            <Text style={styles.groupBadgeText}>Group Workout</Text>
+      {isEditingWorkout ? (
+        workout.wodType === "raw" ? (
+          <View style={styles.editRawContainer}>
+            {editedWods.map((wod, i) => (
+              <View key={wod.id} style={styles.editRawWodCard}>
+                <View style={styles.editRawWodHeader}>
+                  <Text style={styles.editRawWodLabel}>WOD {i + 1}</Text>
+                  {editedWods.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.editRemoveWodBtn}
+                      onPress={() => handleRemoveWod(wod.id)}
+                    >
+                      <Text style={styles.editRemoveWodText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={styles.editInputGroup}>
+                  <Text style={styles.editInputLabel}>WOD Name</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={wod.title}
+                    onChangeText={(t) => updateWodTitle(wod.id, t)}
+                    placeholder='e.g., "Metcon" or "Strength"'
+                    placeholderTextColor={Colors.text.tertiary}
+                  />
+                </View>
+                <View style={styles.editInputGroup}>
+                  <Text style={styles.editInputLabel}>Workout Description</Text>
+                  <TextInput
+                    style={styles.editRawTextarea}
+                    value={wod.rawText ?? ""}
+                    onChangeText={(t) => updateWodRawText(wod.id, t)}
+                    placeholder={"Describe this WOD..."}
+                    placeholderTextColor={Colors.text.tertiary}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.editAddWodBtn} onPress={handleAddWod}>
+              <Text style={styles.editAddWodText}>+ Add WOD</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-        <Text style={styles.workoutDate}>
-          {scheduledDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
-        {workout.notes && (
-          <View style={styles.notesBox}>
-            <Ionicons
-              name="document-text-outline"
-              size={14}
-              color={Colors.text.secondary}
-            />
-            <Text style={styles.notesText}>{workout.notes}</Text>
+        ) : (
+          <WorkoutView
+            wods={editedWods}
+            isEditingWorkout={true}
+            expandedExercises={{}}
+            animatedValues={{}}
+            onToggleExercise={() => {}}
+            onToggleWODCompletion={() => {}}
+            onUpdateWodTitle={updateWodTitle}
+            onUpdateExercise={updateExercise}
+            onAddWod={handleAddWod}
+            onRemoveWod={handleRemoveWod}
+            onAddExercise={handleAddExercise}
+            onRemoveExercise={handleRemoveExercise}
+          />
+        )
+      ) : (
+        <>
+          {/* Workout header */}
+          <View style={styles.workoutHeader}>
+            <View style={styles.workoutHeaderTop}>
+              <View style={styles.groupBadge}>
+                <Ionicons name="people" size={12} color={Colors.primary[500]} />
+                <Text style={styles.groupBadgeText}>Group Workout</Text>
+              </View>
+            </View>
+            <Text style={styles.workoutDate}>
+              {scheduledDate.toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </Text>
+            {workout.notes && (
+              <View style={styles.notesBox}>
+                <Ionicons
+                  name="document-text-outline"
+                  size={14}
+                  color={Colors.text.secondary}
+                />
+                <Text style={styles.notesText}>{workout.notes}</Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
 
-      <Gap size={16} />
+          <Gap size={16} />
 
-      {/* WODs */}
-      <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
-      <Gap size={10} />
-      {workout.wods.map((wod, i) => (
-        <ExerciseCard key={i} wod={wod} wodIndex={i} />
-      ))}
+          {/* WODs */}
+          <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
+          <Gap size={10} />
+          {workout.wods.map((wod, i) => (
+            <ExerciseCard key={i} wod={wod} wodIndex={i} />
+          ))}
 
-      <Gap size={24} />
+          <Gap size={24} />
+        </>
+      )}
     </Page>
   );
 }
@@ -257,7 +558,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary[500],
   },
-  wodCardHeader: { marginBottom: 10 },
+  wodCardHeader: { marginBottom: 8 },
+  wodRawText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    lineHeight: 22,
+  },
   wodCardTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
@@ -295,6 +602,86 @@ const styles = StyleSheet.create({
     fontSize: responsiveSize(10),
     color: Colors.primary[500],
     textTransform: "capitalize",
+  },
+  editRawContainer: {
+    paddingTop: 8,
+  },
+  editRawWodCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  editRawWodHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  editRawWodLabel: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  editRemoveWodBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    backgroundColor: Colors.error[500],
+    borderRadius: 6,
+  },
+  editRemoveWodText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(12),
+    color: "#fff",
+  },
+  editInputGroup: {
+    marginBottom: 12,
+  },
+  editInputLabel: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+    marginBottom: 6,
+  },
+  editInput: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: Colors.text.primary,
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsRegular,
+  },
+  editRawTextarea: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: Colors.text.primary,
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsRegular,
+    minHeight: 160,
+    textAlignVertical: "top",
+  },
+  editAddWodBtn: {
+    backgroundColor: Colors.primary[500],
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  editAddWodText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: "#000",
   },
   headerIconBtn: {
     padding: 4,

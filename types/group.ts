@@ -66,6 +66,8 @@ export interface GroupWorkout {
   title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
+  wodType?: "structured" | "raw";
+  rawText?: string | null;
   wods: WODData[];
   createdBy: string;
   createdAt: Date;
@@ -89,6 +91,8 @@ export interface CreateGroupWorkoutData {
   title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
+  wodType?: "structured" | "raw";
+  rawText?: string | null;
   wods: WODData[];
 }
 

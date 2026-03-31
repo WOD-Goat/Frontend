@@ -66,9 +66,11 @@ const TABS: { key: FilterTab; label: string; color: string; icon: any }[] = [
 ];
 
 export default function WorkoutsScreen() {
-  const [workoutSections, setWorkoutSections] = useState<WorkoutSectionData[]>(
-    [],
-  );
+  const [rawWorkouts, setRawWorkouts] = useState<AssignedWorkoutData[]>([]);
+  const [myGroupIds, setMyGroupIds] = useState<Set<string>>(new Set());
+  const [joinedGroupsForLocking, setJoinedGroupsForLocking] = useState<
+    { id: string; createdAt: any }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -127,30 +129,19 @@ export default function WorkoutsScreen() {
 
       const [response, groupsResult] = await Promise.all([workoutsPromise, groupsPromise]);
 
-      let locked = new Map<string, "join" | "create">();
       if (groupsResult) {
         const [myRes, memberRes] = groupsResult;
-        const currentUid = user?.uid;
         const myGroups = myRes.success ? myRes.data ?? [] : [];
-        const myGroupIds = new Set(myGroups.map((g) => g.id));
+        setMyGroupIds(new Set(myGroups.map((g) => g.id)));
         const joinedGroups = (memberRes.success ? memberRes.data ?? [] : [])
-          .filter((g) => g.createdBy !== currentUid)
-          .sort((a, b) => {
-            const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
-            const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
-            return aDate - bDate;
-          });
-        if (!canAccess("createGroup")) {
-          myGroupIds.forEach((id) => locked.set(id, "create"));
-        }
-        joinedGroups.forEach((g, i) => {
-          if (!withinLimit("groupJoinMax", i)) locked.set(g.id, "join");
-        });
+          .filter((g) => g.createdBy !== user?.uid);
+        setJoinedGroupsForLocking(
+          joinedGroups.map((g) => ({ id: g.id, createdAt: g.createdAt })),
+        );
       }
       if (response.success && response.data) {
-        const newSections = transformWorkoutsToSections(response.data, locked);
-        setWorkoutSections((prev) =>
-          isLoadMore ? [...prev, ...newSections] : newSections,
+        setRawWorkouts((prev) =>
+          isLoadMore ? [...prev, ...response.data] : response.data,
         );
         if (response.nextCursor) {
           setCursor(response.nextCursor);
@@ -189,6 +180,7 @@ export default function WorkoutsScreen() {
           id: `${workout.id || ""}-wod-${i}`,
           title: wod.name || "Untitled WOD",
           exercises: wod.exercises.map((ex) => ex.name),
+          rawText: wod.rawText ?? undefined,
         })),
         source: workout.source ?? "personal",
         groupId: workout.groupId ?? undefined,
@@ -196,8 +188,32 @@ export default function WorkoutsScreen() {
         isLocked: workout.groupId ? locked.has(workout.groupId) : false,
         lockType: workout.groupId ? locked.get(workout.groupId) : undefined,
         hasSubmitted: workout.hasSubmitted ?? false,
+        wodType: workout.wodType,
+        rawText: workout.rawText,
       };
     });
+
+  // Recomputes whenever plan changes — no re-fetch needed after subscription
+  const locked = useMemo(() => {
+    const map = new Map<string, "join" | "create">();
+    if (!canAccess("createGroup")) {
+      myGroupIds.forEach((id) => map.set(id, "create"));
+    }
+    const sorted = [...joinedGroupsForLocking].sort((a, b) => {
+      const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
+      const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
+      return aDate - bDate;
+    });
+    sorted.forEach((g, i) => {
+      if (!withinLimit("groupJoinMax", i)) map.set(g.id, "join");
+    });
+    return map;
+  }, [myGroupIds, joinedGroupsForLocking, canAccess, withinLimit]);
+
+  const workoutSections = useMemo(
+    () => transformWorkoutsToSections(rawWorkouts, locked),
+    [rawWorkouts, locked],
+  );
 
   const counts = useMemo(
     () => ({

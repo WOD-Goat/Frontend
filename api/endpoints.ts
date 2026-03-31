@@ -46,6 +46,10 @@ export const API_ENDPOINTS = {
       `/api/groups/${groupId}/workouts/${workoutId}/submit`,
     LEADERBOARD: (groupId: string, workoutId: string) =>
       `/api/groups/${groupId}/workouts/${workoutId}/leaderboard`,
+    UPDATE_WORKOUT: (groupId: string, workoutId: string) =>
+      `/api/groups/${groupId}/workouts/${workoutId}`,
+    DELETE_WORKOUT: (groupId: string, workoutId: string) =>
+      `/api/groups/${groupId}/workouts/${workoutId}`,
   },
   APP: {
     VERSION: '/api/app/version',

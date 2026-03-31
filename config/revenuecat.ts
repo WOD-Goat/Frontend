@@ -11,7 +11,7 @@ export const REVENUECAT_CONFIG = {
   // Swap these for your production keys when going live
   apiKey: Platform.select({
     ios: "appl_dxhZNxnTIDRBkSNzIjAwLWPggBc",
-    android: "test_xefpyQqkDiXYOIKrmCzlRWLzJRb",
+    android: "goog_NlFKZMONnfwhqZnbnypSwqKcGqd",
     default: "test_xefpyQqkDiXYOIKrmCzlRWLzJRb",
   }) as string,
 } as const;

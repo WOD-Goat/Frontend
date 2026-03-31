@@ -1,7 +1,7 @@
 import { Colors, Typography } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { ReactNode } from "react";
+import { ReactNode, RefObject } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -36,6 +36,9 @@ interface PageProps {
   // Style overrides
   contentStyle?: ViewStyle;
   headerStyle?: ViewStyle;
+
+  // Scroll ref for programmatic scrolling
+  scrollRef?: RefObject<ScrollView>;
 }
 
 export default function Page({
@@ -52,6 +55,7 @@ export default function Page({
   footer,
   contentStyle,
   headerStyle,
+  scrollRef,
 }: PageProps) {
   const insets = useSafeAreaInsets();
 
@@ -118,6 +122,7 @@ export default function Page({
     if (scrollable) {
       return (
         <ScrollView
+          ref={scrollRef}
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}

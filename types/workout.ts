@@ -28,7 +28,8 @@ export interface ExerciseData {
 
 export interface WODData {
   name: string; // WOD name (e.g., "Metcon", "Strength Work")
-  exercises: ExerciseData[]; // Exercises within this WOD
+  rawText?: string | null; // Free-text description (when wodType === "raw")
+  exercises: ExerciseData[]; // Exercises within this WOD (empty for raw WODs)
 }
 
 export interface ResultData {
@@ -54,6 +55,8 @@ export interface AssignedWorkoutData {
   hasSubmitted?: boolean;
   completedAt: Date | null;
   notes: string | null;
+  wodType?: "structured" | "raw";
+  rawText?: string | null;
   wods: WODData[]; // Today's session contains multiple WODs
   results: ResultData[];
 }
@@ -78,6 +81,8 @@ export interface CreateWorkoutData {
   title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
+  wodType?: "structured" | "raw";
+  rawText?: string | null;
   wods: WODData[];
 }
 
@@ -87,6 +92,7 @@ export interface UpdateWorkoutData {
   completed?: boolean;
   completedAt?: Date | null;
   notes?: string | null;
+  rawText?: string | null;
   wods?: WODData[];
   results?: ResultData[];
 }

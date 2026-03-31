@@ -34,7 +34,7 @@ const TAB_ICONS: Record<string, { default: any; selected: any }> = {
   profile: { default: tabIcons.profile, selected: tabIcons.profileSelected },
 };
 
-const FAB_TABS = new Set(["index", "groups", "timer"]);
+const FAB_TABS = new Set(["index", "groups", "timer", "prs"]);
 
 export default function FloatingTabBar({
   state,
@@ -127,6 +127,8 @@ export default function FloatingTabBar({
       guard("createGroup", () => router.push("/group/create"));
     } else if (iconRoute === "timer") {
       requestConfirm();
+    } else if (iconRoute === "prs") {
+      router.push("/pr/create");
     }
   };
 
@@ -153,6 +155,7 @@ export default function FloatingTabBar({
             accessibilityLabel={
               iconRoute === "index" ? "Create Workout"
               : iconRoute === "timer" ? "Start Timer"
+              : iconRoute === "prs" ? "Add Personal Record"
               : "Create Group"
             }
           >

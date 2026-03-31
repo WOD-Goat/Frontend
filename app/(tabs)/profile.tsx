@@ -150,7 +150,7 @@ export default function ProfileScreen() {
       <View style={styles.profileCard}>
         <View style={styles.avatarRing}>
           <Image
-            source={mascotAssets.standard}
+            source={plan === "free" ? mascotAssets.standard : mascotAssets.premium}
             style={styles.avatar}
             contentFit="contain"
           />

@@ -5,6 +5,7 @@ import standardExercises from "@/constants/standardExercises.json";
 import type { StandardExercise } from "@/types";
 import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -43,10 +44,15 @@ export default function PRsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(PR_PAGE_SIZE);
   const searchInputRef = useRef<TextInput>(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     loadPRs();
   }, []);
+
+  useEffect(() => {
+    navigation.setOptions({ tabBarShowFAB: prs.length > 0 });
+  }, [prs.length]);
 
   const loadPRs = async () => {
     try {

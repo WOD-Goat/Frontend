@@ -13,6 +13,7 @@ import {
   Alert,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -25,22 +26,26 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
           {wod.name || `WOD ${wodIndex + 1}`}
         </Text>
       </View>
-      {wod.exercises.map((ex, i) => (
-        <View key={i} style={styles.exerciseRow}>
-          <View style={styles.exerciseDot} />
-          <View style={styles.exerciseInfo}>
-            <Text style={styles.exerciseName}>{ex.name}</Text>
-            {ex.instructions ? (
-              <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
-            ) : null}
-            <View style={styles.trackingBadge}>
-              <Text style={styles.trackingBadgeText}>
-                {ex.trackingType.replace("_", " ")}
-              </Text>
+      {wod.rawText ? (
+        <Text style={styles.wodRawText}>{wod.rawText}</Text>
+      ) : (
+        wod.exercises.map((ex, i) => (
+          <View key={i} style={styles.exerciseRow}>
+            <View style={styles.exerciseDot} />
+            <View style={styles.exerciseInfo}>
+              <Text style={styles.exerciseName}>{ex.name}</Text>
+              {ex.instructions ? (
+                <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
+              ) : null}
+              <View style={styles.trackingBadge}>
+                <Text style={styles.trackingBadgeText}>
+                  {ex.trackingType.replace("_", " ")}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      ))}
+        ))
+      )}
     </View>
   );
 }
@@ -54,6 +59,7 @@ interface WOD {
   id: string;
   title: string;
   exercises: Exercise[];
+  rawText?: string;
   completed: boolean;
 }
 
@@ -92,6 +98,7 @@ export default function WorkoutDetailScreen() {
         const transformedWods: WOD[] = response.data.wods.map((wod, index) => ({
           id: `wod-${index}`,
           title: wod.name,
+          rawText: wod.rawText ?? undefined,
           exercises: wod.exercises.map((ex) => ({
             name: ex.name,
             instructions: ex.instructions ? [ex.instructions] : undefined,
@@ -170,33 +177,61 @@ export default function WorkoutDetailScreen() {
     setEditedWods([]);
   };
 
+  const handleCompleteRaw = async () => {
+    try {
+      setLoading(true);
+      const response = await workoutsService.completeWorkout(id as string, []);
+      if (response.success) {
+        authService.getProfile().then(async (res) => {
+          await storage.set("user", res.user);
+          globalState.set("user", res.user);
+        });
+        showToast({ type: "success", label: "Workout completed!" });
+        router.dismissAll();
+        router.replace("/(tabs)/");
+      } else {
+        showToast({ type: "error", label: response.message || "Failed to complete workout" });
+      }
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to complete workout" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveWorkout = async () => {
     try {
       setLoading(true);
 
       // Transform edited WODs back to WODData format
-      const updatedWods = editedWods.map((wod, wodIndex) => ({
-        name: wod.title || "Untitled WOD",
-        exercises: wod.exercises.map((ex, exIndex) => {
-          let trackingType = "reps";
-          let exerciseId = "";
-          if (
-            workout &&
-            workout.wods[wodIndex] &&
-            workout.wods[wodIndex].exercises[exIndex]
-          ) {
-            const originalEx = workout.wods[wodIndex].exercises[exIndex];
-            trackingType = originalEx.trackingType;
-            exerciseId = originalEx.exerciseId || "";
-          }
-          return {
-            exerciseId: exerciseId,
-            name: ex.name || "Exercise",
-            instructions: ex.instructions?.[0] || "",
-            trackingType: trackingType as any,
-          };
-        }),
-      }));
+      const updatedWods = workout?.wodType === "raw"
+        ? editedWods.map((wod) => ({
+            name: wod.title || "Untitled WOD",
+            rawText: wod.rawText ?? "",
+            exercises: [],
+          }))
+        : editedWods.map((wod, wodIndex) => ({
+            name: wod.title || "Untitled WOD",
+            exercises: wod.exercises.map((ex, exIndex) => {
+              let trackingType = "reps";
+              let exerciseId = "";
+              if (
+                workout &&
+                workout.wods[wodIndex] &&
+                workout.wods[wodIndex].exercises[exIndex]
+              ) {
+                const originalEx = workout.wods[wodIndex].exercises[exIndex];
+                trackingType = originalEx.trackingType;
+                exerciseId = originalEx.exerciseId || "";
+              }
+              return {
+                exerciseId: exerciseId,
+                name: ex.name || "Exercise",
+                instructions: ex.instructions?.[0] || "",
+                trackingType: trackingType as any,
+              };
+            }),
+          }));
 
       const response = await workoutsService.updateWorkout(id as string, {
         wods: updatedWods,
@@ -229,6 +264,12 @@ export default function WorkoutDetailScreen() {
   const updateWodTitle = (wodId: string, title: string) => {
     setEditedWods((prev) =>
       prev.map((wod) => (wod.id === wodId ? { ...wod, title } : wod)),
+    );
+  };
+
+  const updateWodRawText = (wodId: string, rawText: string) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => (wod.id === wodId ? { ...wod, rawText } : wod)),
     );
   };
 
@@ -356,7 +397,7 @@ export default function WorkoutDetailScreen() {
     );
   }
 
-  if (!workout || wods.length === 0) {
+  if (!workout || (workout.wodType !== "raw" && wods.length === 0)) {
     return (
       <Page
         title="Workout Details"
@@ -384,13 +425,15 @@ export default function WorkoutDetailScreen() {
       headerRight={
         <View style={{ flexDirection: "row", gap: 16 }}>
           {!isEditingWorkout ? (
-            <TouchableOpacity onPress={handleEditWorkout}>
-              <Ionicons
-                name="create-outline"
-                size={24}
-                color={Colors.text.primary}
-              />
-            </TouchableOpacity>
+            !workout.completed && (
+              <TouchableOpacity onPress={handleEditWorkout}>
+                <Ionicons
+                  name="create-outline"
+                  size={24}
+                  color={Colors.text.primary}
+                />
+              </TouchableOpacity>
+            )
           ) : (
             <TouchableOpacity onPress={handleCancelEdit}>
               <Ionicons name="close" size={24} color={Colors.text.primary} />
@@ -432,10 +475,12 @@ export default function WorkoutDetailScreen() {
             style={styles.footerButton}
             activeOpacity={0.85}
             onPress={() =>
-              router.push({
-                pathname: "/workout/results",
-                params: { workoutData: JSON.stringify(workout) },
-              })
+              workout.wodType === "raw"
+                ? handleCompleteRaw()
+                : router.push({
+                    pathname: "/workout/results",
+                    params: { workoutData: JSON.stringify(workout) },
+                  })
             }
           >
             <Ionicons name="barbell-outline" size={18} color="#fff" />
@@ -445,20 +490,65 @@ export default function WorkoutDetailScreen() {
       }
     >
       {isEditingWorkout ? (
-        <WorkoutView
-          wods={editedWods}
-          isEditingWorkout={true}
-          expandedExercises={{}}
-          animatedValues={{}}
-          onToggleExercise={() => {}}
-          onToggleWODCompletion={() => {}}
-          onUpdateWodTitle={updateWodTitle}
-          onUpdateExercise={updateExercise}
-          onAddWod={handleAddWod}
-          onRemoveWod={handleRemoveWod}
-          onAddExercise={handleAddExercise}
-          onRemoveExercise={handleRemoveExercise}
-        />
+        workout.wodType === "raw" ? (
+          <View style={styles.editRawContainer}>
+            {editedWods.map((wod, i) => (
+              <View key={wod.id} style={styles.editRawWodCard}>
+                <View style={styles.editRawWodHeader}>
+                  <Text style={styles.editRawWodLabel}>WOD {i + 1}</Text>
+                  {editedWods.length > 1 && (
+                    <TouchableOpacity
+                      style={styles.editRemoveWodBtn}
+                      onPress={() => handleRemoveWod(wod.id)}
+                    >
+                      <Text style={styles.editRemoveWodText}>Remove</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View style={styles.editInputGroup}>
+                  <Text style={styles.editInputLabel}>WOD Name</Text>
+                  <TextInput
+                    style={styles.editInput}
+                    value={wod.title}
+                    onChangeText={(t) => updateWodTitle(wod.id, t)}
+                    placeholder='e.g., "Metcon" or "Strength"'
+                    placeholderTextColor={Colors.text.tertiary}
+                  />
+                </View>
+                <View style={styles.editInputGroup}>
+                  <Text style={styles.editInputLabel}>Workout Description</Text>
+                  <TextInput
+                    style={styles.editRawTextarea}
+                    value={wod.rawText ?? ""}
+                    onChangeText={(t) => updateWodRawText(wod.id, t)}
+                    placeholder={"Describe this WOD..."}
+                    placeholderTextColor={Colors.text.tertiary}
+                    multiline
+                    textAlignVertical="top"
+                  />
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.editAddWodBtn} onPress={handleAddWod}>
+              <Text style={styles.editAddWodText}>+ Add WOD</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <WorkoutView
+            wods={editedWods}
+            isEditingWorkout={true}
+            expandedExercises={{}}
+            animatedValues={{}}
+            onToggleExercise={() => {}}
+            onToggleWODCompletion={() => {}}
+            onUpdateWodTitle={updateWodTitle}
+            onUpdateExercise={updateExercise}
+            onAddWod={handleAddWod}
+            onRemoveWod={handleRemoveWod}
+            onAddExercise={handleAddExercise}
+            onRemoveExercise={handleRemoveExercise}
+          />
+        )
       ) : (
         <>
           {/* Workout header */}
@@ -573,6 +663,43 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
+  rawTextCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "30",
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+    marginBottom: 12,
+  },
+  rawTextCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  },
+  rawTextIconCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.primary[500] + "20",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rawTextLabel: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(11),
+    color: Colors.primary[500],
+    textTransform: "uppercase",
+    letterSpacing: 0.6,
+  },
+  rawTextBody: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    lineHeight: 22,
+  },
   wodCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 12,
@@ -583,7 +710,93 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.primary[500],
   },
-  wodCardHeader: { marginBottom: 10 },
+  wodCardHeader: { marginBottom: 8 },
+  wodRawText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    lineHeight: 22,
+  },
+  editRawContainer: {
+    paddingTop: 8,
+  },
+  editRawWodCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary[500],
+  },
+  editRawWodHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+  editRawWodLabel: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  editRemoveWodBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    backgroundColor: Colors.error[500],
+    borderRadius: 6,
+  },
+  editRemoveWodText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(12),
+    color: "#fff",
+  },
+  editInputGroup: {
+    marginBottom: 12,
+  },
+  editInputLabel: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+    marginBottom: 6,
+  },
+  editInput: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: Colors.text.primary,
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsRegular,
+  },
+  editRawTextarea: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: Colors.text.primary,
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsRegular,
+    minHeight: 160,
+    textAlignVertical: "top",
+  },
+  editAddWodBtn: {
+    backgroundColor: Colors.primary[500],
+    borderRadius: 10,
+    padding: 14,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  editAddWodText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: "#000",
+  },
   wodCardTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,

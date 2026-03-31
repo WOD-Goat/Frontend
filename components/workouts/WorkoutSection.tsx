@@ -11,6 +11,7 @@ interface WOD {
   id: string;
   title: string;
   exercises: string[];
+  rawText?: string;
 }
 
 interface WorkoutSectionProps {
@@ -126,7 +127,7 @@ export default function WorkoutSection({
           </View>
         </Pressable>
 
-        {/* WODs horizontal scroll — free to scroll */}
+        {/* WODs horizontal scroll */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -135,7 +136,7 @@ export default function WorkoutSection({
         >
           {wods.map((wod, index) => (
             <React.Fragment key={wod.id}>
-              <WorkoutCard title={wod.title} exercises={wod.exercises} />
+              <WorkoutCard title={wod.title} exercises={wod.exercises} rawText={wod.rawText} />
               {index < wods.length - 1 && <View style={styles.divider} />}
             </React.Fragment>
           ))}
