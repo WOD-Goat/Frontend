@@ -25,7 +25,7 @@ import {
   View,
 } from "react-native";
 
-const PAGE_SIZE = 14; // 2 weeks + today, adjust as needed
+const PAGE_SIZE = 7; // 1 week + today, adjust as needed
 
 type FilterTab = "all" | "not-started-yet" | "completed" | "missed";
 

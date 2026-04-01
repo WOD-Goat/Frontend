@@ -565,6 +565,9 @@ export default function WorkoutDetailScreen() {
                 </View>
               )}
             </View>
+            {workout.title ? (
+              <Text style={styles.workoutTitle}>{workout.title}</Text>
+            ) : null}
             <Text style={styles.workoutDate}>
               {scheduledDate.toLocaleDateString("en-US", {
                 weekday: "long",
@@ -639,6 +642,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
+  },
+  workoutTitle: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: FontSizes.headingLG,
+    color: Colors.text.primary,
   },
   workoutDate: {
     fontFamily: FontFamilies.poppinsSemiBold,
