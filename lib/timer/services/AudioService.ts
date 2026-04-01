@@ -16,6 +16,7 @@
 import type { AudioPlayer } from "expo-audio";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Speech from "expo-speech";
+import { Platform } from "react-native";
 import type { AudioEvent, SoundCueId } from "../types";
 
 // ─── Sound asset map ──────────────────────────────────────────────────────────
@@ -73,20 +74,21 @@ class AudioService {
 
     try {
       await setAudioModeAsync({
-        playsInSilentMode: true,
+        // playsInSilentMode is iOS-only; omitting it on Android prevents
+        // setAudioModeAsync from throwing and leaving isReady = false.
+        ...(Platform.OS === "ios" && { playsInSilentMode: true }),
         shouldPlayInBackground: true,
-        // "mixWithOthers" plays our sounds alongside background music
-        // without lowering or pausing it — minimal OS overhead, zero latency.
         interruptionMode: "mixWithOthers",
-        interruptionModeAndroid: "mixWithOthers",
       });
-
-      this._preloadSounds();
-      this.state.isReady = true;
     } catch (err) {
-      // Non-fatal: timer still works, just muted
-      console.warn("[AudioService] init failed:", err);
+      // Non-fatal — audio mode is best-effort; sounds must still load.
+      console.warn("[AudioService] setAudioModeAsync failed:", err);
     }
+
+    // Preload outside the audio-mode try so sounds always load,
+    // even if the audio session config fails on a given platform.
+    this._preloadSounds();
+    this.state.isReady = true;
   }
 
   /** Release all Sound objects. Call on timer screen unmount. */
