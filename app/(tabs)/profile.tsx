@@ -288,12 +288,12 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
-        <PressableDetailRow
+        {/* <PressableDetailRow
           icon="sparkles"
           label="What's New"
           onPress={() => Alert.alert("What's New", "Coming soon")}
         />
-        <View style={styles.detailDivider} />
+        <View style={styles.detailDivider} /> */}
         {plan === "free" && (
           <PressableDetailRow
             icon="rocket-outline"
