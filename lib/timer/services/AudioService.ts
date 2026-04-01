@@ -75,10 +75,6 @@ class AudioService {
       await setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
-        // "mixWithOthers" plays our sounds alongside background music
-        // without lowering or pausing it — minimal OS overhead, zero latency.
-        interruptionMode: "mixWithOthers",
-        interruptionModeAndroid: "mixWithOthers",
       });
 
       this._preloadSounds();

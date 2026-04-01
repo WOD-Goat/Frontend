@@ -45,7 +45,7 @@ export default function FloatingTabBar({
   const requestConfirm = useTimerStore((s) => s.requestConfirm);
   const { guard } = useFeatureGuard();
   const bottomPadding =
-    Platform.OS === "ios" ? Math.max(insets.bottom, 8) : 12;
+    Platform.OS === "ios" ? Math.max(insets.bottom, 8) : 32;
 
   const activeRoute = state.routes[state.index].name;
   const activeOptions = descriptors[state.routes[state.index].key].options as any;
@@ -328,8 +328,8 @@ const styles = StyleSheet.create({
     height: PILL_HEIGHT,
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
+    width: responsiveSize(ICON_SIZE + 16),
+    height: responsiveSize(ICON_SIZE + 16),
     borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",

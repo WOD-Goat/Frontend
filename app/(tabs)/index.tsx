@@ -86,8 +86,8 @@ export default function WorkoutsScreen() {
 
   const navigation = useNavigation();
   useEffect(() => {
-    navigation.setOptions({ tabBarShowFAB: workoutSections.length > 0 });
-  }, [workoutSections.length]);
+    navigation.setOptions({ tabBarShowFAB: rawWorkouts.length > 0 });
+  }, [rawWorkouts.length]);
 
   // Tab indicator animation
   const tabScales = useRef(
@@ -132,11 +132,13 @@ export default function WorkoutsScreen() {
       if (groupsResult) {
         const [myRes, memberRes] = groupsResult;
         const myGroups = myRes.success ? myRes.data ?? [] : [];
-        setMyGroupIds(new Set(myGroups.map((g) => g.id)));
+        setMyGroupIds(new Set(myGroups.map((g) => g.id).filter((id): id is string => id !== undefined)));
         const joinedGroups = (memberRes.success ? memberRes.data ?? [] : [])
           .filter((g) => g.createdBy !== user?.uid);
         setJoinedGroupsForLocking(
-          joinedGroups.map((g) => ({ id: g.id, createdAt: g.createdAt })),
+          joinedGroups
+            .filter((g): g is typeof g & { id: string } => g.id !== undefined)
+            .map((g) => ({ id: g.id, createdAt: g.createdAt })),
         );
       }
       if (response.success && response.data) {
