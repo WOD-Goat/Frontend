@@ -38,7 +38,7 @@ export default function Input({
       ]}>
 
         <TextInput
-          style={[styles.input]}
+          style={[styles.input, props.secureTextEntry && styles.secureInput]}
           placeholder={placeholder}
           placeholderTextColor="#999999"
           onFocus={() => setIsFocused(true)}
@@ -83,6 +83,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     fontSize: FontSizes.bodySM,
+  },
+  secureInput: {
+    color: '#1C1C1E',
   },
   
   // Variants
