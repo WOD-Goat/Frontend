@@ -91,7 +91,7 @@ export default function FloatingTabBar({
     return () => pulseLoop.current?.stop();
   }, [showPlus]);
 
-  const plusEntryStyle = {
+  const plusAnimStyle = {
     opacity: plusAnim,
     transform: [
       {
@@ -101,7 +101,6 @@ export default function FloatingTabBar({
         }),
       },
     ],
-    pointerEvents: showPlus ? ("auto" as const) : ("none" as const),
   };
 
   const pulseRingStyle = {
@@ -133,9 +132,12 @@ export default function FloatingTabBar({
   };
 
   return (
-    <View style={[styles.wrapper, { paddingBottom: bottomPadding }]}>
+    <View style={[styles.wrapper, { paddingBottom: bottomPadding }]} pointerEvents="box-none">
       {/* Floating + button */}
-      <Animated.View style={[styles.plusContainer, plusEntryStyle]}>
+      <Animated.View
+        pointerEvents={showPlus ? "auto" : "none"}
+        style={[styles.plusContainer, plusAnimStyle]}
+      >
         {/* Pulse ring */}
         <Animated.View
           style={[styles.pulseRing, pulseRingStyle]}
@@ -176,7 +178,6 @@ export default function FloatingTabBar({
         intensity={55}
         tint="dark"
         style={styles.pill}
-        experimentalBlurMethod="dimezisBlurView"
       >
         <View style={styles.pillInner}>
           {state.routes.map((route, index) => {
