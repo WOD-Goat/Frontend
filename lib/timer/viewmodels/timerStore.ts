@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { timerEngine } from "../engine/TimerEngine";
 import { audioService } from "../services/AudioService";
+import { liveActivityService } from "../services/LiveActivityService";
 import type {
     TickResult,
     TimerPhase,
@@ -144,19 +145,24 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       // ── Display: throttled to 1 Hz (or phase change) ───────────────────────
       if (!shouldUpdateDisplay(result)) return;
 
-      set({
+      const newDisplay = {
+        phase: result.phase,
+        elapsedSeconds: result.elapsedSeconds,
+        remainingSeconds: result.remainingSeconds,
+        currentRound: result.currentRound,
+        totalRounds: result.totalRounds,
+        intervalRemaining: result.intervalRemaining,
+        label: result.label,
         isComplete: result.isComplete,
-        display: {
-          phase: result.phase,
-          elapsedSeconds: result.elapsedSeconds,
-          remainingSeconds: result.remainingSeconds,
-          currentRound: result.currentRound,
-          totalRounds: result.totalRounds,
-          intervalRemaining: result.intervalRemaining,
-          label: result.label,
-          isComplete: result.isComplete,
-        },
-      });
+      };
+
+      set({ isComplete: result.isComplete, display: newDisplay });
+
+      // Update live activity / foreground notification (fire-and-forget)
+      const currentConfig = get().config;
+      if (currentConfig) {
+        liveActivityService.update(currentConfig, newDisplay).catch(() => {});
+      }
 
       if (result.isComplete) {
         set({ isRunning: false });
@@ -177,42 +183,52 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   // ─── Start ────────────────────────────────────────────────────────────────
 
   start() {
-    if (!get().config) return;
+    const { config, display } = get();
+    if (!config) return;
     timerEngine.start();
     set({ isRunning: true, hasStarted: true });
+    liveActivityService.start(config, display).catch(() => {});
   },
 
   // ─── Pause ────────────────────────────────────────────────────────────────
 
   pause() {
     const accumulated = timerEngine.pause();
+    const { config, display } = get();
     set({ isRunning: false, accumulatedMs: accumulated });
     get().saveSnapshot();
+    if (config) liveActivityService.pause(config, display).catch(() => {});
   },
 
   // ─── Resume ───────────────────────────────────────────────────────────────
 
   resume() {
-    const { accumulatedMs, config } = get();
+    const { accumulatedMs, config, display } = get();
     if (!config) return;
 
     // Re-attach the same onTick callback (engine callback ref is stable)
     timerEngine.resume(accumulatedMs, (result: TickResult) => {
       audioService.processEvents(result.audioEvents);
       if (!shouldUpdateDisplay(result)) return;
-      set({
+
+      const newDisplay = {
+        phase: result.phase,
+        elapsedSeconds: result.elapsedSeconds,
+        remainingSeconds: result.remainingSeconds,
+        currentRound: result.currentRound,
+        totalRounds: result.totalRounds,
+        intervalRemaining: result.intervalRemaining,
+        label: result.label,
         isComplete: result.isComplete,
-        display: {
-          phase: result.phase,
-          elapsedSeconds: result.elapsedSeconds,
-          remainingSeconds: result.remainingSeconds,
-          currentRound: result.currentRound,
-          totalRounds: result.totalRounds,
-          intervalRemaining: result.intervalRemaining,
-          label: result.label,
-          isComplete: result.isComplete,
-        },
-      });
+      };
+
+      set({ isComplete: result.isComplete, display: newDisplay });
+
+      const currentConfig = get().config;
+      if (currentConfig) {
+        liveActivityService.update(currentConfig, newDisplay).catch(() => {});
+      }
+
       if (result.isComplete) {
         set({ isRunning: false });
         get().clearSnapshot();
@@ -220,6 +236,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     });
 
     set({ isRunning: true });
+    liveActivityService.start(config, display).catch(() => {});
   },
 
   // ─── Stop ─────────────────────────────────────────────────────────────────
@@ -228,6 +245,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     timerEngine.stop();
     set({ isRunning: false });
     get().clearSnapshot();
+    liveActivityService.stop().catch(() => {});
   },
 
   // ─── Reset ────────────────────────────────────────────────────────────────
@@ -236,6 +254,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
     timerEngine.stop();
     _lastDisplayUpdateSecond = -1;
     _lastDisplayPhase = "IDLE";
+    liveActivityService.stop().catch(() => {});
     set({
       isRunning: false,
       hasStarted: false,

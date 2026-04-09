@@ -1,4 +1,13 @@
+import notifee from "@notifee/react-native";
 import NetInfo from "@react-native-community/netinfo";
+import { Platform } from "react-native";
+
+// Register the Android foreground service handler at module load time.
+// The never-resolving Promise keeps the service alive for the duration of
+// the timer notification; it ends automatically when the notification is cancelled.
+if (Platform.OS === "android") {
+  notifee.registerForegroundService(() => new Promise(() => {}));
+}
 import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
