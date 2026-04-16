@@ -35,6 +35,8 @@ export interface WODData {
 export interface ResultData {
   wodIndex: number; // links to wods array
   exerciseIndex: number; // links to exercises array within WOD
+  exerciseName?: string | null;
+  wodName?: string | null;
   reps: number | null;
   weight: number | null;
   timeInSeconds: number | null;

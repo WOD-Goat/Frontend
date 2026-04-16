@@ -241,7 +241,7 @@ export default function RootLayout() {
             name="paywall"
             options={{ presentation: "fullScreenModal" }}
           />
-          <Stack.Screen name="timer" options={{ headerShown: false }} />
+          <Stack.Screen name="timer" options={{ headerShown: false, gestureEnabled: false }} />
         </Stack>
         {!isOnline && (
           <NoInternetScreen onRetry={handleRetry} loading={isRetrying} />

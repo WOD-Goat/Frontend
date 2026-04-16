@@ -85,6 +85,19 @@ class AudioService {
     }
   }
 
+  /**
+   * Reset TTS state between sessions.
+   * Stops any in-flight speech and clears the stuck-speaking guard so a new
+   * session never inherits a stale isSpeaking=true from the previous one.
+   */
+  reset(): void {
+    Speech.stop();
+    this.state.isSpeaking = false;
+    this._currentTTSPriority = -1;
+    this.state.ttsPriorityQueue = [];
+    this.state.lastPlayed = {};
+  }
+
   /** Release all Sound objects. Call on timer screen unmount. */
   async dispose(): Promise<void> {
     for (const player of Object.values(this.state.sounds)) {

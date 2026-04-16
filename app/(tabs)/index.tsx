@@ -345,7 +345,7 @@ export default function WorkoutsScreen() {
         {/* CTA */}
         <TouchableOpacity
           style={styles.ctaButton}
-          onPress={() => router.push("/workout/create?voice=true")}
+          onPress={() => router.push("/workout/create")}
           activeOpacity={0.85}
         >
           <View style={styles.ctaGlow} />

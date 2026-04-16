@@ -15,6 +15,8 @@ import Input from "../ui/Input";
 interface Exercise {
   name: string;
   instructions?: string[];
+  exerciseId?: string;
+  trackingType?: string;
 }
 
 interface WOD {
@@ -38,6 +40,11 @@ interface WorkoutViewProps {
     field: "name" | "instructions",
     value: string,
   ) => void;
+  onSelectExercise: (
+    wodId: string,
+    exerciseIndex: number,
+    exercise: { id: string; name: string; trackingType: string },
+  ) => void;
   onAddWod: () => void;
   onRemoveWod: (wodId: string) => void;
   onAddExercise: (wodId: string) => void;
@@ -53,6 +60,7 @@ export default function WorkoutView({
   onToggleWODCompletion,
   onUpdateWodTitle,
   onUpdateExercise,
+  onSelectExercise,
   onAddWod,
   onRemoveWod,
   onAddExercise,
@@ -107,12 +115,11 @@ export default function WorkoutView({
                     <ExerciseSearchInput
                       value={exercise.name}
                       onSelectExercise={(selectedExercise: StandardExercise) =>
-                        onUpdateExercise(
-                          wod.id,
-                          index,
-                          "name",
-                          selectedExercise.name,
-                        )
+                        onSelectExercise(wod.id, index, {
+                          id: selectedExercise.id,
+                          name: selectedExercise.name,
+                          trackingType: selectedExercise.trackingType,
+                        })
                       }
                       placeholder="Search for an exercise"
                     />

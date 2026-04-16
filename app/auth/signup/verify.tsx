@@ -3,13 +3,20 @@ import { auth } from "@/config/firebase";
 import { Colors, Typography } from "@/constants";
 import { router } from "expo-router";
 import { sendEmailVerification } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function VerifyScreen() {
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(60);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
 
   const handleContinue = async () => {
     setIsChecking(true);
@@ -22,6 +29,7 @@ export default function VerifyScreen() {
       }
       await user.reload();
       if (user.emailVerified) {
+        router.dismissAll();
         router.replace("/(tabs)");
       } else {
         setError(
@@ -46,6 +54,7 @@ export default function VerifyScreen() {
       }
       await sendEmailVerification(user);
       setError("Verification email resent! Check your inbox.");
+      setCooldown(60);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -84,11 +93,12 @@ export default function VerifyScreen() {
         />
 
         <Button
-          title="Resend Email"
+          title={cooldown > 0 ? `Resend in ${cooldown}s` : "Resend Email"}
           variant="secondary"
           size="large"
           fullWidth
           loading={isResending}
+          disabled={cooldown > 0}
           onPress={handleResend}
         />
       </View>

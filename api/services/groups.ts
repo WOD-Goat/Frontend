@@ -156,6 +156,54 @@ export const groupsService = {
   },
 
   /**
+   * Get detailed stats for a group member (admin only)
+   */
+  getMemberDetail: async (groupId: string, userId: string): Promise<import("@/types").MemberDetailResponse> => {
+    const response = await apiClient.get<import("@/types").MemberDetailResponse>(
+      API_ENDPOINTS.GROUPS.GET_MEMBER_DETAIL(groupId, userId),
+    );
+    return response as unknown as import("@/types").MemberDetailResponse;
+  },
+
+  /**
+   * Remove a member from a group (leave group or admin kick)
+   */
+  removeMember: async (groupId: string, userId: string): Promise<ApiResponse> => {
+    const response = await apiClient.delete<ApiResponse>(
+      API_ENDPOINTS.GROUPS.REMOVE_MEMBER(groupId, userId),
+    );
+    return response as unknown as ApiResponse;
+  },
+
+  /**
+   * Set a member's subscription due date (admin only)
+   */
+  setMemberSubscription: async (
+    groupId: string,
+    userId: string,
+    data: { dueDate: string; suspended?: boolean },
+  ): Promise<ApiResponse> => {
+    const response = await apiClient.post<ApiResponse>(
+      API_ENDPOINTS.GROUPS.SET_MEMBER_SUBSCRIPTION(groupId, userId),
+      data,
+    );
+    return response as unknown as ApiResponse;
+  },
+
+  /**
+   * Get a member's subscription status (admin only)
+   */
+  getMemberSubscription: async (
+    groupId: string,
+    userId: string,
+  ): Promise<{ success: boolean; data: { dueDate: string | null; suspended: boolean } | null }> => {
+    const response = await apiClient.get(
+      API_ENDPOINTS.GROUPS.GET_MEMBER_SUBSCRIPTION(groupId, userId),
+    );
+    return response as any;
+  },
+
+  /**
    * Get leaderboard for a group workout
    */
   getLeaderboard: async (

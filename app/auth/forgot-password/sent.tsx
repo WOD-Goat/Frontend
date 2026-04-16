@@ -3,13 +3,20 @@ import { auth } from "@/config/firebase";
 import { Colors, FontFamilies, FontSizes, Typography } from "@/constants";
 import { router, useLocalSearchParams } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function ForgotPasswordSentScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
   const [isResending, setIsResending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(60);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const id = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearTimeout(id);
+  }, [cooldown]);
 
   const handleResend = async () => {
     if (!email) return;
@@ -18,6 +25,7 @@ export default function ForgotPasswordSentScreen() {
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage("Reset link resent! Check your inbox.");
+      setCooldown(60);
     } catch (e: any) {
       setMessage("Failed to resend. Please try again later.");
     } finally {
@@ -60,9 +68,9 @@ export default function ForgotPasswordSentScreen() {
 
         <View style={styles.resendRow}>
           <Text style={styles.resendLabel}>Didn&apos;t receive it? </Text>
-          <TouchableOpacity onPress={handleResend} disabled={isResending}>
-            <Text style={styles.resendLink}>
-              {isResending ? "Sending..." : "Resend"}
+          <TouchableOpacity onPress={handleResend} disabled={isResending || cooldown > 0}>
+            <Text style={[styles.resendLink, cooldown > 0 && styles.resendLinkDisabled]}>
+              {isResending ? "Sending..." : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -126,5 +134,8 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
     fontSize: FontSizes.bodyMD,
     fontFamily: FontFamilies.spartanBold,
+  },
+  resendLinkDisabled: {
+    color: Colors.text.secondary,
   },
 });

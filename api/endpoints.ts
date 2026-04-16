@@ -50,6 +50,14 @@ export const API_ENDPOINTS = {
       `/api/groups/${groupId}/workouts/${workoutId}`,
     DELETE_WORKOUT: (groupId: string, workoutId: string) =>
       `/api/groups/${groupId}/workouts/${workoutId}`,
+    REMOVE_MEMBER: (groupId: string, userId: string) =>
+      `/api/groups/${groupId}/members/${userId}`,
+    GET_MEMBER_DETAIL: (groupId: string, userId: string) =>
+      `/api/groups/${groupId}/members/${userId}`,
+    SET_MEMBER_SUBSCRIPTION: (groupId: string, userId: string) =>
+      `/api/groups/${groupId}/members/${userId}/subscription`,
+    GET_MEMBER_SUBSCRIPTION: (groupId: string, userId: string) =>
+      `/api/groups/${groupId}/members/${userId}/subscription`,
   },
   APP: {
     VERSION: '/api/app/version',

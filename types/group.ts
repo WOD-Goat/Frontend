@@ -28,6 +28,7 @@ export interface GroupsResponse {
 // Group creation/update types
 export interface CreateGroupData {
   name: string;
+  adminParticipates?: boolean;
 }
 
 export interface UpdateGroupData {
@@ -73,6 +74,8 @@ export interface GroupWorkout {
   createdAt: Date;
   hasSubmitted?: boolean;
   userResult?: UserResult | null;
+  submittedCount?: number;
+  totalMembers?: number;
 }
 
 export interface GroupWorkoutResponse {
@@ -94,6 +97,46 @@ export interface CreateGroupWorkoutData {
   wodType?: "structured" | "raw";
   rawText?: string | null;
   wods: WODData[];
+}
+
+// Member detail types
+export interface MemberSubmission {
+  workoutId: string;
+  workoutTitle: string | null;
+  scheduledFor: Date;
+  submittedAt: Date;
+  results: import("./workout").ResultData[];
+  wods?: import("./workout").WODData[];
+}
+
+export interface MemberDetail {
+  member: {
+    uid: string;
+    name: string | null;
+    nickname: string | null;
+    profilePictureUrl: string | null;
+  };
+  personalStats: {
+    currentStreak: number;
+    longestStreak: number;
+  };
+  groupStats: {
+    totalWorkouts: number;
+    completedWorkouts: number;
+    completionRate: number;
+  };
+  subscription: {
+    dueDate: string | null;
+    suspended: boolean;
+    notifiedAt: string | null;
+  } | null;
+  recentSubmissions: MemberSubmission[];
+}
+
+export interface MemberDetailResponse {
+  success: boolean;
+  data: MemberDetail;
+  message?: string;
 }
 
 // Leaderboard types

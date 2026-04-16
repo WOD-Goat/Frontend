@@ -1,15 +1,14 @@
 import { authService, groupsService, workoutsService } from "@/api/services";
-import { BottomSheetSelect, Button, Gap, Input, Page } from "@/components";
+import { BottomSheetSelect, Button, ExerciseSearchInput, Gap, Input, Page } from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
-import type { ExerciseData, ResultData, StandardExercise, WODData } from "@/types";
+import type { ExerciseData, ResultData, StandardExercise, TrackingType, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,8 +17,14 @@ import {
 
 interface ResultEntry {
   id: string;
+  // structured mode
   wodIndex: number;
   exerciseIndex: number;
+  // raw mode
+  exerciseName: string;
+  exerciseId: string;
+  trackingType: TrackingType | "";
+  // inputs
   reps: string;
   weight: string;
   timeMins: string;
@@ -35,7 +40,22 @@ const exerciseMap = new Map(
 const isTrackable = (exercise: ExerciseData) =>
   exerciseMap.get(exercise.exerciseId)?.trackResults !== false;
 
-export default function PostWorkoutScreen() {
+const blankEntry = (id: string): ResultEntry => ({
+  id,
+  wodIndex: 0,
+  exerciseIndex: 0,
+  exerciseName: "",
+  exerciseId: "",
+  trackingType: "",
+  reps: "",
+  weight: "",
+  timeMins: "",
+  timeSecs: "",
+  distanceKm: "",
+  calories: "",
+});
+
+export default function PRsScreen() {
   const params = useLocalSearchParams<{
     workoutData: string;
     type?: string;
@@ -45,28 +65,19 @@ export default function PostWorkoutScreen() {
 
   const type = params.type ?? "personal";
   const parsed = JSON.parse(params.workoutData);
-  const wods: WODData[] = parsed.wods;
+  const isRaw = parsed.wodType === "raw";
+  const wods: WODData[] = parsed.wods ?? [];
   const resolvedWorkoutId: string =
     type === "group" ? (params.workoutId ?? "") : (parsed.id ?? "");
   const groupId = params.groupId ?? "";
 
-  const [results, setResults] = useState<ResultEntry[]>([
-    {
-      id: "result-1",
-      wodIndex: 0,
-      exerciseIndex: 0,
-      reps: "",
-      weight: "",
-      timeMins: "",
-      timeSecs: "",
-      distanceKm: "",
-      calories: "",
-    },
-  ]);
+  const [results, setResults] = useState<ResultEntry[]>([blankEntry("result-1")]);
   const [submitting, setSubmitting] = useState(false);
 
   const globalState = useGlobalState();
   const { showToast } = useToast();
+
+  // ── structured helpers ──────────────────────────────────────────────────────
 
   const getExercise = (wodIndex: number, exerciseIndex: number) =>
     wods[wodIndex]?.exercises[exerciseIndex];
@@ -83,7 +94,7 @@ export default function PostWorkoutScreen() {
       .map(({ ex, idx }) => ({ label: ex.name, value: idx }));
   };
 
-  const hasAvailableExercises = () => {
+  const hasAvailableStructuredExercises = () => {
     const total = wods.reduce(
       (s, w) => s + w.exercises.filter(isTrackable).length,
       0,
@@ -91,11 +102,9 @@ export default function PostWorkoutScreen() {
     return results.length < total;
   };
 
-  const updateResult = (
-    id: string,
-    field: keyof ResultEntry,
-    value: string | number,
-  ) => {
+  // ── update helpers ──────────────────────────────────────────────────────────
+
+  const updateResult = (id: string, field: keyof ResultEntry, value: string | number) => {
     setResults((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
@@ -114,33 +123,37 @@ export default function PostWorkoutScreen() {
     );
   };
 
+  const handleSelectRawExercise = (id: string, exercise: StandardExercise) => {
+    setResults((prev) =>
+      prev.map((r) =>
+        r.id === id
+          ? { ...r, exerciseName: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+          : r,
+      ),
+    );
+  };
+
   const addResultEntry = () => {
-    const selected = results.map((r) => `${r.wodIndex}-${r.exerciseIndex}`);
-    let newWodIndex = 0;
-    let newExerciseIndex = 0;
-    outer: for (let w = 0; w < wods.length; w++) {
-      for (let e = 0; e < wods[w].exercises.length; e++) {
-        if (!selected.includes(`${w}-${e}`)) {
-          newWodIndex = w;
-          newExerciseIndex = e;
-          break outer;
+    if (!isRaw) {
+      const selected = results.map((r) => `${r.wodIndex}-${r.exerciseIndex}`);
+      let newWodIndex = 0;
+      let newExerciseIndex = 0;
+      outer: for (let w = 0; w < wods.length; w++) {
+        for (let e = 0; e < wods[w].exercises.length; e++) {
+          if (!selected.includes(`${w}-${e}`)) {
+            newWodIndex = w;
+            newExerciseIndex = e;
+            break outer;
+          }
         }
       }
+      setResults((prev) => [
+        ...prev,
+        { ...blankEntry(`result-${Date.now()}`), wodIndex: newWodIndex, exerciseIndex: newExerciseIndex },
+      ]);
+    } else {
+      setResults((prev) => [...prev, blankEntry(`result-${Date.now()}`)]);
     }
-    setResults((prev) => [
-      ...prev,
-      {
-        id: `result-${Date.now()}`,
-        wodIndex: newWodIndex,
-        exerciseIndex: newExerciseIndex,
-        reps: "",
-        weight: "",
-        timeMins: "",
-        timeSecs: "",
-        distanceKm: "",
-        calories: "",
-      },
-    ]);
   };
 
   const removeResultEntry = (id: string) => {
@@ -148,23 +161,30 @@ export default function PostWorkoutScreen() {
     setResults((prev) => prev.filter((r) => r.id !== id));
   };
 
+  // ── format & submit ─────────────────────────────────────────────────────────
+
   const formatResults = (): ResultData[] =>
-    results.map((r) => {
-      const totalSeconds =
-        parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
-      const meters = r.distanceKm
-        ? Math.round(parseFloat(r.distanceKm) * 1000)
-        : null;
-      return {
-        wodIndex: r.wodIndex,
-        exerciseIndex: r.exerciseIndex,
-        reps: r.reps ? parseInt(r.reps) : null,
-        weight: r.weight ? parseFloat(r.weight) : null,
-        timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
-        distanceMeters: meters,
-        calories: r.calories ? parseInt(r.calories) : null,
-      };
-    });
+    results
+      .filter((r) => (isRaw ? r.exerciseName.trim() !== "" : true))
+      .map((r, index) => {
+        const totalSeconds =
+          parseInt(r.timeMins || "0") * 60 + parseInt(r.timeSecs || "0");
+        const meters = r.distanceKm
+          ? Math.round(parseFloat(r.distanceKm) * 1000)
+          : null;
+        return {
+          wodIndex: isRaw ? 0 : r.wodIndex,
+          exerciseIndex: isRaw ? index : r.exerciseIndex,
+          exerciseName: isRaw
+            ? r.exerciseName
+            : (getExercise(r.wodIndex, r.exerciseIndex)?.name ?? undefined),
+          reps: r.reps ? parseInt(r.reps) : null,
+          weight: r.weight ? parseFloat(r.weight) : null,
+          timeInSeconds: totalSeconds > 0 ? totalSeconds : null,
+          distanceMeters: meters,
+          calories: r.calories ? parseInt(r.calories) : null,
+        };
+      });
 
   const navigateHome = () => {
     router.dismissAll();
@@ -194,11 +214,18 @@ export default function PostWorkoutScreen() {
     }
   };
 
-  const hasAnyInput = () =>
-    results.some(
-      (r) =>
-        r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories,
+  const hasAnyInput = () => {
+    if (isRaw) {
+      return results.some(
+        (r) =>
+          r.exerciseName.trim() !== "" &&
+          (r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories),
+      );
+    }
+    return results.some(
+      (r) => r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories,
     );
+  };
 
   const handleSave = async () => {
     if (!hasAnyInput()) {
@@ -210,6 +237,7 @@ export default function PostWorkoutScreen() {
       const formattedResults = formatResults();
       let response;
       if (type === "group") {
+        
         response = await groupsService.submitGroupWorkout(
           groupId,
           resolvedWorkoutId,
@@ -223,22 +251,28 @@ export default function PostWorkoutScreen() {
         if (response.success) await refreshProfile();
       }
       if (response.success) {
-        showToast({ type: "success", label: "Results saved!" });
+        showToast({ type: "success", label: "PRs saved!" });
         navigateHome();
       } else {
         showToast({ type: "error", label: (response as any).message || "Failed to save" });
       }
     } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to save results" });
+      showToast({ type: "error", label: err.message || "Failed to save PRs" });
     } finally {
       setSubmitting(false);
     }
   };
 
+  // ── input fields ────────────────────────────────────────────────────────────
+
   const renderInputFields = (result: ResultEntry) => {
-    const exercise = getExercise(result.wodIndex, result.exerciseIndex);
-    if (!exercise) return null;
-    switch (exercise.trackingType) {
+    const trackingType = isRaw
+      ? result.trackingType
+      : getExercise(result.wodIndex, result.exerciseIndex)?.trackingType;
+
+    if (!trackingType) return null;
+
+    switch (trackingType) {
       case "weight_reps":
         return (
           <View style={styles.inputRow}>
@@ -324,7 +358,7 @@ export default function PostWorkoutScreen() {
         <View style={styles.footerRow}>
           <View style={{ flex: 1 }}>
             <Button
-              title="Skip for now"
+              title="No PRs today"
               variant="secondary"
               size="large"
               onPress={handleSkip}
@@ -333,7 +367,7 @@ export default function PostWorkoutScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Button
-              title={submitting ? "Saving..." : "Save Results"}
+              title={submitting ? "Saving..." : "Save PRs"}
               variant="primary"
               size="large"
               onPress={handleSave}
@@ -343,27 +377,29 @@ export default function PostWorkoutScreen() {
         </View>
       }
     >
-      {/* Celebration header */}
+      {/* Header */}
       <View style={styles.celebrationBox}>
-        <View style={styles.trophyCircle}>
-          <Ionicons name="trophy" size={36} color={Colors.primary[500]} />
+        <View style={styles.medalCircle}>
+          <Ionicons name="medal" size={36} color={Colors.primary[500]} />
         </View>
         <Gap size={16} />
         <Text style={styles.celebrationTitle}>Workout Complete!</Text>
         <Gap size={8} />
         <Text style={styles.celebrationSubtitle}>
-          Hit any new PRs or want to log your results?{"\n"}
-          Totally optional — skip whenever you're done.
+          Did you break any personal records?{"\n"}Log them below or skip.
         </Text>
       </View>
 
       <Gap size={24} />
 
-      {/* Result entries */}
+      {/* PR entries */}
       {results.map((result, index) => (
         <View key={result.id} style={styles.resultCard}>
           <View style={styles.resultCardHeader}>
-            <Text style={styles.resultCardTitle}>Result {index + 1}</Text>
+            <View style={styles.prBadge}>
+              <Ionicons name="medal-outline" size={14} color={Colors.primary[500]} />
+              <Text style={styles.prBadgeText}>PR #{index + 1}</Text>
+            </View>
             {results.length > 1 && (
               <TouchableOpacity onPress={() => removeResultEntry(result.id)}>
                 <Ionicons name="trash-outline" size={18} color={Colors.error[500]} />
@@ -371,31 +407,49 @@ export default function PostWorkoutScreen() {
             )}
           </View>
 
-          <BottomSheetSelect
-            label="WOD"
-            placeholder="Select WOD"
-            value={result.wodIndex}
-            options={wods.map((wod, idx) => ({
-              label: wod.name || `WOD ${idx + 1}`,
-              value: idx,
-            }))}
-            onValueChange={(v) => updateResult(result.id, "wodIndex", v)}
-          />
-          <BottomSheetSelect
-            label="Exercise"
-            placeholder="Select Exercise"
-            value={result.exerciseIndex}
-            options={getAvailableExercises(result.id, result.wodIndex)}
-            onValueChange={(v) => updateResult(result.id, "exerciseIndex", v)}
-          />
-          {renderInputFields(result)}
+          {isRaw ? (
+            <>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Exercise</Text>
+                <ExerciseSearchInput
+                  value={result.exerciseName}
+                  onSelectExercise={(ex) => handleSelectRawExercise(result.id, ex)}
+                  placeholder="Search for an exercise"
+                />
+              </View>
+              {result.trackingType ? renderInputFields(result) : null}
+            </>
+          ) : (
+            <>
+              {wods.length > 1 && (
+                <BottomSheetSelect
+                  label="WOD"
+                  placeholder="Select WOD"
+                  value={result.wodIndex}
+                  options={wods.map((wod, idx) => ({
+                    label: wod.name || `WOD ${idx + 1}`,
+                    value: idx,
+                  }))}
+                  onValueChange={(v) => updateResult(result.id, "wodIndex", v)}
+                />
+              )}
+              <BottomSheetSelect
+                label="Exercise"
+                placeholder="Select Exercise"
+                value={result.exerciseIndex}
+                options={getAvailableExercises(result.id, result.wodIndex)}
+                onValueChange={(v) => updateResult(result.id, "exerciseIndex", v)}
+              />
+              {renderInputFields(result)}
+            </>
+          )}
         </View>
       ))}
 
-      {hasAvailableExercises() && (
+      {(isRaw || hasAvailableStructuredExercises()) && (
         <TouchableOpacity style={styles.addResultBtn} onPress={addResultEntry}>
           <Ionicons name="add-circle" size={20} color={Colors.primary[500]} />
-          <Text style={styles.addResultBtnText}>Add Another Result</Text>
+          <Text style={styles.addResultBtnText}>Add Another PR</Text>
         </TouchableOpacity>
       )}
 
@@ -416,7 +470,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary[500] + "30",
     marginTop: 8,
   },
-  trophyCircle: {
+  medalCircle: {
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -439,9 +493,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-  skipLink: {
-    padding: 4,
-  },
+  skipLink: { padding: 4 },
   skipLinkText: {
     fontFamily: FontFamilies.poppinsMedium,
     fontSize: FontSizes.bodyMD,
@@ -461,10 +513,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
-  resultCardTitle: {
+  prBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: Colors.primary[500] + "18",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  prBadgeText: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
+    fontSize: responsiveSize(12),
+    color: Colors.primary[500],
   },
   inputGroup: { marginBottom: 16 },
   inputLabel: {

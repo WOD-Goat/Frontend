@@ -543,7 +543,6 @@ export default function CreateGroupWorkoutScreen() {
         <TouchableOpacity style={styles.addWodButton} onPress={handleAddWod}>
           <Text style={styles.addWodButtonText}>+ Add WOD</Text>
         </TouchableOpacity>
-        )}
       </View>
     </Page>
     </>

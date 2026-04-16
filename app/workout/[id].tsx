@@ -53,6 +53,8 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
 interface Exercise {
   name: string;
   instructions?: string[];
+  exerciseId?: string;
+  trackingType?: string;
 }
 
 interface WOD {
@@ -102,6 +104,8 @@ export default function WorkoutDetailScreen() {
           exercises: wod.exercises.map((ex) => ({
             name: ex.name,
             instructions: ex.instructions ? [ex.instructions] : undefined,
+            exerciseId: ex.exerciseId || "",
+            trackingType: ex.trackingType || "reps",
           })),
           completed: false,
         }));
@@ -139,7 +143,7 @@ export default function WorkoutDetailScreen() {
 
               if (response.success) {
                 router.dismissAll();
-                router.replace("/(tabs)/");
+                router.replace("/(tabs)");
                 showToast({
                   type: "success",
                   label: "Workout deleted successfully!",
@@ -177,26 +181,11 @@ export default function WorkoutDetailScreen() {
     setEditedWods([]);
   };
 
-  const handleCompleteRaw = async () => {
-    try {
-      setLoading(true);
-      const response = await workoutsService.completeWorkout(id as string, []);
-      if (response.success) {
-        authService.getProfile().then(async (res) => {
-          await storage.set("user", res.user);
-          globalState.set("user", res.user);
-        });
-        showToast({ type: "success", label: "Workout completed!" });
-        router.dismissAll();
-        router.replace("/(tabs)/");
-      } else {
-        showToast({ type: "error", label: response.message || "Failed to complete workout" });
-      }
-    } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to complete workout" });
-    } finally {
-      setLoading(false);
-    }
+  const handleCompleteRaw = () => {
+    router.push({
+      pathname: "/workout/results",
+      params: { workoutData: JSON.stringify(workout) },
+    });
   };
 
   const handleSaveWorkout = async () => {
@@ -210,36 +199,23 @@ export default function WorkoutDetailScreen() {
             rawText: wod.rawText ?? "",
             exercises: [],
           }))
-        : editedWods.map((wod, wodIndex) => ({
+        : editedWods.map((wod) => ({
             name: wod.title || "Untitled WOD",
-            exercises: wod.exercises.map((ex, exIndex) => {
-              let trackingType = "reps";
-              let exerciseId = "";
-              if (
-                workout &&
-                workout.wods[wodIndex] &&
-                workout.wods[wodIndex].exercises[exIndex]
-              ) {
-                const originalEx = workout.wods[wodIndex].exercises[exIndex];
-                trackingType = originalEx.trackingType;
-                exerciseId = originalEx.exerciseId || "";
-              }
-              return {
-                exerciseId: exerciseId,
-                name: ex.name || "Exercise",
-                instructions: ex.instructions?.[0] || "",
-                trackingType: trackingType as any,
-              };
-            }),
+            exercises: wod.exercises.map((ex) => ({
+              exerciseId: ex.exerciseId || "",
+              name: ex.name || "Exercise",
+              instructions: ex.instructions?.[0] || "",
+              trackingType: (ex.trackingType || "reps") as any,
+            })),
           }));
-
+          console.log("Saving workout with updated wods:", JSON.stringify(updatedWods, null, 2));
       const response = await workoutsService.updateWorkout(id as string, {
         wods: updatedWods,
       });
 
       if (response.success) {
         router.dismissAll();
-        router.replace("/(tabs)/");
+        router.replace("/(tabs)");
         showToast({
           type: "success",
           label: "Workout updated successfully!",
@@ -270,6 +246,26 @@ export default function WorkoutDetailScreen() {
   const updateWodRawText = (wodId: string, rawText: string) => {
     setEditedWods((prev) =>
       prev.map((wod) => (wod.id === wodId ? { ...wod, rawText } : wod)),
+    );
+  };
+
+  const selectExercise = (
+    wodId: string,
+    exerciseIndex: number,
+    exercise: { id: string; name: string; trackingType: string },
+  ) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => {
+        if (wod.id === wodId) {
+          const updatedExercises = wod.exercises.map((ex, idx) =>
+            idx === exerciseIndex
+              ? { ...ex, name: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+              : ex,
+          );
+          return { ...wod, exercises: updatedExercises };
+        }
+        return wod;
+      }),
     );
   };
 
@@ -470,7 +466,12 @@ export default function WorkoutDetailScreen() {
               />
             </View>
           </View>
-        ) : workout.completed ? null : (
+        ) : workout.completed ? (
+          <View style={styles.completedFooterButton}>
+            <Ionicons name="checkmark-circle" size={18} color="#fff" />
+            <Text style={styles.footerButtonText}>Completed</Text>
+          </View>
+        ) : (
           <TouchableOpacity
             style={styles.footerButton}
             activeOpacity={0.85}
@@ -543,6 +544,7 @@ export default function WorkoutDetailScreen() {
             onToggleWODCompletion={() => {}}
             onUpdateWodTitle={updateWodTitle}
             onUpdateExercise={updateExercise}
+            onSelectExercise={selectExercise}
             onAddWod={handleAddWod}
             onRemoveWod={handleRemoveWod}
             onAddExercise={handleAddExercise}
@@ -849,6 +851,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     backgroundColor: Colors.primary[500],
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  completedFooterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.success[500],
     borderRadius: 14,
     paddingVertical: 14,
   },

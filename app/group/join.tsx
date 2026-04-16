@@ -5,8 +5,7 @@ import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-
+import { Keyboard, StyleSheet, Text, View } from "react-native";
 
 export default function JoinGroupScreen() {
   const [code, setCode] = useState("");
@@ -14,8 +13,12 @@ export default function JoinGroupScreen() {
   const { showToast } = useToast();
 
   const handleJoin = async () => {
+    Keyboard.dismiss();
     if (code.trim().length !== 6) {
-      showToast({ type: "error", label: "Please enter a valid 6-character code" });
+      showToast({
+        type: "error",
+        label: "Please enter a valid 6-character code",
+      });
       return;
     }
     try {
@@ -26,10 +29,16 @@ export default function JoinGroupScreen() {
         router.dismissAll();
         router.replace("/(tabs)/groups");
       } else {
-        showToast({ type: "error", label: response.message || "Failed to join group" });
+        showToast({
+          type: "error",
+          label: response.message || "Failed to join group",
+        });
       }
     } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to join group" });
+      showToast({
+        type: "error",
+        label: err.message || "Failed to join group",
+      });
     } finally {
       setLoading(false);
     }
@@ -53,7 +62,11 @@ export default function JoinGroupScreen() {
       <View style={styles.container}>
         <View style={styles.iconSection}>
           <View style={styles.iconRing}>
-            <Ionicons name="enter-outline" size={36} color={Colors.primary[500]} />
+            <Ionicons
+              name="enter-outline"
+              size={36}
+              color={Colors.primary[500]}
+            />
           </View>
           <Text style={styles.description}>
             Enter the 6-character code shared by your group admin to join their
@@ -66,7 +79,9 @@ export default function JoinGroupScreen() {
           <Input
             placeholder="XXXXXX"
             value={code}
-            onChangeText={(text) => setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+            onChangeText={(text) =>
+              setCode(text.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+            }
             autoCapitalize="characters"
             autoCorrect={false}
             maxLength={6}

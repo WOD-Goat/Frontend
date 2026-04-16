@@ -217,6 +217,7 @@ export default function CreatePRScreen() {
                 placeholder="0"
                 placeholderTextColor={Colors.text.tertiary}
                 keyboardType="decimal-pad"
+                maxLength={6}
               />
             </View>
             <View style={styles.inputHalf}>
@@ -228,6 +229,7 @@ export default function CreatePRScreen() {
                 placeholder="0"
                 placeholderTextColor={Colors.text.tertiary}
                 keyboardType="number-pad"
+                maxLength={4}
               />
             </View>
           </View>
@@ -244,6 +246,7 @@ export default function CreatePRScreen() {
               placeholder="0"
               placeholderTextColor={Colors.text.tertiary}
               keyboardType="number-pad"
+              maxLength={4}
             />
           </>
         );
@@ -260,6 +263,7 @@ export default function CreatePRScreen() {
                 placeholder="0"
                 placeholderTextColor={Colors.text.tertiary}
                 keyboardType="number-pad"
+                maxLength={3}
               />
             </View>
             <View style={styles.inputHalf}>
@@ -292,6 +296,7 @@ export default function CreatePRScreen() {
                 placeholder="0"
                 placeholderTextColor={Colors.text.tertiary}
                 keyboardType="number-pad"
+                maxLength={3}
               />
             </View>
             <View style={styles.inputHalf}>
@@ -323,6 +328,7 @@ export default function CreatePRScreen() {
               placeholder="0"
               placeholderTextColor={Colors.text.tertiary}
               keyboardType="decimal-pad"
+              maxLength={7}
             />
           </>
         );
@@ -338,6 +344,7 @@ export default function CreatePRScreen() {
               placeholder="0"
               placeholderTextColor={Colors.text.tertiary}
               keyboardType="number-pad"
+              maxLength={4}
             />
           </>
         );

@@ -133,6 +133,10 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   // ─── Configure a new WOD ──────────────────────────────────────────────────
 
   configure(config: WODConfig) {
+    // Stop any in-flight speech from the previous session so isSpeaking
+    // never stays stuck at true and silences the new session's TTS.
+    audioService.reset();
+
     // Reset throttle state
     _lastDisplayUpdateSecond = -1;
     _lastDisplayPhase = "IDLE";

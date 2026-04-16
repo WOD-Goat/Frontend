@@ -10,6 +10,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Share,
@@ -22,7 +23,7 @@ import {
 
 type DetailTab = "workouts" | "members";
 
-function WorkoutItem({ workout, groupId }: { workout: GroupWorkout; groupId: string }) {
+function WorkoutItem({ workout, groupId, isAdmin }: { workout: GroupWorkout; groupId: string; isAdmin: boolean }) {
   const date = parseFirebaseDate(workout.scheduledFor);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -65,18 +66,33 @@ function WorkoutItem({ workout, groupId }: { workout: GroupWorkout; groupId: str
         </View>
       </View>
 
-      <View style={[styles.workoutStatusBadge, { backgroundColor: status.color + "18" }]}>
-        <Ionicons name={status.icon} size={11} color={status.color} />
-        <Text style={[styles.workoutStatusText, { color: status.color }]}>{status.label}</Text>
-      </View>
+      {isAdmin && workout.submittedCount != null && workout.totalMembers != null ? (
+        <View style={styles.submissionBadge}>
+          <Ionicons name="people-outline" size={11} color={Colors.text.secondary} />
+          <Text style={styles.submissionBadgeText}>
+            {workout.submittedCount}/{workout.totalMembers}
+          </Text>
+        </View>
+      ) : (
+        <View style={[styles.workoutStatusBadge, { backgroundColor: status.color + "18" }]}>
+          <Ionicons name={status.icon} size={11} color={status.color} />
+          <Text style={[styles.workoutStatusText, { color: status.color }]}>{status.label}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
 
-function MemberItem({ member }: { member: GroupMember }) {
+function MemberItem({ member, groupId, isAdmin }: { member: GroupMember; groupId: string; isAdmin: boolean }) {
   const initials = (member.name ?? member.nickname ?? "?")[0].toUpperCase();
   return (
-    <View style={styles.memberItem}>
+    <Pressable
+      style={styles.memberItem}
+      onPress={() => isAdmin && !member.isAdmin
+        ? router.push(`/group/member/${member.uid}?groupId=${groupId}`)
+        : undefined
+      }
+    >
       <View style={styles.memberAvatar}>
         <Text style={styles.memberAvatarText}>{initials}</Text>
       </View>
@@ -86,13 +102,15 @@ function MemberItem({ member }: { member: GroupMember }) {
           <Text style={styles.memberNickname}>@{member.nickname}</Text>
         )}
       </View>
-      {member.isAdmin && (
+      {member.isAdmin ? (
         <View style={styles.adminBadge}>
           <Ionicons name="star" size={10} color={Colors.primary[500]} />
           <Text style={styles.adminBadgeText}>Admin</Text>
         </View>
-      )}
-    </View>
+      ) : isAdmin ? (
+        <Ionicons name="chevron-forward" size={16} color={Colors.neutral[600]} />
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -150,6 +168,34 @@ export default function GroupDetailScreen() {
   const handleCopyCode = async () => {
     if (!group?.joinCode) return;
     await Share.share({ message: group.joinCode });
+  };
+
+  const handleLeaveGroup = () => {
+    Alert.alert(
+      "Leave Group",
+      `Are you sure you want to leave "${group?.name}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await groupsService.removeMember(id, currentUserId);
+              if (response.success) {
+                showToast({ type: "success", label: "You have left the group." });
+                router.dismissAll();
+                router.replace("/(tabs)/groups");
+              } else {
+                showToast({ type: "error", label: response.message || "Failed to leave group." });
+              }
+            } catch (err: any) {
+              showToast({ type: "error", label: err.message || "Failed to leave group." });
+            }
+          },
+        },
+      ],
+    );
   };
 
   const isAdmin = group?.createdBy === currentUserId;
@@ -217,11 +263,16 @@ export default function GroupDetailScreen() {
             </Text>
           </View>
         </View>
-        {isAdmin && (
+        {isAdmin ? (
           <View style={styles.adminPill}>
             <Ionicons name="star" size={12} color={Colors.primary[500]} />
             <Text style={styles.adminPillText}>Admin</Text>
           </View>
+        ) : (
+          <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveGroup} activeOpacity={0.8}>
+            <Ionicons name="exit-outline" size={14} color={Colors.error[500]} />
+            <Text style={styles.leaveButtonText}>Leave</Text>
+          </TouchableOpacity>
         )}
       </View>
 
@@ -292,7 +343,7 @@ export default function GroupDetailScreen() {
         ) : (
           <ScrollView showsVerticalScrollIndicator={false}>
             {workouts.map((workout) => (
-              <WorkoutItem key={workout.id} workout={workout} groupId={id} />
+              <WorkoutItem key={workout.id} workout={workout} groupId={id} isAdmin={isAdmin} />
             ))}
             <Gap size={160} />
           </ScrollView>
@@ -307,7 +358,7 @@ export default function GroupDetailScreen() {
       ) : (
         <ScrollView showsVerticalScrollIndicator={false}>
           {sortedMembers.map((member) => (
-            <MemberItem key={member.uid} member={member} />
+            <MemberItem key={member.uid} member={member} groupId={id} isAdmin={isAdmin} />
           ))}
           <Gap size={160} />
         </ScrollView>
@@ -513,6 +564,16 @@ const styles = StyleSheet.create({
     color: Colors.neutral[600],
     fontSize: FontSizes.bodyXS,
   },
+  submissionBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  submissionBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(10),
+    color: Colors.text.secondary,
+  },
   workoutStatusBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -615,5 +676,21 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
+  },
+  leaveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.error[500] + "15",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.error[500] + "40",
+  },
+  leaveButtonText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(11),
+    color: Colors.error[500],
   },
 });

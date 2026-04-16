@@ -83,6 +83,7 @@ export default function LoginScreen() {
       } catch (e) {
         console.warn("RevenueCat logIn failed:", e);
       }
+      router.dismissAll();
       router.replace("/(tabs)");
     } catch (firebaseError) {
       Alert.alert("Login Failed", error || "Please check your credentials and try again");

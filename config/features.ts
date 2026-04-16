@@ -25,10 +25,10 @@ export const FEATURE_CONFIG: Record<Plan, PlanFeatures> = {
   free: {
     voiceWorkoutMaxCountPerMonth: 5,
     voiceWorkoutMaxDurationSeconds: 45,
-    groupJoinMax: 1,
-    createGroup: false,
+    groupJoinMax: null,
+    createGroup: true,
     leaderboard: false,
-    prShareSticker: false,
+    prShareSticker: true,
     customTimerIntervals: false,
   },
   athlete: {

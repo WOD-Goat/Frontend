@@ -3,7 +3,6 @@ import { Button, Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
-import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import type { GroupWorkout, WODData } from "@/types";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +21,8 @@ import {
 interface Exercise {
   name: string;
   instructions?: string[];
+  exerciseId?: string;
+  trackingType?: string;
 }
 
 interface WOD {
@@ -49,7 +50,9 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
             <View style={styles.exerciseInfo}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               {ex.instructions ? (
-                <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
+                <Text style={styles.exerciseInstructions}>
+                  {ex.instructions}
+                </Text>
               ) : null}
               <View style={styles.trackingBadge}>
                 <Text style={styles.trackingBadgeText}>
@@ -77,7 +80,6 @@ export default function GroupWorkoutDetailScreen() {
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
   const { showToast } = useToast();
   const globalState = useGlobalState();
-  const { guard } = useFeatureGuard();
 
   useEffect(() => {
     if (workoutId && groupId) loadWorkout();
@@ -98,6 +100,8 @@ export default function GroupWorkoutDetailScreen() {
           exercises: wod.exercises.map((ex) => ({
             name: ex.name,
             instructions: ex.instructions ? [ex.instructions] : undefined,
+            exerciseId: ex.exerciseId || "",
+            trackingType: ex.trackingType || "reps",
           })),
           completed: false,
         }));
@@ -148,14 +152,16 @@ export default function GroupWorkoutDetailScreen() {
   const currentUserId = globalState.get("user")?.uid ?? "";
   const isAdmin = workout.createdBy === currentUserId;
 
-  const handleCompleteRaw = async () => {
-    try {
-      await groupsService.submitGroupWorkout(groupId, workoutId, []);
-      setSubmitted(true);
-      showToast({ type: "success", label: "Workout completed!" });
-    } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to complete workout" });
-    }
+  const handleCompleteRaw = () => {
+    router.push({
+      pathname: "/workout/results",
+      params: {
+        workoutData: JSON.stringify(workout),
+        type: "group",
+        workoutId,
+        groupId,
+      },
+    });
   };
 
   const handleEditWorkout = () => {
@@ -180,15 +186,27 @@ export default function GroupWorkoutDetailScreen() {
           onPress: async () => {
             try {
               setLoading(true);
-              const response = await groupsService.deleteGroupWorkout(groupId, workoutId);
+              const response = await groupsService.deleteGroupWorkout(
+                groupId,
+                workoutId,
+              );
               if (response.success) {
                 router.back();
-                showToast({ type: "success", label: "Workout deleted successfully!" });
+                showToast({
+                  type: "success",
+                  label: "Workout deleted successfully!",
+                });
               } else {
-                showToast({ type: "error", label: response.message || "Failed to delete workout" });
+                showToast({
+                  type: "error",
+                  label: response.message || "Failed to delete workout",
+                });
               }
             } catch (err: any) {
-              showToast({ type: "error", label: err.message || "Failed to delete workout" });
+              showToast({
+                type: "error",
+                label: err.message || "Failed to delete workout",
+              });
             } finally {
               setLoading(false);
             }
@@ -201,41 +219,43 @@ export default function GroupWorkoutDetailScreen() {
   const handleSaveWorkout = async () => {
     try {
       setLoading(true);
-      const updatedWods = workout.wodType === "raw"
-        ? editedWods.map((wod) => ({
-            name: wod.title || "Untitled WOD",
-            rawText: wod.rawText ?? "",
-            exercises: [],
-          }))
-        : editedWods.map((wod, wodIndex) => ({
-            name: wod.title || "Untitled WOD",
-            exercises: wod.exercises.map((ex, exIndex) => {
-              let trackingType = "reps";
-              let exerciseId = "";
-              if (workout.wods[wodIndex]?.exercises[exIndex]) {
-                const originalEx = workout.wods[wodIndex].exercises[exIndex];
-                trackingType = originalEx.trackingType;
-                exerciseId = originalEx.exerciseId || "";
-              }
-              return {
-                exerciseId,
+      const updatedWods =
+        workout.wodType === "raw"
+          ? editedWods.map((wod) => ({
+              name: wod.title || "Untitled WOD",
+              rawText: wod.rawText ?? "",
+              exercises: [],
+            }))
+          : editedWods.map((wod) => ({
+              name: wod.title || "Untitled WOD",
+              exercises: wod.exercises.map((ex) => ({
+                exerciseId: ex.exerciseId || "",
                 name: ex.name || "Exercise",
                 instructions: ex.instructions?.[0] || "",
-                trackingType: trackingType as any,
-              };
-            }),
-          }));
+                trackingType: (ex.trackingType || "reps") as any,
+              })),
+            }));
 
-      const response = await groupsService.updateGroupWorkout(groupId, workoutId, { wods: updatedWods });
+      const response = await groupsService.updateGroupWorkout(
+        groupId,
+        workoutId,
+        { wods: updatedWods },
+      );
       if (response.success) {
         setIsEditingWorkout(false);
         await loadWorkout();
         showToast({ type: "success", label: "Workout updated successfully!" });
       } else {
-        showToast({ type: "error", label: response.message || "Failed to update workout" });
+        showToast({
+          type: "error",
+          label: response.message || "Failed to update workout",
+        });
       }
     } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to update workout" });
+      showToast({
+        type: "error",
+        label: err.message || "Failed to update workout",
+      });
     } finally {
       setLoading(false);
     }
@@ -253,6 +273,26 @@ export default function GroupWorkoutDetailScreen() {
     );
   };
 
+  const selectExercise = (
+    wodId: string,
+    exerciseIndex: number,
+    exercise: { id: string; name: string; trackingType: string },
+  ) => {
+    setEditedWods((prev) =>
+      prev.map((wod) => {
+        if (wod.id === wodId) {
+          const updatedExercises = wod.exercises.map((ex, idx) =>
+            idx === exerciseIndex
+              ? { ...ex, name: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+              : ex,
+          );
+          return { ...wod, exercises: updatedExercises };
+        }
+        return wod;
+      }),
+    );
+  };
+
   const updateExercise = (
     wodId: string,
     exerciseIndex: number,
@@ -264,7 +304,9 @@ export default function GroupWorkoutDetailScreen() {
         if (wod.id === wodId) {
           const updatedExercises = wod.exercises.map((ex, idx) => {
             if (idx === exerciseIndex) {
-              return field === "name" ? { ...ex, name: value } : { ...ex, instructions: [value] };
+              return field === "name"
+                ? { ...ex, name: value }
+                : { ...ex, instructions: [value] };
             }
             return ex;
           });
@@ -297,7 +339,10 @@ export default function GroupWorkoutDetailScreen() {
     setEditedWods((prev) =>
       prev.map((wod) =>
         wod.id === wodId
-          ? { ...wod, exercises: [...wod.exercises, { name: "", instructions: [""] }] }
+          ? {
+              ...wod,
+              exercises: [...wod.exercises, { name: "", instructions: [""] }],
+            }
           : wod,
       ),
     );
@@ -307,13 +352,19 @@ export default function GroupWorkoutDetailScreen() {
     const wod = editedWods.find((w) => w.id === wodId);
     if (!wod) return;
     if (wod.exercises.length <= 1) {
-      showToast({ type: "error", label: "Each WOD must have at least one exercise" });
+      showToast({
+        type: "error",
+        label: "Each WOD must have at least one exercise",
+      });
       return;
     }
     setEditedWods((prev) =>
       prev.map((w) =>
         w.id === wodId
-          ? { ...w, exercises: w.exercises.filter((_, idx) => idx !== exerciseIndex) }
+          ? {
+              ...w,
+              exercises: w.exercises.filter((_, idx) => idx !== exerciseIndex),
+            }
           : w,
       ),
     );
@@ -322,13 +373,28 @@ export default function GroupWorkoutDetailScreen() {
   const footer = isEditingWorkout ? (
     <View style={{ flexDirection: "row", gap: 12 }}>
       <View style={{ flex: 1 }}>
-        <Button title="Cancel" size="large" onPress={handleCancelEdit} variant="secondary" />
+        <Button
+          title="Cancel"
+          size="large"
+          onPress={handleCancelEdit}
+          variant="secondary"
+        />
       </View>
       <View style={{ flex: 1 }}>
-        <Button title="Save Changes" size="large" onPress={handleSaveWorkout} disabled={loading} />
+        <Button
+          title="Save Changes"
+          size="large"
+          onPress={handleSaveWorkout}
+          disabled={loading}
+        />
       </View>
     </View>
-  ) : !submitted ? (
+  ) : submitted ? (
+    <View style={styles.completedFooterButton}>
+      <Ionicons name="checkmark-circle" size={18} color="#fff" />
+      <Text style={styles.footerButtonText}>Completed</Text>
+    </View>
+  ) : (
     <TouchableOpacity
       style={styles.footerButton}
       activeOpacity={0.85}
@@ -347,39 +413,42 @@ export default function GroupWorkoutDetailScreen() {
       }
     >
       <Ionicons name="barbell-outline" size={18} color="#fff" />
-      <Text style={styles.footerButtonText}>
-        {workout.wodType === "raw" ? "Complete Workout" : "Log Results"}
-      </Text>
+      <Text style={styles.footerButtonText}>Complete Workout</Text>
     </TouchableOpacity>
-  ) : null;
+  );
 
   const headerRight = isAdmin ? (
     <View style={{ flexDirection: "row", gap: 12 }}>
       {!isEditingWorkout ? (
         <>
           {!submitted && (
-            <TouchableOpacity onPress={handleEditWorkout} style={styles.headerIconBtn}>
-              <Ionicons name="create-outline" size={22} color={Colors.text.primary} />
+            <TouchableOpacity
+              onPress={handleEditWorkout}
+              style={styles.headerIconBtn}
+            >
+              <Ionicons
+                name="create-outline"
+                size={22}
+                color={Colors.text.primary}
+              />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={handleDeleteWorkout} style={styles.headerIconBtn}>
-            <Ionicons name="trash-outline" size={22} color={Colors.error[500]} />
-          </TouchableOpacity>
           <TouchableOpacity
-            onPress={() =>
-              guard("leaderboard", () =>
-                router.push(
-                  `/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`,
-                ),
-              )
-            }
+            onPress={handleDeleteWorkout}
             style={styles.headerIconBtn}
           >
-            <Ionicons name="trophy-outline" size={22} color={Colors.primary[500]} />
+            <Ionicons
+              name="trash-outline"
+              size={22}
+              color={Colors.error[500]}
+            />
           </TouchableOpacity>
         </>
       ) : (
-        <TouchableOpacity onPress={handleCancelEdit} style={styles.headerIconBtn}>
+        <TouchableOpacity
+          onPress={handleCancelEdit}
+          style={styles.headerIconBtn}
+        >
           <Ionicons name="close" size={24} color={Colors.text.primary} />
         </TouchableOpacity>
       )}
@@ -434,7 +503,10 @@ export default function GroupWorkoutDetailScreen() {
                 </View>
               </View>
             ))}
-            <TouchableOpacity style={styles.editAddWodBtn} onPress={handleAddWod}>
+            <TouchableOpacity
+              style={styles.editAddWodBtn}
+              onPress={handleAddWod}
+            >
               <Text style={styles.editAddWodText}>+ Add WOD</Text>
             </TouchableOpacity>
           </View>
@@ -448,6 +520,7 @@ export default function GroupWorkoutDetailScreen() {
             onToggleWODCompletion={() => {}}
             onUpdateWodTitle={updateWodTitle}
             onUpdateExercise={updateExercise}
+            onSelectExercise={selectExercise}
             onAddWod={handleAddWod}
             onRemoveWod={handleRemoveWod}
             onAddExercise={handleAddExercise}
@@ -700,6 +773,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     backgroundColor: Colors.primary[500],
+    borderRadius: 14,
+    paddingVertical: 14,
+  },
+  completedFooterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: Colors.success[500],
     borderRadius: 14,
     paddingVertical: 14,
   },

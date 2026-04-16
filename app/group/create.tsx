@@ -8,6 +8,7 @@ import { useState } from "react";
 import {
   Share,
   StyleSheet,
+  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -16,6 +17,7 @@ import {
 
 export default function CreateGroupScreen() {
   const [groupName, setGroupName] = useState("");
+  const [adminParticipates, setAdminParticipates] = useState(false);
   const [loading, setLoading] = useState(false);
   const [joinCode, setJoinCode] = useState<string | null>(null);
   const { showToast } = useToast();
@@ -27,7 +29,7 @@ export default function CreateGroupScreen() {
     }
     try {
       setLoading(true);
-      const response = await groupsService.createGroup({ name: groupName.trim() });
+      const response = await groupsService.createGroup({ name: groupName.trim(), adminParticipates });
       if (response.success && response.data) {
         setJoinCode(response.data.joinCode ?? null);
         showToast({ type: "success", label: "Group created!" });
@@ -128,6 +130,23 @@ export default function CreateGroupScreen() {
             autoFocus
           />
         </View>
+
+        <View style={styles.formSection}>
+          <View style={styles.switchRow}>
+            <View style={styles.switchInfo}>
+              <Text style={styles.label}>Participate in workouts</Text>
+              <Text style={styles.switchSubtext}>
+                Add group workouts to your own workouts screen
+              </Text>
+            </View>
+            <Switch
+              value={adminParticipates}
+              onValueChange={setAdminParticipates}
+              trackColor={{ false: Colors.neutral[700], true: Colors.primary[500] + "80" }}
+              thumbColor={adminParticipates ? Colors.primary[500] : Colors.neutral[500]}
+            />
+          </View>
+        </View>
       </View>
     </Page>
   );
@@ -171,6 +190,22 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  switchInfo: {
+    flex: 1,
+    gap: 3,
+  },
+  switchSubtext: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
+    lineHeight: 16,
   },
   successContainer: {
     flex: 1,
