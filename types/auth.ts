@@ -5,12 +5,28 @@ export enum Gender {
   FEMALE = "female",
 }
 
+export type UserType = "athlete" | "coach";
+export type CoachApplicationStatus = "none" | "pending" | "approved" | "rejected";
+export type CoachStatus = "active" | "suspended";
+
 export interface User {
   uid: string | null;
   name: string;
   nickname: string;
   email: string;
   profilePictureUrl: string;
+  userType: UserType;
+  coachStatus?: CoachStatus | null;
+  coachApplication?: {
+    status: CoachApplicationStatus;
+    phoneNumber?: string;
+    avgAthletesCount?: number;
+    currentGym?: string;
+    rejectionReason?: string;
+  };
+  coachSubscription?: {
+    expiresAt?: string;
+  };
   statsSummary: {
     completedWorkouts: number;
     currentStreak: number;
@@ -33,6 +49,15 @@ export interface RegisterUserData {
   email: string;
   password: string;
   profilePictureUrl: string;
+  phoneNumber?: string;
+  avgAthletesCount?: number;
+  currentGym?: string;
+}
+
+export interface CoachApplicationData {
+  phoneNumber: string;
+  avgAthletesCount: number;
+  currentGym: string;
 }
 
 // Signup form data - used during the signup flow (uses age instead of birthYear for better UX)

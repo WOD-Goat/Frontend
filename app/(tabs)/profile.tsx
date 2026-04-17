@@ -3,18 +3,18 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
 import { Gap, Page, ProfileSkeleton } from "@/components";
 import { useGlobalState } from "@/components/lib";
-import { ENTITLEMENTS } from "@/config/revenuecat";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
+import { useEntitlements } from "@/hooks/useEntitlements";
 import { useRevenueCat } from "@/hooks/useRevenueCat";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useMemo } from "react";
-import { Linking } from "react-native";
 import {
   Alert,
   Dimensions,
+  Linking,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -59,7 +59,9 @@ export default function ProfileScreen() {
   const { logout, loading } = useAuth();
   const globalState = useGlobalState();
   const user = globalState.get("user");
-  const { plan, logoutUser } = useRevenueCat();
+  const { logoutUser } = useRevenueCat();
+  const { plan, coachApplicationStatus } = useEntitlements();
+  console.log("User data on profile screen:", plan, coachApplicationStatus);
 
   const displayName = useMemo(() => {
     if (!user?.name) return "Athlete";
@@ -76,7 +78,10 @@ export default function ProfileScreen() {
   const handleShowPaywall = async () => {
     try {
       const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+      if (
+        result === PAYWALL_RESULT.PURCHASED ||
+        result === PAYWALL_RESULT.RESTORED
+      ) {
         Alert.alert("You're all set!", "Your subscription is now active.");
       }
     } catch {
@@ -88,7 +93,10 @@ export default function ProfileScreen() {
     try {
       await RevenueCatUI.presentCustomerCenter({ callbacks: {} });
     } catch {
-      Alert.alert("Error", "Unable to open subscription management. Please try again.");
+      Alert.alert(
+        "Error",
+        "Unable to open subscription management. Please try again.",
+      );
     }
   };
   // Show skeleton while user data hasn't loaded yet
@@ -150,7 +158,9 @@ export default function ProfileScreen() {
       <View style={styles.profileCard}>
         <View style={styles.avatarRing}>
           <Image
-            source={plan === "free" ? mascotAssets.standard : mascotAssets.premium}
+            source={
+              plan === "free" ? mascotAssets.standard : mascotAssets.premium
+            }
             style={styles.avatar}
             contentFit="contain"
           />
@@ -160,7 +170,30 @@ export default function ProfileScreen() {
         {nickname && <Text style={styles.nickname}>@{nickname}</Text>}
       </View>
 
-      <Gap size={20} />
+      <Gap size={16} />
+
+      {/* ── Coach Application Pending Banner ───────────── */}
+      {coachApplicationStatus === "pending" && (
+        <>
+          <View style={styles.coachPendingBanner}>
+            <Ionicons
+              name="time-outline"
+              size={18}
+              color={Colors.warning[500]}
+            />
+            <View style={styles.coachPendingText}>
+              <Text style={styles.coachPendingTitle}>
+                Coach Application Pending
+              </Text>
+              <Text style={styles.coachPendingSubtitle}>
+                Our team will reach out to finalize your agreement. Keep your
+                phone available.
+              </Text>
+            </View>
+          </View>
+          <Gap size={12} />
+        </>
+      )}
 
       {/* ── Quick Stats Row ─────────────────────────────── */}
       <View style={styles.statsRow}>
@@ -259,7 +292,13 @@ export default function ProfileScreen() {
         <DetailRow
           icon="sparkles"
           label="Plan"
-          value={plan === "coach" ? "Coach Pro ✨" : plan === "athlete" ? "Athlete Pro ✨" : "Free"}
+          value={
+            plan === "coach"
+              ? "Coach ✨"
+              : plan === "athlete"
+                ? "Athlete Pro ✨"
+                : "Free"
+          }
         />
         <View style={styles.detailDivider} />
         <DetailRow
@@ -282,49 +321,66 @@ export default function ProfileScreen() {
       </View>
       <Gap size={24} />
       {/* ── Account Section ─────────────────────────────── */}
-      <View style={styles.sectionHeader}>
-        <Ionicons name="star" size={16} color={Colors.primary[500]} />
-        <Text style={styles.sectionTitle}>Features</Text>
-      </View>
-      <Gap size={10} />
-      <View style={styles.detailsCard}>
-        {/* <PressableDetailRow
-          icon="sparkles"
-          label="What's New"
-          onPress={() => Alert.alert("What's New", "Coming soon")}
-        />
-        <View style={styles.detailDivider} /> */}
-        {plan === "free" && (
-          <PressableDetailRow
-            icon="rocket-outline"
-            label="Upgrade to Pro"
-            onPress={handleShowPaywall}
-          />
-        )}
-        {plan === "athlete" && (
-          <>
-            <PressableDetailRow
-              icon="trophy-outline"
-              label="Upgrade to Coach Pro"
-              onPress={handleShowPaywall}
-            />
-            <View style={styles.detailDivider} />
-            <PressableDetailRow
-              icon="card-outline"
-              label="Manage Subscription"
-              onPress={handleManageSubscription}
-            />
-          </>
-        )}
-        {plan === "coach" && (
-          <PressableDetailRow
-            icon="card-outline"
-            label="Manage Subscription"
-            onPress={handleManageSubscription}
-          />
-        )}
-      </View>
-      <Gap size={24} />
+      {plan !== "coach" && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="star" size={16} color={Colors.primary[500]} />
+            <Text style={styles.sectionTitle}>Features</Text>
+          </View>
+          <Gap size={10} />
+          <View style={styles.detailsCard}>
+            {/* Free user */}
+            {plan === "free" &&
+              (coachApplicationStatus === "none" ? (
+                <>
+                  <PressableDetailRow
+                    icon="rocket-outline"
+                    label="Upgrade to Pro"
+                    onPress={handleShowPaywall}
+                  />
+                  <View style={styles.detailDivider} />
+                  <PressableDetailRow
+                    icon="trophy-outline"
+                    label="Apply as Coach"
+                    onPress={() => router.push("/coach-apply")}
+                  />
+                </>
+              ) : coachApplicationStatus === "pending" ? (
+                <PressableDetailRow
+                  icon="rocket-outline"
+                  label="Upgrade to Pro"
+                  onPress={handleShowPaywall}
+                />
+              ) : null)}
+
+            {/* Athlete Pro user */}
+            {plan === "athlete" &&
+              (coachApplicationStatus === "none" ? (
+                <>
+                  <PressableDetailRow
+                    icon="card-outline"
+                    label="Manage Subscription"
+                    onPress={handleManageSubscription}
+                  />
+                  <View style={styles.detailDivider} />
+                  <PressableDetailRow
+                    icon="trophy-outline"
+                    label="Apply as Coach"
+                    onPress={() => router.push("/coach-apply")}
+                  />
+                </>
+              ) : coachApplicationStatus === "pending" ? (
+                <PressableDetailRow
+                  icon="card-outline"
+                  label="Manage Subscription"
+                  onPress={handleManageSubscription}
+                />
+              ) : null)}
+            {/* Coach — all done, nothing to show */}
+          </View>
+          <Gap size={24} />
+        </>
+      )}
       {/* ── About App ─────────────────────────────── */}
       <View style={styles.sectionHeader}>
         <Ionicons
@@ -608,6 +664,33 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsBold,
     color: Colors.text.secondary,
     marginTop: -4,
+  },
+
+  // ── Coach Pending Banner ──────────────────────────────
+  coachPendingBanner: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    backgroundColor: Colors.warning[500] + "18",
+    borderRadius: 12,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.warning[500],
+  },
+  coachPendingText: {
+    flex: 1,
+    gap: 3,
+  },
+  coachPendingTitle: {
+    fontSize: FontSizes.bodySM,
+    fontFamily: FontFamilies.poppinsSemiBold,
+    color: Colors.warning[500],
+  },
+  coachPendingSubtitle: {
+    fontSize: FontSizes.bodyXS,
+    fontFamily: FontFamilies.poppinsRegular,
+    color: Colors.text.secondary,
+    lineHeight: 17,
   },
 
   // ── Logout Button ─────────────────────────────────────

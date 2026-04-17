@@ -9,6 +9,7 @@ export const API_ENDPOINTS = {
     LOGOUT: "/api/users/logout",
     UPDATE_PROFILE: "/api/users/profile",
     DELETE_PROFILE: "/api/users/profile",
+    COACH_APPLICATION: "/api/users/coach-application",
   },
   WORKOUTS: {
     CREATE: "/api/workouts",

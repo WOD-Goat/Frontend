@@ -2,7 +2,6 @@ import { groupsService } from "@/api/services";
 import { Gap, Page } from "@/components";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useEntitlements } from "@/hooks/useEntitlements";
-import { presentPaywall } from "@/app/paywall";
 import type { LeaderboardData, LeaderboardEntry, LeaderboardExercise } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -10,6 +9,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -190,14 +190,18 @@ export default function LeaderboardScreen() {
             <Ionicons name="lock-closed" size={32} color={Colors.primary[500]} />
           </View>
           <Gap size={16} />
-          <Text style={styles.lockTitle}>Coach Pro Feature</Text>
+          <Text style={styles.lockTitle}>Coach Feature</Text>
           <Text style={styles.lockMessage}>
-            Leaderboards are available on Coach Pro.
+            Leaderboards are a coach feature. Apply to become a coach from your profile.
           </Text>
           <Gap size={20} />
-          <TouchableOpacity style={styles.upgradeBtn} onPress={() => presentPaywall()} activeOpacity={0.8}>
-            <Ionicons name="sparkles" size={14} color="#000" />
-            <Text style={styles.upgradeBtnText}>Upgrade Now</Text>
+          <TouchableOpacity
+            style={styles.upgradeBtn}
+            onPress={() => Alert.alert("Coach Feature", "Leaderboards are a coach feature. Apply to become a coach from your profile.")}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="information-circle-outline" size={14} color="#000" />
+            <Text style={styles.upgradeBtnText}>Learn More</Text>
           </TouchableOpacity>
         </View>
       </Page>

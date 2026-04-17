@@ -25,10 +25,10 @@ export const FEATURE_CONFIG: Record<Plan, PlanFeatures> = {
   free: {
     voiceWorkoutMaxCountPerMonth: 5,
     voiceWorkoutMaxDurationSeconds: 45,
-    groupJoinMax: null,
-    createGroup: true,
+    groupJoinMax: 1,
+    createGroup: false,
     leaderboard: false,
-    prShareSticker: true,
+    prShareSticker: false,
     customTimerIntervals: false,
   },
   athlete: {
@@ -63,22 +63,22 @@ export const FEATURE_UPGRADE_HINTS: Record<
 > = {
   createGroup: {
     requiredPlan: "coach",
-    label: "Coach Pro",
-    message: "Creating groups is a Coach Pro feature.",
+    label: "Coach",
+    message: "Creating groups is a coach feature. Apply to become a coach from your profile.",
   },
   leaderboard: {
     requiredPlan: "coach",
-    label: "Coach Pro",
-    message: "Leaderboards are available on Coach Pro.",
+    label: "Coach",
+    message: "Leaderboards are a coach feature. Apply to become a coach from your profile.",
   },
   prShareSticker: {
     requiredPlan: "athlete",
     label: "Athlete Pro",
-    message: "PR share stickers require Athlete Pro or Coach Pro.",
+    message: "PR share stickers require Athlete Pro.",
   },
   customTimerIntervals: {
     requiredPlan: "athlete",
     label: "Athlete Pro",
-    message: "Custom timer intervals require Athlete Pro or Coach Pro.",
+    message: "Custom timer intervals require Athlete Pro.",
   },
 };

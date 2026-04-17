@@ -1,12 +1,15 @@
 import { Button, Page } from "@/components";
 import { auth } from "@/config/firebase";
-import { Colors, Typography } from "@/constants";
-import { router } from "expo-router";
+import { Colors, FontFamilies, Typography } from "@/constants";
+import { router, useLocalSearchParams } from "expo-router";
 import { sendEmailVerification } from "firebase/auth";
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 export default function VerifyScreen() {
+  const { isCoach } = useLocalSearchParams<{ isCoach?: string }>();
+  const isCoachApplication = isCoach === "1";
+
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +75,15 @@ export default function VerifyScreen() {
           We sent a verification link to your email address. Click the link then
           come back and press Continue.
         </Text>
+      
+        {isCoachApplication && (
+          <View>
+            <Text style={styles.coachNoteTitle}>Coach Application Submitted</Text>
+            <Text style={styles.coachNoteText}>
+              Our team will contact you to review your application and finalize the coach agreement. Keep your phone available.
+            </Text>
+          </View>
+        )}
 
         <View style={styles.spamNote}>
           <Text style={[styles.spamNoteText, Typography.bodyMedium]}>
@@ -80,6 +92,7 @@ export default function VerifyScreen() {
             {" "}and mark it as "Not Spam" to ensure you receive all future emails from us.
           </Text>
         </View>
+
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -110,7 +123,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     gap: 16,
-    paddingTop: 40,
+    paddingTop: 16,
   },
   title: {
     color: Colors.text.primary,
@@ -118,7 +131,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     color: Colors.text.secondary,
-    marginBottom: 24,
+    marginBottom: 12,
   },
   spamNote: {
     backgroundColor: Colors.background.secondary,
@@ -136,5 +149,25 @@ const styles = StyleSheet.create({
   errorText: {
     color: Colors.text.error,
     fontSize: 14,
+  },
+  coachNote: {
+    backgroundColor: Colors.text.success + "18",
+    borderRadius: 10,
+    padding: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.text.success,
+    gap: 4,
+  },
+  coachNoteTitle: {
+    fontFamily: FontFamilies.spartanMedium,
+    color: Colors.text.success,
+    fontWeight: "600",
+    fontSize: 16,
+  },
+  coachNoteText: {
+    color: Colors.text.secondary,
+    fontSize: 15,
+    lineHeight: 19,
+    fontFamily: FontFamilies.spartanRegular,
   },
 });

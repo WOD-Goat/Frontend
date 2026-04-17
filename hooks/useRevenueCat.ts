@@ -19,13 +19,11 @@ export interface RevenueCatState {
   isConfigured: boolean;
   /** Whether a network/SDK operation is in progress */
   isLoading: boolean;
-  /** Whether the user has any paid plan (athlete or coach) */
+  /** Whether the user has an active Athlete Pro entitlement */
   isPro: boolean;
   /** Whether the user has an active Athlete Pro entitlement */
   isAthletePro: boolean;
-  /** Whether the user has an active Coach Pro entitlement */
-  isCoachPro: boolean;
-  /** Current plan tier */
+  /** Current plan tier derived from RevenueCat only ("free" | "athlete") */
   plan: Plan;
   /** Full CustomerInfo object from RevenueCat */
   customerInfo: CustomerInfo | null;
@@ -68,7 +66,6 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
     isLoading: false,
     isPro: false,
     isAthletePro: false,
-    isCoachPro: false,
     plan: "free",
     customerInfo: null,
     offerings: null,
@@ -76,11 +73,12 @@ export const useRevenueCat = (): UseRevenueCatReturn => {
   });
 
   // ── Helper to derive plan from CustomerInfo ───────────────────────────────
-  const derivePlan = (info: CustomerInfo): Pick<RevenueCatState, "isPro" | "isAthletePro" | "isCoachPro" | "plan"> => {
-    const isCoachPro = info.entitlements.active[ENTITLEMENTS.COACH_PRO] !== undefined;
-    const isAthletePro = isCoachPro || info.entitlements.active[ENTITLEMENTS.ATHLETE_PRO] !== undefined;
-    const plan: Plan = isCoachPro ? "coach" : isAthletePro ? "athlete" : "free";
-    return { isPro: isAthletePro || isCoachPro, isAthletePro, isCoachPro, plan };
+  // Coach access is now role-based (userType from backend), not a RevenueCat entitlement.
+  // This hook only derives "free" or "athlete" from RevenueCat.
+  const derivePlan = (info: CustomerInfo): Pick<RevenueCatState, "isPro" | "isAthletePro" | "plan"> => {
+    const isAthletePro = info.entitlements.active[ENTITLEMENTS.ATHLETE_PRO] !== undefined;
+    const plan: Plan = isAthletePro ? "athlete" : "free";
+    return { isPro: isAthletePro, isAthletePro, plan };
   };
 
   // ── Subscribe to CustomerInfo updates ────────────────────────────────────

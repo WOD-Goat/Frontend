@@ -202,7 +202,7 @@ export default function GroupsScreen() {
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const currentUid = globalState.get("user")?.uid;
-  const { guard, guardLimit, canAccess, withinLimit } = useFeatureGuard();
+  const { guard, guardLimit, canAccess, withinLimit, coachSuspensionReason } = useFeatureGuard();
 
   const filterScales = useRef(
     FILTER_TABS.map((_, i) => new Animated.Value(i === 0 ? 1 : 0.95)),
@@ -362,7 +362,13 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
                     <LockedGroupCard
                       key={group.id}
                       group={group}
-                      hint="Upgrade to Coach Pro to access"
+                      hint={
+                        coachSuspensionReason === 'expired'
+                          ? "Subscription expired — contact WODGoat team to resubscribe"
+                          : coachSuspensionReason === 'admin'
+                          ? "Account suspended — contact WODGoat team"
+                          : "Coach feature — apply from your profile"
+                      }
                       onUpgrade={() =>
                         guard("createGroup", () => router.push(`/group/${group.id}`))
                       }

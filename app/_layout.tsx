@@ -241,6 +241,10 @@ export default function RootLayout() {
             name="paywall"
             options={{ presentation: "fullScreenModal" }}
           />
+          <Stack.Screen
+            name="coach-apply"
+            options={{ presentation: "modal" }}
+          />
           <Stack.Screen name="timer" options={{ headerShown: false, gestureEnabled: false }} />
         </Stack>
         {!isOnline && (

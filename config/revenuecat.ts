@@ -19,15 +19,14 @@ export const REVENUECAT_CONFIG = {
 /** Entitlement identifiers configured in the RevenueCat dashboard */
 export const ENTITLEMENTS = {
   ATHLETE_PRO: "Athlete Pro",
-  COACH_PRO: "Coach Pro",
+  // Coach access is now userType-based (backend-approved), not a RevenueCat entitlement
 } as const;
 
 /** Product identifiers as configured in App Store Connect / Google Play Console */
 export const PRODUCT_IDS = {
   ATHLETE_MONTHLY: "athlete_pro_monthly",
   ATHLETE_YEARLY: "athlete_pro_annually",
-  COACH_MONTHLY: "coach_pro_monthly",
-  COACH_YEARLY: "coach_pro_annually",
+  // Coach Pro products removed — coach onboarding is handled outside the app
 } as const;
 
 /** Offering identifier configured in the RevenueCat dashboard */

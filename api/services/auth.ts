@@ -4,6 +4,7 @@ import { useStorage } from "@/components/lib";
 import { notificationsService } from "@/api/services/notifications";
 import type {
   AuthResponse,
+  CoachApplicationData,
   LogoutResponse,
   RegisterResponse,
   RegisterUserData,
@@ -148,6 +149,22 @@ export const authService = {
       return response as unknown as AuthResponse;
     } catch (error) {
       console.error("🔐 AuthService: Update profile error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Submit a coach application for an already-registered athlete
+   */
+  applyAsCoach: async (data: CoachApplicationData): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await apiClient.post<{ success: boolean; message: string }>(
+        API_ENDPOINTS.AUTH.COACH_APPLICATION,
+        data,
+      );
+      return response as unknown as { success: boolean; message: string };
+    } catch (error) {
+      console.error("🔐 AuthService: Coach application error:", error);
       throw error;
     }
   },

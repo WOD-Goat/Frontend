@@ -8,6 +8,7 @@ import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Alert,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -69,9 +70,27 @@ export function FeatureGate({
 
 function UpgradePromptCard({ feature }: { feature: BooleanFeatureKey }) {
   const hint = FEATURE_UPGRADE_HINTS[feature];
+  const isCoachFeature = hint.requiredPlan === "coach";
+  const { coachSuspensionReason } = useEntitlements();
+  const suspensionReason = isCoachFeature ? coachSuspensionReason : null;
 
-  const handleUpgrade = async () => {
-    await presentPaywall();
+  const suspensionMessage =
+    suspensionReason === 'expired'
+      ? "Your coach subscription has expired. Contact the WODGoat team to resubscribe."
+      : suspensionReason === 'admin'
+      ? "Your account has been suspended. Please contact the WODGoat team."
+      : null;
+
+  const handleAction = async () => {
+    if (suspensionReason === 'expired') {
+      Alert.alert("Subscription Expired", suspensionMessage!);
+    } else if (suspensionReason === 'admin') {
+      Alert.alert("Account Suspended", suspensionMessage!);
+    } else if (isCoachFeature) {
+      Alert.alert("Coach Feature", hint.message);
+    } else {
+      await presentPaywall();
+    }
   };
 
   return (
@@ -81,17 +100,23 @@ function UpgradePromptCard({ feature }: { feature: BooleanFeatureKey }) {
           <Ionicons name="lock-closed" size={20} color={Colors.primary[500]} />
         </View>
         <View style={styles.upgradeBadge}>
-          <Text style={styles.upgradeBadgeText}>{hint.label}</Text>
+          <Text style={styles.upgradeBadgeText}>
+            {suspensionReason ? "Suspended" : hint.label}
+          </Text>
         </View>
       </View>
-      <Text style={styles.upgradeMessage}>{hint.message}</Text>
+      <Text style={styles.upgradeMessage}>
+        {suspensionMessage ?? hint.message}
+      </Text>
       <TouchableOpacity
         style={styles.upgradeButton}
-        onPress={handleUpgrade}
+        onPress={handleAction}
         activeOpacity={0.8}
       >
-        <Ionicons name="sparkles" size={14} color="#000" />
-        <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+        <Ionicons name={isCoachFeature ? "information-circle-outline" : "sparkles"} size={14} color="#000" />
+        <Text style={styles.upgradeButtonText}>
+          {suspensionReason ? "Contact Us" : isCoachFeature ? "Learn More" : "Upgrade Now"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -100,14 +125,27 @@ function UpgradePromptCard({ feature }: { feature: BooleanFeatureKey }) {
 // ─── Internal: Lock Overlay ───────────────────────────────────────────────────
 
 function LockOverlay({ feature }: { feature: BooleanFeatureKey }) {
-  const handleUpgrade = async () => {
-    await presentPaywall();
+  const hint = FEATURE_UPGRADE_HINTS[feature];
+  const isCoachFeature = hint.requiredPlan === "coach";
+  const { coachSuspensionReason } = useEntitlements();
+  const suspensionReason = isCoachFeature ? coachSuspensionReason : null;
+
+  const handleAction = async () => {
+    if (suspensionReason === 'expired') {
+      Alert.alert("Subscription Expired", "Your coach subscription has expired. Please contact the WODGoat team to resubscribe.");
+    } else if (suspensionReason === 'admin') {
+      Alert.alert("Account Suspended", "Your account has been suspended. Please contact the WODGoat team.");
+    } else if (isCoachFeature) {
+      Alert.alert("Coach Feature", hint.message);
+    } else {
+      await presentPaywall();
+    }
   };
 
   return (
     <TouchableOpacity
       style={styles.lockOverlay}
-      onPress={handleUpgrade}
+      onPress={handleAction}
       activeOpacity={0.85}
     >
       <View style={styles.lockIconBg}>

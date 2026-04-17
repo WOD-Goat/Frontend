@@ -1,17 +1,33 @@
 import {
   BooleanFeatureKey,
   FEATURE_CONFIG,
+  Plan,
   PlanFeatures,
 } from "@/config/features";
+import { useGlobalState } from "@/components/lib";
+import { CoachApplicationStatus } from "@/types/auth";
 import { useCallback } from "react";
 import { useRevenueCat } from "./useRevenueCat";
 
+
 export interface UseEntitlementsReturn {
-  /** Current subscription plan */
-  plan: "free" | "athlete" | "coach";
+  /** Effective plan — combines RevenueCat (Athlete Pro) and userType (Coach) */
+  plan: Plan;
   isPro: boolean;
   isAthletePro: boolean;
+  /** True when the user's userType is "coach" (backend-approved, not RevenueCat) */
   isCoachPro: boolean;
+  /** True when the user is a coach but their coachStatus is not 'active' */
+  isCoachSuspended: boolean;
+  /**
+   * Why a suspended coach lost access:
+   * - 'expired'  → coachSubscription.expiresAt exists and is in the past
+   * - 'admin'    → manually suspended, no subscription record
+   * - null       → not suspended
+   */
+  coachSuspensionReason: 'expired' | 'admin' | null;
+  /** The user's coach application status */
+  coachApplicationStatus: CoachApplicationStatus;
   /** True once the RevenueCat SDK has finished initializing */
   isReady: boolean;
   /** True during a refresh/restore network call */
@@ -39,16 +55,32 @@ export interface UseEntitlementsReturn {
 
 export function useEntitlements(): UseEntitlementsReturn {
   const {
-    plan,
-    isPro,
-    isAthletePro,
-    isCoachPro,
+    plan: rcPlan,
+    isPro: isAthletePro,
     isConfigured,
     isLoading,
     refreshCustomerInfo,
   } = useRevenueCat();
 
-  const features = FEATURE_CONFIG[plan];
+  const globalState = useGlobalState();
+  const user = globalState.get("user");
+
+  // Coach features are gated on coachStatus === 'active' (backend-set, not RevenueCat).
+  const isCoach = user?.userType === "coach";
+  const isCoachActive = isCoach && user?.coachStatus === "active";
+  const isCoachSuspended = isCoach && user?.coachStatus === "suspended";
+  const effectivePlan: Plan = isCoachActive ? "coach" : rcPlan;
+  const isCoachPro = isCoachActive;
+
+  const expiresAt = user?.coachSubscription?.expiresAt;
+  const coachSuspensionReason: 'expired' | 'admin' | null = isCoachSuspended
+    ? (expiresAt && new Date(expiresAt) < new Date() ? 'expired' : 'admin')
+    : null;
+
+  const coachApplicationStatus: CoachApplicationStatus =
+    user?.coachApplication?.status ?? "none";
+
+  const features = FEATURE_CONFIG[effectivePlan];
 
   const canAccess = useCallback(
     (key: BooleanFeatureKey): boolean => features[key] as boolean,
@@ -71,10 +103,13 @@ export function useEntitlements(): UseEntitlementsReturn {
   );
 
   return {
-    plan,
-    isPro,
+    plan: effectivePlan,
+    isPro: isAthletePro || isCoachPro,
     isAthletePro,
     isCoachPro,
+    isCoachSuspended,
+    coachSuspensionReason,
+    coachApplicationStatus,
     isReady: isConfigured,
     isLoading,
     features,
