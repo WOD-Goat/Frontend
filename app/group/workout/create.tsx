@@ -29,7 +29,7 @@ import {
   TextStyle,
   TouchableOpacity,
   View,
-  ViewStyle
+  ViewStyle,
 } from "react-native";
 
 interface Exercise {
@@ -228,7 +228,7 @@ export default function CreateGroupWorkoutScreen() {
   const [loading, setLoading] = useState(false);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [inputMode, setInputMode] = useState<"structured" | "freetext">(
-    "structured",
+    "freetext",
   );
   const scrollRef = useRef<ScrollView>(null);
   const wodYPositions = useRef<{ [key: string]: number }>({});
@@ -581,23 +581,6 @@ export default function CreateGroupWorkoutScreen() {
             <TouchableOpacity
               style={[
                 styles.modeTab,
-                inputMode === "structured" && styles.modeTabActive,
-              ]}
-              onPress={() => setInputMode("structured")}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.modeTabText,
-                  inputMode === "structured" && styles.modeTabTextActive,
-                ]}
-              >
-                Structured
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.modeTab,
                 inputMode === "freetext" && styles.modeTabActive,
               ]}
               onPress={() => setInputMode("freetext")}
@@ -610,6 +593,23 @@ export default function CreateGroupWorkoutScreen() {
                 ]}
               >
                 Free Text
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.modeTab,
+                inputMode === "structured" && styles.modeTabActive,
+              ]}
+              onPress={() => setInputMode("structured")}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.modeTabText,
+                  inputMode === "structured" && styles.modeTabTextActive,
+                ]}
+              >
+                Structured
               </Text>
             </TouchableOpacity>
           </View>
