@@ -1,18 +1,22 @@
 import { Button } from "@/components";
-import { Colors, Typography, responsiveSize } from "@/constants";
+import { Colors, Typography } from "@/constants";
 import { useStorage } from "@/components/lib/storage";
 import { router } from "expo-router";
 import { useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { mascotAssets } from "@/assets/images";
 import { Image } from "expo-image";
 
-const { width: screenWidth } = Dimensions.get("window");
-const CARD_WIDTH = screenWidth * 0.9;
-
 export default function OnboardingScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const {set: setStorage} = useStorage();
+  const { set: setStorage } = useStorage();
+  const { width, height } = useWindowDimensions();
+
+  const CARD_WIDTH = width * 0.9;
+  const imageSize = Math.min(width * 0.72, height * 0.38);
+  const imageMarginBottom = Math.max(16, height * 0.03);
+  const paginationPadding = Math.max(12, height * 0.025);
+  const footerPaddingBottom = Math.max(24, height * 0.05);
 
   const handleGetStarted = async () => {
     router.push("/auth/login");
@@ -21,9 +25,7 @@ export default function OnboardingScreen() {
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset;
     const pageIndex = Math.round(contentOffset.x / CARD_WIDTH);
-    setCurrentIndex(
-      Math.max(0, Math.min(pageIndex, onboardingData.length - 1)),
-    );
+    setCurrentIndex(Math.max(0, Math.min(pageIndex, onboardingData.length - 1)));
   };
 
   const onboardingData = [
@@ -47,7 +49,7 @@ export default function OnboardingScreen() {
 
   const renderPaginationDots = () => {
     return (
-      <View style={styles.paginationContainer}>
+      <View style={[styles.paginationContainer, { paddingVertical: paginationPadding }]}>
         {onboardingData.map((_, index) => (
           <View
             key={index}
@@ -70,7 +72,10 @@ export default function OnboardingScreen() {
           showsHorizontalScrollIndicator={false}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingHorizontal: (width - CARD_WIDTH) / 2 },
+          ]}
           style={styles.scrollView}
           decelerationRate="fast"
           snapToInterval={CARD_WIDTH}
@@ -78,10 +83,18 @@ export default function OnboardingScreen() {
           pagingEnabled={false}
         >
           {onboardingData.map((item, index) => (
-            <View key={index} style={styles.card}>
+            <View key={index} style={[styles.card, { width: CARD_WIDTH }]}>
               {/* Image */}
-              <View style={styles.imageContainer}>
-                <Image source={item.image} style={{ width: "100%", height: "100%", resizeMode: "contain" }} />
+              <View style={[
+                styles.imageContainer,
+                {
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: imageSize * 0.3,
+                  marginBottom: imageMarginBottom,
+                },
+              ]}>
+                <Image source={item.image} style={{ width: "100%", height: "100%" }} contentFit="contain" />
               </View>
 
               {/* Text and Subtitle */}
@@ -100,7 +113,7 @@ export default function OnboardingScreen() {
       {renderPaginationDots()}
 
       {/* Section 3: Fixed Footer Button */}
-      <View style={styles.footerSection}>
+      <View style={[styles.footerSection, { paddingBottom: footerPaddingBottom }]}>
         <Button
           variant="primary"
           size="large"
@@ -116,7 +129,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background.primary,
-    justifyContent: "center",
   },
 
   // Section 1: Carousel
@@ -127,42 +139,31 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flexGrow: 0,
-    height: "80%",
+    width: "100%",
   },
   scrollContent: {
-    paddingHorizontal: (screenWidth - CARD_WIDTH) / 2,
     alignItems: "center",
-    justifyContent: "center",
   },
 
   // Card
   card: {
-    width: CARD_WIDTH,
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
     backgroundColor: "transparent",
   },
 
-  // Image Section
+  // Image Section (width/height/borderRadius/marginBottom injected inline)
   imageContainer: {
-    width: screenWidth * 0.8,
-    height: screenWidth * 0.8,
     backgroundColor: "#242426",
-    borderRadius: screenWidth * 0.25,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 32,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
-    padding:24
+    padding: 24,
   },
 
   // Text
@@ -177,12 +178,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
 
-  // Section 2: Pagination Dots
+  // Section 2: Pagination Dots (paddingVertical injected inline)
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: 40,
   },
   paginationDot: {
     width: 8,
@@ -198,32 +198,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#A6A6A6",
   },
 
-  // Section 3: Fixed Footer
+  // Section 3: Fixed Footer (paddingBottom injected inline)
   footerSection: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 20,
-  },
-  button: {
-    width: "100%",
-    backgroundColor: Colors.primary[500],
-    paddingVertical: 18,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  buttonText: {
-    color: Colors.text.primary,
-    fontSize: responsiveSize(18),
-    fontWeight: "bold",
-    textAlign: "center",
-  },
+    paddingTop: 16,  },
 });

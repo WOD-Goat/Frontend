@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "buildNumber": "17",
+      "buildNumber": "18",
       "supportsTablet": false,
       "bundleIdentifier": "com.wodgoat",
       "infoPlist": {
@@ -39,9 +39,9 @@
       }
     },
     "android": {
-      "versionCode": 17,
+      "versionCode": 18,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
+        "foregroundImage": "./assets/images/androidlogo.png",
         "backgroundColor": "#1c0e00"
       },
       "edgeToEdgeEnabled": false,
@@ -64,7 +64,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/androidlogo.png",
           "imageWidth": 300,
           "contentFit": "contain",
           "backgroundColor": "#1c0e00"
