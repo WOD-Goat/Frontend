@@ -38,7 +38,7 @@ interface PageProps {
   headerStyle?: ViewStyle;
 
   // Scroll ref for programmatic scrolling
-  scrollRef?: RefObject<ScrollView>;
+  scrollRef?: RefObject<ScrollView | null>;
 }
 
 export default function Page({

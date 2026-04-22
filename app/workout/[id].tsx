@@ -1,12 +1,12 @@
 import { workoutsService } from "@/api/services";
-import { Button, Gap, Page } from "@/components";
+import { BulletTextArea, Button, Gap, Page } from "@/components";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import type { AssignedWorkoutData, WODData } from "@/types";
+import { parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { parseFirebaseDate } from "@/utils";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -35,7 +35,9 @@ function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
             <View style={styles.exerciseInfo}>
               <Text style={styles.exerciseName}>{ex.name}</Text>
               {ex.instructions ? (
-                <Text style={styles.exerciseInstructions}>{ex.instructions}</Text>
+                <Text style={styles.exerciseInstructions}>
+                  {ex.instructions}
+                </Text>
               ) : null}
               <View style={styles.trackingBadge}>
                 <Text style={styles.trackingBadgeText}>
@@ -193,22 +195,26 @@ export default function WorkoutDetailScreen() {
       setLoading(true);
 
       // Transform edited WODs back to WODData format
-      const updatedWods = workout?.wodType === "raw"
-        ? editedWods.map((wod) => ({
-            name: wod.title || "Untitled WOD",
-            rawText: wod.rawText ?? "",
-            exercises: [],
-          }))
-        : editedWods.map((wod) => ({
-            name: wod.title || "Untitled WOD",
-            exercises: wod.exercises.map((ex) => ({
-              exerciseId: ex.exerciseId || "",
-              name: ex.name || "Exercise",
-              instructions: ex.instructions?.[0] || "",
-              trackingType: (ex.trackingType || "reps") as any,
-            })),
-          }));
-          console.log("Saving workout with updated wods:", JSON.stringify(updatedWods, null, 2));
+      const updatedWods =
+        workout?.wodType === "raw"
+          ? editedWods.map((wod) => ({
+              name: wod.title || "Untitled WOD",
+              rawText: wod.rawText ?? "",
+              exercises: [],
+            }))
+          : editedWods.map((wod) => ({
+              name: wod.title || "Untitled WOD",
+              exercises: wod.exercises.map((ex) => ({
+                exerciseId: ex.exerciseId || "",
+                name: ex.name || "Exercise",
+                instructions: ex.instructions?.[0] || "",
+                trackingType: (ex.trackingType || "reps") as any,
+              })),
+            }));
+      console.log(
+        "Saving workout with updated wods:",
+        JSON.stringify(updatedWods, null, 2),
+      );
       const response = await workoutsService.updateWorkout(id as string, {
         wods: updatedWods,
       });
@@ -259,7 +265,12 @@ export default function WorkoutDetailScreen() {
         if (wod.id === wodId) {
           const updatedExercises = wod.exercises.map((ex, idx) =>
             idx === exerciseIndex
-              ? { ...ex, name: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+              ? {
+                  ...ex,
+                  name: exercise.name,
+                  exerciseId: exercise.id,
+                  trackingType: exercise.trackingType,
+                }
               : ex,
           );
           return { ...wod, exercises: updatedExercises };
@@ -518,19 +529,21 @@ export default function WorkoutDetailScreen() {
                 </View>
                 <View style={styles.editInputGroup}>
                   <Text style={styles.editInputLabel}>Workout Description</Text>
-                  <TextInput
-                    style={styles.editRawTextarea}
+                  <BulletTextArea
+                    inputContainerStyle={styles.editRawTextarea}
+                    inputStyle={styles.editRawTextareaInput}
                     value={wod.rawText ?? ""}
                     onChangeText={(t) => updateWodRawText(wod.id, t)}
                     placeholder={"Describe this WOD..."}
-                    placeholderTextColor={Colors.text.tertiary}
-                    multiline
-                    textAlignVertical="top"
+                    minHeight={160}
                   />
                 </View>
               </View>
             ))}
-            <TouchableOpacity style={styles.editAddWodBtn} onPress={handleAddWod}>
+            <TouchableOpacity
+              style={styles.editAddWodBtn}
+              onPress={handleAddWod}
+            >
               <Text style={styles.editAddWodText}>+ Add WOD</Text>
             </TouchableOpacity>
           </View>
@@ -562,7 +575,11 @@ export default function WorkoutDetailScreen() {
               </View>
               {workout.completed && (
                 <View style={styles.completedBadge}>
-                  <Ionicons name="checkmark-circle" size={12} color={Colors.success[500]} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={12}
+                    color={Colors.success[500]}
+                  />
                   <Text style={styles.completedBadgeText}>Completed</Text>
                 </View>
               )}
@@ -787,13 +804,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    minHeight: 160,
+  },
+  editRawTextareaInput: {
     color: Colors.text.primary,
     fontSize: FontSizes.bodySM,
     fontFamily: FontFamilies.poppinsRegular,
-    minHeight: 160,
-    textAlignVertical: "top",
   },
   editAddWodBtn: {
     backgroundColor: Colors.primary[500],

@@ -1,12 +1,18 @@
 import { authService, workoutsService } from "@/api/services";
-import { Button, ExerciseSearchInput, Input, Page } from "@/components";
+import {
+  BulletTextArea,
+  Button,
+  ExerciseSearchInput,
+  Input,
+  Page,
+} from "@/components";
 import { VoiceRecorderModal } from "@/components/ai";
 import { storage, useGlobalState, useToast } from "@/components/lib";
 import { Colors, Typography, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
-import { getVoiceUsage } from "@/lib/voiceUsageStorage";
 import type { VoiceWorkoutResult } from "@/lib/ai/useVoiceWorkout";
+import { getVoiceUsage } from "@/lib/voiceUsageStorage";
 import type {
   CreateWorkoutData,
   StandardExercise,
@@ -22,7 +28,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TextStyle,
   TouchableOpacity,
   View,
@@ -245,9 +250,11 @@ export default function CreateWorkoutScreen() {
   const [notes, setNotes] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
-  const [inputMode, setInputMode] = useState<"structured" | "freetext">("structured");
+  const [inputMode, setInputMode] = useState<"structured" | "freetext">(
+    "structured",
+  );
   const scrollRef = useRef<ScrollView>(null);
-  const wodYPositions = useRef<{[key: string]: number}>({});
+  const wodYPositions = useRef<{ [key: string]: number }>({});
   const { voice } = useLocalSearchParams<{ voice?: string }>();
   const globalState = useGlobalState();
   const { showToast } = useToast();
@@ -455,27 +462,28 @@ export default function CreateWorkoutScreen() {
     if (loading) return;
 
     // Filter out items being removed before saving
-    const finalWods = inputMode === "freetext"
-      ? wods
-          .filter((wod) => !wod.removing)
-          .map((wod) => ({
-            name: wod.name || "Untitled WOD",
-            rawText: wod.rawText ?? "",
-            exercises: [],
-          }))
-      : wods
-          .filter((wod) => !wod.removing)
-          .map((wod) => ({
-            name: wod.name || "Untitled WOD",
-            exercises: wod.exercises
-              .filter((ex) => !ex.removing)
-              .map(({ exerciseId, name, instructions, trackingType }) => ({
-                exerciseId: exerciseId,
-                name,
-                instructions,
-                trackingType,
-              })),
-          }));
+    const finalWods =
+      inputMode === "freetext"
+        ? wods
+            .filter((wod) => !wod.removing)
+            .map((wod) => ({
+              name: wod.name || "Untitled WOD",
+              rawText: wod.rawText ?? "",
+              exercises: [],
+            }))
+        : wods
+            .filter((wod) => !wod.removing)
+            .map((wod) => ({
+              name: wod.name || "Untitled WOD",
+              exercises: wod.exercises
+                .filter((ex) => !ex.removing)
+                .map(({ exerciseId, name, instructions, trackingType }) => ({
+                  exerciseId: exerciseId,
+                  name,
+                  instructions,
+                  trackingType,
+                })),
+            }));
 
     try {
       setLoading(true);
@@ -515,7 +523,9 @@ export default function CreateWorkoutScreen() {
 
   const isValid = () => {
     if (inputMode === "freetext") {
-      return wods.some((wod) => !wod.removing && (wod.rawText ?? "").trim().length > 0);
+      return wods.some(
+        (wod) => !wod.removing && (wod.rawText ?? "").trim().length > 0,
+      );
     }
     const hasUnresolved = wods.some((wod) =>
       wod.exercises.some((ex) => !ex.removing && ex.unresolved),
@@ -623,11 +633,11 @@ export default function CreateWorkoutScreen() {
 
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Notes (optional)</Text>
-              <Input
+              <BulletTextArea
                 placeholder="Any notes for this workout..."
                 value={notes}
                 onChangeText={setNotes}
-                multiline
+                minHeight={120}
               />
             </View>
           </View>
@@ -635,20 +645,36 @@ export default function CreateWorkoutScreen() {
           {/* Mode Toggle */}
           <View style={styles.modeToggle}>
             <TouchableOpacity
-              style={[styles.modeTab, inputMode === "structured" && styles.modeTabActive]}
+              style={[
+                styles.modeTab,
+                inputMode === "structured" && styles.modeTabActive,
+              ]}
               onPress={() => setInputMode("structured")}
               activeOpacity={0.8}
             >
-              <Text style={[styles.modeTabText, inputMode === "structured" && styles.modeTabTextActive]}>
+              <Text
+                style={[
+                  styles.modeTabText,
+                  inputMode === "structured" && styles.modeTabTextActive,
+                ]}
+              >
                 Structured
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.modeTab, inputMode === "freetext" && styles.modeTabActive]}
+              style={[
+                styles.modeTab,
+                inputMode === "freetext" && styles.modeTabActive,
+              ]}
               onPress={() => setInputMode("freetext")}
               activeOpacity={0.8}
             >
-              <Text style={[styles.modeTabText, inputMode === "freetext" && styles.modeTabTextActive]}>
+              <Text
+                style={[
+                  styles.modeTabText,
+                  inputMode === "freetext" && styles.modeTabTextActive,
+                ]}
+              >
                 Free Text
               </Text>
             </TouchableOpacity>
@@ -657,141 +683,174 @@ export default function CreateWorkoutScreen() {
           {wods.map((wod, wodIndex) => (
             <View
               key={wod.id}
-              onLayout={(e) => { wodYPositions.current[wod.id] = e.nativeEvent.layout.y; }}
+              onLayout={(e) => {
+                wodYPositions.current[wod.id] = e.nativeEvent.layout.y;
+              }}
             >
-            <AnimatedWODSection
-              removing={wod.removing}
-              onRemoveComplete={() => handleWodRemoveComplete(wod.id)}
-            >
-              <View style={styles.wodSection}>
-                {/* WOD Header */}
-                <View style={styles.wodHeader}>
-                  <Text style={[styles.wodTitle, Typography.headingMedium]}>
-                    WOD {wodIndex + 1}
-                  </Text>
-                  {wods.filter((w) => !w.removing).length > 1 && (
-                    <TouchableOpacity
-                      onPress={() => handleRemoveWod(wod.id)}
-                      style={styles.removeButton}
-                    >
-                      <Text style={styles.removeButtonText}>Remove</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
+              <AnimatedWODSection
+                removing={wod.removing}
+                onRemoveComplete={() => handleWodRemoveComplete(wod.id)}
+              >
+                <View style={styles.wodSection}>
+                  {/* WOD Header */}
+                  <View style={styles.wodHeader}>
+                    <Text style={[styles.wodTitle, Typography.headingMedium]}>
+                      WOD {wodIndex + 1}
+                    </Text>
+                    {wods.filter((w) => !w.removing).length > 1 && (
+                      <TouchableOpacity
+                        onPress={() => handleRemoveWod(wod.id)}
+                        style={styles.removeButton}
+                      >
+                        <Text style={styles.removeButtonText}>Remove</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
 
-                {/* WOD Name */}
-                <View style={styles.section}>
-                  <Text style={[styles.label, Typography.bodyMedium]}>WOD Name</Text>
-                  <Input
-                    placeholder='e.g., "Metcon" or "Strength"'
-                    value={wod.name}
-                    onChangeText={(text) => handleWodNameChange(wod.id, text)}
-                  />
-                </View>
-
-                {inputMode === "freetext" ? (
-                  /* Free text: single textarea per WOD */
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>Workout Description</Text>
-                    <TextInput
-                      style={styles.freeTextInput}
-                      placeholder={"Describe this WOD...\n\nE.g. 3 rounds of:\n10 squats\n20 push-ups\n400m run"}
-                      placeholderTextColor={Colors.text.tertiary}
-                      value={wod.rawText ?? ""}
-                      onChangeText={(text) => handleWodRawTextChange(wod.id, text)}
-                      multiline
-                      textAlignVertical="top"
-                      onFocus={() => {
-                        setTimeout(() => {
-                          const y = (wodYPositions.current[wod.id] ?? 0) + 100;
-                          scrollRef.current?.scrollTo({ y, animated: true });
-                        }, 150);
-                      }}
+                  {/* WOD Name */}
+                  <View style={styles.section}>
+                    <Text style={[styles.label, Typography.bodyMedium]}>
+                      WOD Name
+                    </Text>
+                    <Input
+                      placeholder='e.g., "Metcon" or "Strength"'
+                      value={wod.name}
+                      onChangeText={(text) => handleWodNameChange(wod.id, text)}
                     />
                   </View>
-                ) : (
-                  /* Structured: exercise list */
-                  <View style={styles.exercisesContainer}>
-                    <Text style={[styles.sectionTitle, Typography.headingSmall]}>
-                      Exercises
-                    </Text>
 
-                    {wod.exercises.map((exercise, exerciseIndex) => (
-                      <AnimatedExerciseSection
-                        key={exercise.id}
-                        removing={exercise.removing}
-                        onRemoveComplete={() =>
-                          handleExerciseRemoveComplete(wod.id, exercise.id)
+                  {inputMode === "freetext" ? (
+                    /* Free text: single textarea per WOD */
+                    <View style={styles.inputGroup}>
+                      <Text style={styles.inputLabel}>Workout Description</Text>
+                      <BulletTextArea
+                        inputContainerStyle={styles.freeTextInputContainer}
+                        inputStyle={styles.freeTextInput}
+                        minHeight={200}
+                        placeholder={
+                          "Describe this WOD...\n\nE.g. 3 rounds of:\n10 squats\n20 push-ups\n400m run"
                         }
+                        value={wod.rawText ?? ""}
+                        onChangeText={(text) =>
+                          handleWodRawTextChange(wod.id, text)
+                        }
+                        onFocus={() => {
+                          setTimeout(() => {
+                            const y =
+                              (wodYPositions.current[wod.id] ?? 0) + 100;
+                            scrollRef.current?.scrollTo({ y, animated: true });
+                          }, 150);
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    /* Structured: exercise list */
+                    <View style={styles.exercisesContainer}>
+                      <Text
+                        style={[styles.sectionTitle, Typography.headingSmall]}
                       >
-                        <View style={styles.exerciseSection}>
-                          <View style={styles.exerciseHeader}>
-                            <Text style={[styles.exerciseLabel, Typography.bodyMedium]}>
-                              Exercise {exerciseIndex + 1}
-                            </Text>
-                            {wod.exercises.filter((ex) => !ex.removing).length > 1 && (
-                              <TouchableOpacity
-                                onPress={() => handleRemoveExercise(wod.id, exercise.id)}
-                                style={styles.removeExerciseButton}
+                        Exercises
+                      </Text>
+
+                      {wod.exercises.map((exercise, exerciseIndex) => (
+                        <AnimatedExerciseSection
+                          key={exercise.id}
+                          removing={exercise.removing}
+                          onRemoveComplete={() =>
+                            handleExerciseRemoveComplete(wod.id, exercise.id)
+                          }
+                        >
+                          <View style={styles.exerciseSection}>
+                            <View style={styles.exerciseHeader}>
+                              <Text
+                                style={[
+                                  styles.exerciseLabel,
+                                  Typography.bodyMedium,
+                                ]}
                               >
-                                <Text style={styles.removeExerciseText}>×</Text>
-                              </TouchableOpacity>
-                            )}
-                          </View>
-
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Name</Text>
-                            <ExerciseSearchInput
-                              value={exercise.name}
-                              onSelectExercise={(selectedExercise) =>
-                                handleExerciseSelect(wod.id, exercise.id, selectedExercise)
-                              }
-                              placeholder="Search for an exercise"
-                              error={exercise.unresolved}
-                            />
-                            {exercise.unresolved && (
-                              <Text style={styles.exerciseErrorText}>
-                                Exercise not found — please search manually
+                                Exercise {exerciseIndex + 1}
                               </Text>
+                              {wod.exercises.filter((ex) => !ex.removing)
+                                .length > 1 && (
+                                <TouchableOpacity
+                                  onPress={() =>
+                                    handleRemoveExercise(wod.id, exercise.id)
+                                  }
+                                  style={styles.removeExerciseButton}
+                                >
+                                  <Text style={styles.removeExerciseText}>
+                                    ×
+                                  </Text>
+                                </TouchableOpacity>
+                              )}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>Name</Text>
+                              <ExerciseSearchInput
+                                value={exercise.name}
+                                onSelectExercise={(selectedExercise) =>
+                                  handleExerciseSelect(
+                                    wod.id,
+                                    exercise.id,
+                                    selectedExercise,
+                                  )
+                                }
+                                placeholder="Search for an exercise"
+                                error={exercise.unresolved}
+                              />
+                              {exercise.unresolved && (
+                                <Text style={styles.exerciseErrorText}>
+                                  Exercise not found — please search manually
+                                </Text>
+                              )}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                              <Text style={styles.inputLabel}>
+                                Instructions
+                              </Text>
+                              <BulletTextArea
+                                placeholder="Exercise instructions (e.g., 21-15-9 reps)"
+                                value={exercise.instructions}
+                                onChangeText={(text) =>
+                                  handleExerciseChange(
+                                    wod.id,
+                                    exercise.id,
+                                    "instructions",
+                                    text,
+                                  )
+                                }
+                                minHeight={120}
+                              />
+                            </View>
+
+                            {exercise.exerciseId && (
+                              <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>
+                                  Tracking Type
+                                </Text>
+                                <View style={styles.trackingTypeDisplay}>
+                                  <Text style={styles.trackingTypeDisplayText}>
+                                    {exercise.trackingType.replace("_", " ")}
+                                  </Text>
+                                </View>
+                              </View>
                             )}
                           </View>
+                        </AnimatedExerciseSection>
+                      ))}
 
-                          <View style={styles.inputGroup}>
-                            <Text style={styles.inputLabel}>Instructions</Text>
-                            <Input
-                              placeholder="Exercise instructions (e.g., 21-15-9 reps)"
-                              value={exercise.instructions}
-                              onChangeText={(text) =>
-                                handleExerciseChange(wod.id, exercise.id, "instructions", text)
-                              }
-                              multiline
-                            />
-                          </View>
-
-                          {exercise.exerciseId && (
-                            <View style={styles.inputGroup}>
-                              <Text style={styles.inputLabel}>Tracking Type</Text>
-                              <View style={styles.trackingTypeDisplay}>
-                                <Text style={styles.trackingTypeDisplayText}>
-                                  {exercise.trackingType.replace("_", " ")}
-                                </Text>
-                              </View>
-                            </View>
-                          )}
-                        </View>
-                      </AnimatedExerciseSection>
-                    ))}
-
-                    <TouchableOpacity
-                      style={styles.addButton}
-                      onPress={() => handleAddExercise(wod.id)}
-                    >
-                      <Text style={styles.addButtonText}>+ Add Exercise</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            </AnimatedWODSection>
+                      <TouchableOpacity
+                        style={styles.addButton}
+                        onPress={() => handleAddExercise(wod.id)}
+                      >
+                        <Text style={styles.addButtonText}>+ Add Exercise</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </AnimatedWODSection>
             </View>
           ))}
 
@@ -1034,16 +1093,16 @@ const styles = StyleSheet.create({
   modeTabTextActive: {
     color: "#000000",
   } as TextStyle,
-  freeTextInput: {
+  freeTextInputContainer: {
     backgroundColor: Colors.background.primary,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: Colors.text.tertiary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 200,
+  } as ViewStyle,
+  freeTextInput: {
     color: Colors.text.primary,
     fontSize: responsiveSize(15),
-    minHeight: 200,
-    textAlignVertical: "top",
+    lineHeight: responsiveSize(22),
   } as TextStyle,
 });

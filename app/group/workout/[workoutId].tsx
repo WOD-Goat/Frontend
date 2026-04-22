@@ -1,10 +1,10 @@
 import { groupsService } from "@/api/services";
-import { Button, Gap, Page } from "@/components";
+import { BulletTextArea, Button, Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
+import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import type { GroupWorkout, WODData } from "@/types";
-import WorkoutView from "@/components/workouts/WorkoutView";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
@@ -283,7 +283,12 @@ export default function GroupWorkoutDetailScreen() {
         if (wod.id === wodId) {
           const updatedExercises = wod.exercises.map((ex, idx) =>
             idx === exerciseIndex
-              ? { ...ex, name: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+              ? {
+                  ...ex,
+                  name: exercise.name,
+                  exerciseId: exercise.id,
+                  trackingType: exercise.trackingType,
+                }
               : ex,
           );
           return { ...wod, exercises: updatedExercises };
@@ -491,14 +496,12 @@ export default function GroupWorkoutDetailScreen() {
                 </View>
                 <View style={styles.editInputGroup}>
                   <Text style={styles.editInputLabel}>Workout Description</Text>
-                  <TextInput
-                    style={styles.editRawTextarea}
+                  <BulletTextArea
+                    inputStyle={styles.editRawTextarea}
                     value={wod.rawText ?? ""}
                     onChangeText={(t) => updateWodRawText(wod.id, t)}
                     placeholder={"Describe this WOD..."}
-                    placeholderTextColor={Colors.text.tertiary}
-                    multiline
-                    textAlignVertical="top"
+                    minHeight={160}
                   />
                 </View>
               </View>
