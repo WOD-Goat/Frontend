@@ -7,6 +7,7 @@ import {
 } from "@/constants";
 import {
   useVoiceWorkout,
+  type VoiceWorkoutMode,
   type VoiceWorkoutResult,
 } from "@/lib/ai/useVoiceWorkout";
 import { Ionicons } from "@expo/vector-icons";
@@ -82,7 +83,7 @@ function WaveBar({
 }
 
 // ---------- Speaking Guide ----------
-const GUIDE_ITEMS = [
+const STRUCTURED_GUIDE_ITEMS = [
   {
     icon: "layers-outline" as const,
     label: "Exercises per WOD",
@@ -100,7 +101,26 @@ const GUIDE_ITEMS = [
   },
 ];
 
-function SpeakingGuide() {
+const FREETEXT_GUIDE_ITEMS = [
+  {
+    icon: "mic-outline" as const,
+    label: "Describe naturally",
+    examples: ["Just speak as if telling a friend about the workout"],
+  },
+  {
+    icon: "layers-outline" as const,
+    label: "Separate sections",
+    examples: ["Strength part: 5x5 squats. Then WOD: 21-15-9 thrusters"],
+  },
+  {
+    icon: "calendar-outline" as const,
+    label: "When to schedule",
+    examples: ["For tomorrow", "Next Monday", "Today"],
+  },
+];
+
+function SpeakingGuide({ mode = "structured" }: { mode?: VoiceWorkoutMode }) {
+  const items = mode === "freetext" ? FREETEXT_GUIDE_ITEMS : STRUCTURED_GUIDE_ITEMS;
   return (
     <View style={styles.guideContainer}>
       <View style={styles.guideTitleRow}>
@@ -113,7 +133,7 @@ function SpeakingGuide() {
           What to include in your description
         </Text>
       </View>
-      {GUIDE_ITEMS.map((item) => (
+      {items.map((item) => (
         <View key={item.label} style={styles.guideItem}>
           <View style={styles.guideIconWrap}>
             <Ionicons name={item.icon} size={15} color={Colors.primary[500]} />
@@ -137,12 +157,14 @@ interface VoiceRecorderModalProps {
   visible: boolean;
   onClose: () => void;
   onResult: (result: VoiceWorkoutResult) => void;
+  mode?: VoiceWorkoutMode;
 }
 
 export function VoiceRecorderModal({
   visible,
   onClose,
   onResult,
+  mode = "structured",
 }: VoiceRecorderModalProps) {
   const insets = useSafeAreaInsets();
   const {
@@ -154,7 +176,7 @@ export function VoiceRecorderModal({
     startRecording,
     stopAndProcess,
     reset,
-  } = useVoiceWorkout();
+  } = useVoiceWorkout(mode);
 
   // Pulse ring
   const pulseScale = useSharedValue(1);
@@ -313,11 +335,11 @@ export function VoiceRecorderModal({
                   <Text style={styles.stopText}>Tap to stop</Text>
                 </TouchableOpacity>
 
-                <SpeakingGuide />
+                <SpeakingGuide mode={mode} />
               </>
             )}
             {/* Guide shown at idle before recording starts */}
-            {isIdle && <SpeakingGuide />}
+            {isIdle && <SpeakingGuide mode={mode} />}
             {isError && (
               <TouchableOpacity
                 style={styles.retryBtn}

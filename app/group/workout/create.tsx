@@ -236,6 +236,30 @@ export default function CreateGroupWorkoutScreen() {
 
   const handleVoiceResult = (result: VoiceWorkoutResult) => {
     const data = result.data as CreateWorkoutData;
+
+    if (inputMode === "freetext") {
+      const filled = data.wods.map((w, i) => ({
+        id: `wod-voice-${i}-${Date.now()}`,
+        name: w.name,
+        rawText: w.rawText ?? "",
+        exercises: [
+          {
+            id: `exercise-voice-${i}-0-${Date.now()}`,
+            exerciseId: "",
+            name: "",
+            instructions: "",
+            trackingType: "reps" as const,
+          },
+        ],
+      }));
+      setWods(filled);
+      if (data.scheduledFor) setScheduledFor(new Date(data.scheduledFor));
+      if (data.notes) setNotes(data.notes);
+      setVoiceModalVisible(false);
+      showToast({ type: "success", label: "Workout filled from voice! Review and save." });
+      return;
+    }
+
     const filled = data.wods.map((w, i) => ({
       id: `wod-voice-${i}-${Date.now()}`,
       name: w.name,
@@ -478,6 +502,7 @@ export default function CreateGroupWorkoutScreen() {
         visible={voiceModalVisible}
         onClose={() => setVoiceModalVisible(false)}
         onResult={handleVoiceResult}
+        mode={inputMode}
       />
       <Page
         title="Post Workout"
@@ -495,19 +520,17 @@ export default function CreateGroupWorkoutScreen() {
                 disabled={!isValid() || loading}
               />
             </View>
-            {inputMode === "structured" && (
-              <TouchableOpacity
-                style={styles.voiceFooterButton}
-                onPress={() => setVoiceModalVisible(true)}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name="mic-outline"
-                  size={responsiveSize(22)}
-                  color={Colors.primary[500]}
-                />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.voiceFooterButton}
+              onPress={() => setVoiceModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="mic-outline"
+                size={responsiveSize(22)}
+                color={Colors.primary[500]}
+              />
+            </TouchableOpacity>
           </View>
         }
       >
@@ -656,6 +679,7 @@ export default function CreateGroupWorkoutScreen() {
                     <View style={styles.inputGroup}>
                       <Text style={styles.inputLabel}>Workout Description</Text>
                       <BulletTextArea
+                        inputContainerStyle={styles.freeTextInputContainer}
                         inputStyle={styles.freeTextInput}
                         placeholder={
                           "Describe this WOD...\n\nE.g. 3 rounds of:\n10 squats\n20 push-ups\n400m run"
@@ -979,16 +1003,10 @@ const styles = StyleSheet.create({
   modeTabTextActive: {
     color: "#000000",
   } as TextStyle,
-  freeTextInput: {
-    backgroundColor: Colors.background.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.text.tertiary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: Colors.text.primary,
-    fontSize: responsiveSize(15),
+  freeTextInputContainer: {
     minHeight: 200,
-    textAlignVertical: "top",
+  } as ViewStyle,
+  freeTextInput: {
+    color: Colors.text.primary,
   } as TextStyle,
 });

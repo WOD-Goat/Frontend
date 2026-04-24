@@ -10,6 +10,8 @@ import { File } from "expo-file-system";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+export type VoiceWorkoutMode = "structured" | "freetext";
+
 export type VoiceRecordingState =
   | "idle"
   | "recording"
@@ -22,7 +24,7 @@ export interface VoiceWorkoutResult {
   data: CreateWorkoutData;
 }
 
-export function useVoiceWorkout() {
+export function useVoiceWorkout(mode: VoiceWorkoutMode = "structured") {
   const [recordingState, setRecordingState] =
     useState<VoiceRecordingState>("idle");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -144,10 +146,11 @@ export function useVoiceWorkout() {
                 ? "audio/webm"
                 : "audio/m4a"; // fallback
 
-      const response = await aiService.parseVoiceWorkout({
-        audio: base64,
-        mimeType,
-      });
+      const payload = { audio: base64, mimeType };
+      const response =
+        mode === "freetext"
+          ? await aiService.formatVoiceWorkout(payload)
+          : await aiService.parseVoiceWorkout(payload);
 
       // Clean up temp file regardless of outcome
       audioFile.delete();
@@ -159,9 +162,25 @@ export function useVoiceWorkout() {
           await incrementVoiceUsage();
         }
 
+        let workoutData: CreateWorkoutData;
+        if (mode === "freetext") {
+          const d = response.data as import("@/api/services/ai").FreeFormWorkoutSuccessData;
+          workoutData = {
+            scheduledFor: new Date(d.parsedWorkout.scheduledFor),
+            notes: d.parsedWorkout.notes ?? null,
+            wods: d.parsedWorkout.wods.map((w) => ({
+              name: w.name,
+              rawText: w.rawText,
+              exercises: [],
+            })),
+          };
+        } else {
+          workoutData = (response.data as import("@/api/services/ai").VoiceWorkoutSuccessData).parsedWorkout;
+        }
+
         setResult({
           transcript: response.data.transcript,
-          data: response.data.parsedWorkout,
+          data: workoutData,
         });
         setRecordingState("review");
         await Haptics.notificationAsync(
@@ -177,7 +196,7 @@ export function useVoiceWorkout() {
       setRecordingState("error");
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-  }, [recorder, features]);
+  }, [recorder, features, mode]);
 
   const reset = useCallback(async () => {
     if (timerRef.current) {

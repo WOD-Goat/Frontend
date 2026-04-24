@@ -1,5 +1,5 @@
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
     StyleProp,
     StyleSheet,
@@ -162,7 +162,6 @@ function transformText(
   if (inserted === " ") {
     const lineStart = previousText.lastIndexOf("\n", changeStart - 1) + 1;
     const currentLine = newText.slice(lineStart, changeStart + 1);
-    const parsed = parseLine(currentLine);
 
     // Convert "- " or "* " to "• "
     const dashMatch = currentLine.match(/^(\s*)[\-*]\s$/);
@@ -215,6 +214,13 @@ export default function BulletTextArea({
   const isProcessingRef = useRef(false);
   const [isFocused, setIsFocused] = useState(false);
 
+  // Keep prevValueRef in sync when the parent changes value externally (e.g. voice fill)
+  useEffect(() => {
+    if (!isProcessingRef.current) {
+      prevValueRef.current = value;
+    }
+  }, [value]);
+
   const handleChangeText = useCallback(
     (newText: string) => {
       // Prevent re-processing our own programmatic updates
@@ -255,9 +261,9 @@ export default function BulletTextArea({
         style={[
           styles.inputWrapper,
           { minHeight },
+          inputContainerStyle,
           isFocused && styles.inputWrapperFocused,
           error && styles.inputWrapperError,
-          inputContainerStyle,
         ]}
       >
         <TextInput
@@ -305,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background.primary,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: Colors.neutral[700],
+    borderColor: Colors.text.tertiary,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },

@@ -7,49 +7,26 @@ import type { AssignedWorkoutData, WODData } from "@/types";
 import { parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
+  LayoutAnimation,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  UIManager,
   View,
 } from "react-native";
 
-function ExerciseCard({ wod, wodIndex }: { wod: WODData; wodIndex: number }) {
-  return (
-    <View style={styles.wodCard}>
-      <View style={styles.wodCardHeader}>
-        <Text style={styles.wodCardTitle}>
-          {wod.name || `WOD ${wodIndex + 1}`}
-        </Text>
-      </View>
-      {wod.rawText ? (
-        <Text style={styles.wodRawText}>{wod.rawText}</Text>
-      ) : (
-        wod.exercises.map((ex, i) => (
-          <View key={i} style={styles.exerciseRow}>
-            <View style={styles.exerciseDot} />
-            <View style={styles.exerciseInfo}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
-              {ex.instructions ? (
-                <Text style={styles.exerciseInstructions}>
-                  {ex.instructions}
-                </Text>
-              ) : null}
-              <View style={styles.trackingBadge}>
-                <Text style={styles.trackingBadgeText}>
-                  {ex.trackingType.replace("_", " ")}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ))
-      )}
-    </View>
-  );
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 interface Exercise {
@@ -67,6 +44,158 @@ interface WOD {
   completed: boolean;
 }
 
+function ExerciseCard({
+  wod,
+  wodIndex,
+  isExpanded,
+  isCompleted,
+  hideMarkComplete,
+  onToggle,
+  onMarkComplete,
+}: {
+  wod: WODData;
+  wodIndex: number;
+  isExpanded: boolean;
+  isCompleted: boolean;
+  hideMarkComplete?: boolean;
+  onToggle: () => void;
+  onMarkComplete: () => void;
+}) {
+  const rotateAnim = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(rotateAnim, {
+      toValue: isExpanded ? 1 : 0,
+      duration: 240,
+      useNativeDriver: true,
+    }).start();
+  }, [isExpanded]);
+
+  const chevronRotation = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "180deg"],
+  });
+
+  const accentColor = isCompleted ? Colors.success[500] : Colors.primary[500];
+
+  return (
+    <View
+      style={[
+        styles.wodCard,
+        { borderLeftColor: accentColor },
+        isCompleted && styles.wodCardCompleted,
+      ]}
+    >
+      {/* Mark as Completed */}
+      {!hideMarkComplete && (
+        <TouchableOpacity
+          style={[
+            styles.markCompleteRow,
+            isCompleted && styles.markCompleteRowDone,
+          ]}
+          onPress={onMarkComplete}
+          activeOpacity={0.75}
+        >
+          <Ionicons
+            name={isCompleted ? "checkmark-circle" : "ellipse-outline"}
+            size={17}
+            color={isCompleted ? Colors.success[500] : Colors.text.secondary}
+          />
+          <Text
+            style={[
+              styles.markCompleteText,
+              isCompleted && styles.markCompleteTextDone,
+            ]}
+          >
+            {isCompleted ? "Completed" : "Mark as Completed"}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      {/* WOD name header – tappable accordion toggle */}
+      <TouchableOpacity
+        style={[
+          styles.wodCardHeader,
+          !hideMarkComplete && { borderTopColor: Colors.neutral[700] },
+        ]}
+        onPress={onToggle}
+        activeOpacity={0.7}
+      >
+        <Text
+          style={[
+            styles.wodCardTitle,
+            isCompleted && { color: Colors.success[500] },
+          ]}
+        >
+          {wod.name || `WOD ${wodIndex + 1}`}
+        </Text>
+        <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={isCompleted ? Colors.success[500] : Colors.text.secondary}
+          />
+        </Animated.View>
+      </TouchableOpacity>
+
+      {/* Expandable content */}
+      {isExpanded && (
+        <View style={styles.wodCardContent}>
+          {wod.rawText ? (
+            <Text style={styles.wodRawText}>{wod.rawText}</Text>
+          ) : (
+            wod.exercises.map((ex, i) => (
+              <View
+                key={i}
+                style={[
+                  styles.exerciseRow,
+                  i < wod.exercises.length - 1 && styles.exerciseRowBorder,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.exerciseNumBadge,
+                    { backgroundColor: accentColor + "20" },
+                  ]}
+                >
+                  <Text
+                    style={[styles.exerciseNumText, { color: accentColor }]}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </Text>
+                </View>
+                <View style={styles.exerciseInfo}>
+                  <Text style={styles.exerciseName}>{ex.name}</Text>
+                  {ex.instructions ? (
+                    <Text style={styles.exerciseInstructions}>
+                      {ex.instructions}
+                    </Text>
+                  ) : null}
+                  <View
+                    style={[
+                      styles.trackingBadge,
+                      { backgroundColor: accentColor + "18" },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.trackingBadgeText,
+                        { color: accentColor },
+                      ]}
+                    >
+                      {ex.trackingType?.replace("_", " ")}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function WorkoutDetailScreen() {
   const params = useLocalSearchParams();
   const { id } = params;
@@ -75,14 +204,13 @@ export default function WorkoutDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wods, setWods] = useState<WOD[]>([]);
+  const [expandedWods, setExpandedWods] = useState<Record<number, boolean>>({});
 
   const { showToast } = useToast();
 
-  // Edit mode state for workout details
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
 
-  // Fetch workout data
   useEffect(() => {
     if (id && typeof id === "string") {
       loadWorkout(id);
@@ -98,7 +226,6 @@ export default function WorkoutDetailScreen() {
       if (response.success && response.data) {
         setWorkout(response.data);
 
-        // Transform workout data to WOD format for edit mode
         const transformedWods: WOD[] = response.data.wods.map((wod, index) => ({
           id: `wod-${index}`,
           title: wod.name,
@@ -113,6 +240,11 @@ export default function WorkoutDetailScreen() {
         }));
 
         setWods(transformedWods);
+        setExpandedWods(
+          response.data.completed
+            ? Object.fromEntries(response.data.wods.map((_, i) => [i, true]))
+            : {},
+        );
       } else {
         setError(response.message || "Failed to load workout");
       }
@@ -124,15 +256,34 @@ export default function WorkoutDetailScreen() {
     }
   };
 
+  const allWodsCompleted = wods.length > 0 && wods.every((w) => w.completed);
+
+  const toggleWodExpanded = (index: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedWods((prev) => ({ ...prev, [index]: !prev[index] }));
+  };
+
+  const toggleWodCompleted = (index: number) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setWods((prev) => {
+      const current = prev[index];
+      if (!current) return prev;
+      const nowCompleted = !current.completed;
+      if (nowCompleted) {
+        setExpandedWods((e) => ({ ...e, [index]: false }));
+      }
+      return prev.map((wod, i) =>
+        i === index ? { ...wod, completed: nowCompleted } : wod,
+      );
+    });
+  };
+
   const handleDeleteWorkout = () => {
     Alert.alert(
       "Delete Workout",
       "Are you sure you want to delete this workout? This action cannot be undone.",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Delete",
           style: "destructive",
@@ -194,7 +345,6 @@ export default function WorkoutDetailScreen() {
     try {
       setLoading(true);
 
-      // Transform edited WODs back to WODData format
       const updatedWods =
         workout?.wodType === "raw"
           ? editedWods.map((wod) => ({
@@ -310,12 +460,7 @@ export default function WorkoutDetailScreen() {
     const newWod: WOD = {
       id: `wod-${Date.now()}`,
       title: "",
-      exercises: [
-        {
-          name: "",
-          instructions: [""],
-        },
-      ],
+      exercises: [{ name: "", instructions: [""] }],
       completed: false,
     };
     setEditedWods([...editedWods, newWod]);
@@ -335,13 +480,7 @@ export default function WorkoutDetailScreen() {
         wod.id === wodId
           ? {
               ...wod,
-              exercises: [
-                ...wod.exercises,
-                {
-                  name: "",
-                  instructions: [""],
-                },
-              ],
+              exercises: [...wod.exercises, { name: "", instructions: [""] }],
             }
           : wod,
       ),
@@ -423,7 +562,6 @@ export default function WorkoutDetailScreen() {
 
   const scheduledDate = parseFirebaseDate(workout.scheduledFor);
 
-  // Render active workout view
   return (
     <Page
       title={workout.title || "Workout Details"}
@@ -484,8 +622,12 @@ export default function WorkoutDetailScreen() {
           </View>
         ) : (
           <TouchableOpacity
-            style={styles.footerButton}
-            activeOpacity={0.85}
+            style={[
+              styles.footerButton,
+              !allWodsCompleted && styles.footerButtonDisabled,
+            ]}
+            activeOpacity={allWodsCompleted ? 0.85 : 1}
+            disabled={!allWodsCompleted}
             onPress={() =>
               workout.wodType === "raw"
                 ? handleCompleteRaw()
@@ -495,8 +637,21 @@ export default function WorkoutDetailScreen() {
                   })
             }
           >
-            <Ionicons name="barbell-outline" size={18} color="#fff" />
-            <Text style={styles.footerButtonText}>Complete Workout</Text>
+            <Ionicons
+              name="barbell-outline"
+              size={18}
+              color={allWodsCompleted ? "#fff" : Colors.text.secondary}
+            />
+            <Text
+              style={[
+                styles.footerButtonText,
+                !allWodsCompleted && { color: Colors.text.secondary },
+              ]}
+            >
+              {allWodsCompleted
+                ? "Complete Workout"
+                : `Complete Workout (${wods.filter((w) => w.completed).length}/${wods.length})`}
+            </Text>
           </TouchableOpacity>
         )
       }
@@ -607,13 +762,45 @@ export default function WorkoutDetailScreen() {
             )}
           </View>
 
-          <Gap size={16} />
+          <Gap size={20} />
 
-          {/* WODs */}
-          <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
-          <Gap size={10} />
+          {/* Progress indicator */}
+          {wods.length > 0 && !workout.completed && (
+            <>
+              <View style={styles.progressRow}>
+                <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
+                <View style={styles.progressBadge}>
+                  <Text style={styles.progressBadgeText}>
+                    {wods.filter((w) => w.completed).length}/{wods.length} done
+                  </Text>
+                </View>
+              </View>
+              <Gap size={4} />
+              <View style={styles.progressBarTrack}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${(wods.filter((w) => w.completed).length / wods.length) * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Gap size={12} />
+            </>
+          )}
+
           {workout.wods.map((wod, i) => (
-            <ExerciseCard key={i} wod={wod} wodIndex={i} />
+            <ExerciseCard
+              key={i}
+              wod={wod}
+              wodIndex={i}
+              isExpanded={expandedWods[i] ?? false}
+              isCompleted={wods[i]?.completed ?? false}
+              hideMarkComplete={workout.completed}
+              onToggle={() => toggleWodExpanded(i)}
+              onMarkComplete={() => toggleWodCompleted(i)}
+            />
           ))}
 
           <Gap size={24} />
@@ -685,68 +872,147 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
   },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
   sectionHeader: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
-  rawTextCard: {
-    backgroundColor: Colors.background.secondary,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.primary[500] + "30",
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.primary[500],
-    marginBottom: 12,
-  },
-  rawTextCardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  rawTextIconCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+  progressBadge: {
     backgroundColor: Colors.primary[500] + "20",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
   },
-  rawTextLabel: {
+  progressBadgeText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
   },
-  rawTextBody: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.primary,
-    lineHeight: 22,
+  progressBarTrack: {
+    height: 4,
+    backgroundColor: Colors.neutral[700],
+    borderRadius: 2,
+    overflow: "hidden",
   },
+  progressBarFill: {
+    height: 4,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 2,
+  },
+  /* WOD accordion card */
   wodCard: {
     backgroundColor: Colors.background.secondary,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 14,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
     borderLeftWidth: 3,
-    borderLeftColor: Colors.primary[500],
+    overflow: "hidden",
   },
-  wodCardHeader: { marginBottom: 8 },
+  wodCardCompleted: {
+    borderColor: Colors.success[500] + "35",
+  },
+  markCompleteRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: Colors.neutral[800] + "60",
+  },
+  markCompleteRowDone: {
+    backgroundColor: Colors.success[500] + "12",
+  },
+  markCompleteText: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+  },
+  markCompleteTextDone: {
+    color: Colors.success[500],
+  },
+  wodCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[700],
+  },
+  wodCardTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+    flex: 1,
+    marginRight: 8,
+  },
+  wodCardContent: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    paddingTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[700],
+  },
   wodRawText: {
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     lineHeight: 22,
+    paddingTop: 10,
   },
-  editRawContainer: {
-    paddingTop: 8,
+  exerciseRow: {
+    flexDirection: "row",
+    gap: 12,
+    paddingVertical: 11,
+    alignItems: "flex-start",
   },
+  exerciseRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "70",
+  },
+  exerciseNumBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
+  },
+  exerciseNumText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(11),
+  },
+  exerciseInfo: { flex: 1, gap: 4 },
+  exerciseName: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+  },
+  exerciseInstructions: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
+    lineHeight: 16,
+  },
+  trackingBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: "flex-start",
+  },
+  trackingBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(10),
+    textTransform: "capitalize",
+  },
+  /* Edit mode */
+  editRawContainer: { paddingTop: 8 },
   editRawWodCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 12,
@@ -779,9 +1045,7 @@ const styles = StyleSheet.create({
     fontSize: responsiveSize(12),
     color: "#fff",
   },
-  editInputGroup: {
-    marginBottom: 12,
-  },
+  editInputGroup: { marginBottom: 12 },
   editInputLabel: {
     fontFamily: FontFamilies.poppinsMedium,
     fontSize: responsiveSize(12),
@@ -823,44 +1087,6 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.bodyMD,
     color: "#000",
   },
-  wodCardTitle: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.primary,
-  },
-  exerciseRow: { flexDirection: "row", gap: 10, marginBottom: 10 },
-  exerciseDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.primary[500],
-    marginTop: 7,
-  },
-  exerciseInfo: { flex: 1, gap: 4 },
-  exerciseName: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.primary,
-  },
-  exerciseInstructions: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodyXS,
-    color: Colors.text.secondary,
-    lineHeight: 16,
-  },
-  trackingBadge: {
-    backgroundColor: Colors.primary[500] + "15",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    alignSelf: "flex-start",
-  },
-  trackingBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: responsiveSize(10),
-    color: Colors.primary[500],
-    textTransform: "capitalize",
-  },
   footerButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -869,6 +1095,9 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[500],
     borderRadius: 14,
     paddingVertical: 14,
+  },
+  footerButtonDisabled: {
+    backgroundColor: Colors.neutral[700],
   },
   completedFooterButton: {
     flexDirection: "row",

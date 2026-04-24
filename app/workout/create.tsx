@@ -276,6 +276,30 @@ export default function CreateWorkoutScreen() {
 
   const handleVoiceResult = (result: VoiceWorkoutResult) => {
     const data = result.data as CreateWorkoutData;
+
+    if (inputMode === "freetext") {
+      const filled = data.wods.map((w, i) => ({
+        id: `wod-voice-${i}-${Date.now()}`,
+        name: w.name,
+        rawText: w.rawText ?? "",
+        exercises: [
+          {
+            id: `exercise-voice-${i}-0-${Date.now()}`,
+            exerciseId: "",
+            name: "",
+            instructions: "",
+            trackingType: "reps" as const,
+          },
+        ],
+      }));
+      setWods(filled);
+      if (data.scheduledFor) setScheduledFor(new Date(data.scheduledFor));
+      if (data.notes) setNotes(data.notes);
+      setVoiceModalVisible(false);
+      showToast({ type: "success", label: "Workout filled from voice! Review and save." });
+      return;
+    }
+
     const filled = data.wods.map((w, i) => ({
       id: `wod-voice-${i}-${Date.now()}`,
       name: w.name,
@@ -544,6 +568,7 @@ export default function CreateWorkoutScreen() {
         visible={voiceModalVisible}
         onClose={() => setVoiceModalVisible(false)}
         onResult={handleVoiceResult}
+        mode={inputMode}
       />
       <Page
         title="Create Workout"
@@ -560,19 +585,17 @@ export default function CreateWorkoutScreen() {
                 disabled={!isValid() || loading}
               />
             </View>
-            {inputMode === "structured" && (
-              <TouchableOpacity
-                style={styles.voiceFooterButton}
-                onPress={handleVoiceMicPress}
-                activeOpacity={0.8}
-              >
-                <Ionicons
-                  name="mic-outline"
-                  size={responsiveSize(22)}
-                  color={Colors.primary[500]}
-                />
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              style={styles.voiceFooterButton}
+              onPress={handleVoiceMicPress}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="mic-outline"
+                size={responsiveSize(22)}
+                color={Colors.primary[500]}
+              />
+            </TouchableOpacity>
           </View>
         }
       >
@@ -1094,15 +1117,9 @@ const styles = StyleSheet.create({
     color: "#000000",
   } as TextStyle,
   freeTextInputContainer: {
-    backgroundColor: Colors.background.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.text.tertiary,
     minHeight: 200,
   } as ViewStyle,
   freeTextInput: {
     color: Colors.text.primary,
-    fontSize: responsiveSize(15),
-    lineHeight: responsiveSize(22),
   } as TextStyle,
 });
