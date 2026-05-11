@@ -3,7 +3,7 @@ import { BulletTextArea, Button, Gap, Page } from "@/components";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
-import type { AssignedWorkoutData, WODData } from "@/types";
+import type { AssignedWorkoutData, ResultData, WODData } from "@/types";
 import { parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -195,6 +195,21 @@ function ExerciseCard({
     </View>
   );
 }
+
+const formatResultValue = (r: ResultData): string => {
+  if (r.weight != null && r.reps != null) return `${r.weight} kg × ${r.reps} reps`;
+  const parts: string[] = [];
+  if (r.weight != null) parts.push(`${r.weight} kg`);
+  if (r.reps != null) parts.push(`${r.reps} reps`);
+  if (r.timeInSeconds != null) {
+    const m = Math.floor(r.timeInSeconds / 60);
+    const s = r.timeInSeconds % 60;
+    parts.push(m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`);
+  }
+  if (r.distanceMeters != null) parts.push(`${r.distanceMeters} m`);
+  if (r.calories != null) parts.push(`${r.calories} cal`);
+  return parts.join(" · ") || "—";
+};
 
 export default function WorkoutDetailScreen() {
   const params = useLocalSearchParams();
@@ -803,6 +818,38 @@ export default function WorkoutDetailScreen() {
             />
           ))}
 
+          {workout.completed && (workout.results?.length > 0 || workout.comment) && (
+            <>
+              <Gap size={4} />
+              <View style={styles.resultsSection}>
+                <View style={styles.resultsSectionHeader}>
+                  <Ionicons name="trophy-outline" size={15} color={Colors.primary[500]} />
+                  <Text style={styles.resultsSectionTitle}>My Results</Text>
+                </View>
+                {workout.comment ? (
+                  <View style={styles.resultCommentRow}>
+                    <Ionicons name="chatbubble-outline" size={13} color={Colors.text.secondary} />
+                    <Text style={styles.resultCommentText}>{workout.comment}</Text>
+                  </View>
+                ) : null}
+                {workout.results?.map((r, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.resultRow,
+                      i < (workout.results?.length ?? 0) - 1 && styles.resultRowBorder,
+                    ]}
+                  >
+                    <Text style={styles.resultExerciseName} numberOfLines={1}>
+                      {r.exerciseName ?? `Exercise ${i + 1}`}
+                    </Text>
+                    <Text style={styles.resultValue}>{formatResultValue(r)}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
           <Gap size={24} />
         </>
       )}
@@ -1112,6 +1159,63 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
+  },
+  resultsSection: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "30",
+    gap: 10,
+  },
+  resultsSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  resultsSectionTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
+  },
+  resultCommentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "80",
+  },
+  resultCommentText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  resultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  resultRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "60",
+    paddingBottom: 8,
+    marginBottom: 2,
+  },
+  resultExerciseName: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    flex: 1,
+    marginRight: 12,
+  },
+  resultValue: {
+    fontFamily: FontFamilies.spartanSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
   },
   centerContainer: {
     flex: 1,

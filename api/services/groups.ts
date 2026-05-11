@@ -86,6 +86,25 @@ export const groupsService = {
   },
 
   /**
+   * Get past workouts history for a group (newest first)
+   */
+  getGroupWorkoutHistory: async (
+    groupId: string,
+    limit?: number,
+    cursor?: string | null,
+  ): Promise<GroupWorkoutsResponse> => {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append("limit", String(limit));
+    if (cursor) params.append("cursor", cursor);
+    const query = params.toString();
+    const endpoint = query
+      ? `${API_ENDPOINTS.GROUPS.GET_WORKOUT_HISTORY(groupId)}?${query}`
+      : API_ENDPOINTS.GROUPS.GET_WORKOUT_HISTORY(groupId);
+    const response = await apiClient.get<GroupWorkoutsResponse>(endpoint);
+    return response as unknown as GroupWorkoutsResponse;
+  },
+
+  /**
    * Create a group workout (admin only)
    */
   createGroupWorkout: async (
@@ -119,10 +138,13 @@ export const groupsService = {
     groupId: string,
     workoutId: string,
     results: import("@/types").ResultData[],
+    comment?: string | null,
   ): Promise<ApiResponse> => {
+    const body: Record<string, unknown> = { results };
+    if (comment) body.comment = comment;
     const response = await apiClient.post<ApiResponse>(
       API_ENDPOINTS.GROUPS.SUBMIT_WORKOUT(groupId, workoutId),
-      { results },
+      body,
     );
     return response as unknown as ApiResponse;
   },
@@ -204,15 +226,22 @@ export const groupsService = {
   },
 
   /**
-   * Get leaderboard for a group workout
+   * Get leaderboard for a group workout (coach only)
    */
   getLeaderboard: async (
     groupId: string,
     workoutId: string,
+    params?: { limit?: number; startAfter?: string },
   ): Promise<LeaderboardResponse> => {
-    const response = await apiClient.get<LeaderboardResponse>(
-      API_ENDPOINTS.GROUPS.LEADERBOARD(groupId, workoutId),
-    );
+    let endpoint = API_ENDPOINTS.GROUPS.LEADERBOARD(groupId, workoutId);
+    if (params) {
+      const qs = new URLSearchParams();
+      if (params.limit != null) qs.set("limit", String(params.limit));
+      if (params.startAfter) qs.set("startAfter", params.startAfter);
+      const queryString = qs.toString();
+      if (queryString) endpoint += `?${queryString}`;
+    }
+    const response = await apiClient.get<LeaderboardResponse>(endpoint);
     return response as unknown as LeaderboardResponse;
   },
 };

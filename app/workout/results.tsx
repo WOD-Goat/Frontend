@@ -7,10 +7,12 @@ import standardExercises from "@/constants/standardExercises.json";
 import type { ExerciseData, ResultData, StandardExercise, TrackingType, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -72,7 +74,11 @@ export default function PRsScreen() {
   const groupId = params.groupId ?? "";
 
   const [results, setResults] = useState<ResultEntry[]>([blankEntry("result-1")]);
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const commentCardY = useRef(0);
 
   const globalState = useGlobalState();
   const { showToast } = useToast();
@@ -198,12 +204,13 @@ export default function PRsScreen() {
   };
 
   const handleSkip = async () => {
+    const trimmedComment = comment.trim() || null;
     try {
       setSubmitting(true);
       if (type === "group") {
-        await groupsService.submitGroupWorkout(groupId, resolvedWorkoutId, []);
+        await groupsService.submitGroupWorkout(groupId, resolvedWorkoutId, [], trimmedComment);
       } else {
-        await workoutsService.completeWorkout(resolvedWorkoutId, []);
+        await workoutsService.completeWorkout(resolvedWorkoutId, [], trimmedComment);
         await refreshProfile();
       }
       navigateHome();
@@ -232,21 +239,23 @@ export default function PRsScreen() {
       handleSkip();
       return;
     }
+    const trimmedComment = comment.trim() || null;
     try {
       setSubmitting(true);
       const formattedResults = formatResults();
       let response;
       if (type === "group") {
-        
         response = await groupsService.submitGroupWorkout(
           groupId,
           resolvedWorkoutId,
           formattedResults,
+          trimmedComment,
         );
       } else {
         response = await workoutsService.completeWorkout(
           resolvedWorkoutId,
           formattedResults,
+          trimmedComment,
         );
         if (response.success) await refreshProfile();
       }
@@ -349,6 +358,7 @@ export default function PRsScreen() {
       title=""
       showBackButton={false}
       scrollable={true}
+      scrollRef={scrollRef}
       headerRight={
         <TouchableOpacity onPress={handleSkip} disabled={submitting} style={styles.skipLink}>
           <Text style={styles.skipLinkText}>Skip</Text>
@@ -452,6 +462,35 @@ export default function PRsScreen() {
           <Text style={styles.addResultBtnText}>Add Another PR</Text>
         </TouchableOpacity>
       )}
+
+      <Gap size={16} />
+
+      {/* Workout comment */}
+      <View
+        style={styles.commentCard}
+        onLayout={(e) => { commentCardY.current = e.nativeEvent.layout.y; }}
+      >
+        <View style={styles.commentHeader}>
+          <Ionicons name="chatbubble-outline" size={15} color={Colors.text.secondary} />
+          <Text style={styles.commentLabel}>How did it go? (optional)</Text>
+        </View>
+        <TextInput
+          style={styles.commentInput}
+          value={comment}
+          onChangeText={setComment}
+          placeholder="Felt strong today, hit a new squat PR…"
+          placeholderTextColor={Colors.text.secondary}
+          multiline
+          maxLength={500}
+          textAlignVertical="top"
+          onFocus={() => {
+            setTimeout(() => {
+              scrollRef.current?.scrollTo({ y: commentCardY.current - 20, animated: true });
+            }, 150);
+          }}
+        />
+        <Text style={styles.commentCount}>{comment.length}/500</Text>
+      </View>
 
       <Gap size={24} />
     </Page>
@@ -557,5 +596,37 @@ const styles = StyleSheet.create({
   footerRow: {
     flexDirection: "row",
     gap: 12,
+  },
+  commentCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+  },
+  commentHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 10,
+  },
+  commentLabel: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.tertiary,
+  },
+  commentInput: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+    minHeight: 96,
+    padding: 0,
+  },
+  commentCount: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.tertiary,
+    textAlign: "right",
+    marginTop: 8,
   },
 });

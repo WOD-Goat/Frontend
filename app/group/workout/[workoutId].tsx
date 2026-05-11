@@ -1,10 +1,11 @@
 import { groupsService } from "@/api/services";
 import { BulletTextArea, Button, Gap, Page } from "@/components";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
-import type { GroupWorkout, WODData } from "@/types";
+import type { GroupWorkout, ResultData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -195,6 +196,21 @@ function ExerciseCard({
   );
 }
 
+const formatResultValue = (r: ResultData): string => {
+  if (r.weight != null && r.reps != null) return `${r.weight} kg × ${r.reps} reps`;
+  const parts: string[] = [];
+  if (r.weight != null) parts.push(`${r.weight} kg`);
+  if (r.reps != null) parts.push(`${r.reps} reps`);
+  if (r.timeInSeconds != null) {
+    const m = Math.floor(r.timeInSeconds / 60);
+    const s = r.timeInSeconds % 60;
+    parts.push(m > 0 ? `${m}:${String(s).padStart(2, "0")}` : `${s}s`);
+  }
+  if (r.distanceMeters != null) parts.push(`${r.distanceMeters} m`);
+  if (r.calories != null) parts.push(`${r.calories} cal`);
+  return parts.join(" · ") || "—";
+};
+
 export default function GroupWorkoutDetailScreen() {
   const { workoutId, groupId } = useLocalSearchParams<{
     workoutId: string;
@@ -207,6 +223,9 @@ export default function GroupWorkoutDetailScreen() {
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
   const [expandedWods, setExpandedWods] = useState<Record<number, boolean>>({});
+  const [publishMode, setPublishMode] = useState<"unchanged" | "now" | "scheduled">("unchanged");
+  const [publishedAt, setPublishedAt] = useState<Date>(new Date());
+  const [showPublishDatePicker, setShowPublishDatePicker] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
 
@@ -261,7 +280,7 @@ export default function GroupWorkoutDetailScreen() {
 
   if (loading) {
     return (
-      <Page showBackButton={true} title="Group Workout">
+      <Page showBackButton={true} title="Workout Details">
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={Colors.primary[500]} />
         </View>
@@ -271,7 +290,7 @@ export default function GroupWorkoutDetailScreen() {
 
   if (!workout) {
     return (
-      <Page showBackButton={true} title="Group Workout">
+      <Page showBackButton={true} title="Workout Details">
         <View style={styles.centerContainer}>
           <Ionicons
             name="alert-circle-outline"
@@ -326,12 +345,14 @@ export default function GroupWorkoutDetailScreen() {
 
   const handleEditWorkout = () => {
     setEditedWods(JSON.parse(JSON.stringify(wods)));
+    setPublishMode("unchanged");
     setIsEditingWorkout(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditingWorkout(false);
     setEditedWods([]);
+    setPublishMode("unchanged");
   };
 
   const handleDeleteWorkout = () => {
@@ -376,6 +397,10 @@ export default function GroupWorkoutDetailScreen() {
     );
   };
 
+  const handleViewLeaderboard = () => {
+    router.push(`/group/workout/leaderboard?groupId=${groupId}&workoutId=${workoutId}`);
+  };
+
   const handleSaveWorkout = async () => {
     try {
       setLoading(true);
@@ -396,10 +421,14 @@ export default function GroupWorkoutDetailScreen() {
               })),
             }));
 
+      const updatePayload: Parameters<typeof groupsService.updateGroupWorkout>[2] = { wods: updatedWods };
+      if (publishMode === "now") updatePayload.publishedAt = null;
+      else if (publishMode === "scheduled") updatePayload.publishedAt = publishedAt.toISOString();
+
       const response = await groupsService.updateGroupWorkout(
         groupId,
         workoutId,
-        { wods: updatedWods },
+        updatePayload,
       );
       if (response.success) {
         setIsEditingWorkout(false);
@@ -603,6 +632,16 @@ export default function GroupWorkoutDetailScreen() {
     <View style={{ flexDirection: "row", gap: 12 }}>
       {!isEditingWorkout ? (
         <>
+          <TouchableOpacity
+            onPress={handleViewLeaderboard}
+            style={styles.headerIconBtn}
+          >
+            <Ionicons
+              name="podium-outline"
+              size={22}
+              color={Colors.primary[500]}
+            />
+          </TouchableOpacity>
           {!submitted && (
             <TouchableOpacity
               onPress={handleEditWorkout}
@@ -646,7 +685,66 @@ export default function GroupWorkoutDetailScreen() {
       headerRight={headerRight}
     >
       {isEditingWorkout ? (
-        workout.wodType === "raw" ? (
+        <>
+          {/* Publish controls — always visible in edit mode */}
+          <View style={styles.publishSection}>
+            <Text style={styles.publishSectionLabel}>Notification</Text>
+            <View style={styles.publishToggle}>
+              {(["unchanged", "now", "scheduled"] as const).map((mode) => (
+                <TouchableOpacity
+                  key={mode}
+                  style={[styles.publishTab, publishMode === mode && styles.publishTabActive]}
+                  onPress={() => setPublishMode(mode)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.publishTabText, publishMode === mode && styles.publishTabTextActive]}>
+                    {mode === "unchanged" ? "Keep" : mode === "now" ? "Send Now" : "Reschedule"}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {publishMode === "scheduled" && (
+              <>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowPublishDatePicker(true)}
+                >
+                  <Text style={styles.dateButtonText}>
+                    {publishedAt.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showPublishDatePicker && (
+                  <>
+                    <DateTimePicker
+                      value={publishedAt}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      minimumDate={new Date()}
+                      onChange={(_, selectedDate) => {
+                        if (Platform.OS === "android") setShowPublishDatePicker(false);
+                        if (selectedDate) setPublishedAt(selectedDate);
+                      }}
+                    />
+                    {Platform.OS === "ios" && (
+                      <TouchableOpacity
+                        style={styles.doneButton}
+                        onPress={() => setShowPublishDatePicker(false)}
+                      >
+                        <Text style={styles.doneButtonText}>Done</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </View>
+
+        {workout.wodType === "raw" ? (
           <View style={styles.editRawContainer}>
             {editedWods.map((wod, i) => (
               <View key={wod.id} style={styles.editRawWodCard}>
@@ -707,7 +805,8 @@ export default function GroupWorkoutDetailScreen() {
             onAddExercise={handleAddExercise}
             onRemoveExercise={handleRemoveExercise}
           />
-        )
+        )}
+        </>
       ) : (
         <>
           {/* Workout header */}
@@ -782,6 +881,38 @@ export default function GroupWorkoutDetailScreen() {
               onMarkComplete={() => toggleWodCompleted(i)}
             />
           ))}
+
+          {submitted && workout.userResult && (workout.userResult.results?.length > 0 || workout.userResult.comment) && (
+            <>
+              <Gap size={4} />
+              <View style={styles.resultsSection}>
+                <View style={styles.resultsSectionHeader}>
+                  <Ionicons name="trophy-outline" size={15} color={Colors.primary[500]} />
+                  <Text style={styles.resultsSectionTitle}>My Results</Text>
+                </View>
+                {workout.userResult.comment ? (
+                  <View style={styles.resultCommentRow}>
+                    <Ionicons name="chatbubble-outline" size={13} color={Colors.text.secondary} />
+                    <Text style={styles.resultCommentText}>{workout.userResult.comment}</Text>
+                  </View>
+                ) : null}
+                {workout.userResult.results?.map((r, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.resultRow,
+                      i < (workout.userResult?.results?.length ?? 0) - 1 && styles.resultRowBorder,
+                    ]}
+                  >
+                    <Text style={styles.resultExerciseName} numberOfLines={1}>
+                      {r.exerciseName ?? `Exercise ${i + 1}`}
+                    </Text>
+                    <Text style={styles.resultValue}>{formatResultValue(r)}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
 
           <Gap size={24} />
         </>
@@ -977,6 +1108,71 @@ const styles = StyleSheet.create({
     fontSize: responsiveSize(10),
     textTransform: "capitalize",
   },
+  /* Publish controls */
+  publishSection: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    gap: 10,
+  },
+  publishSectionLabel: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+  },
+  publishToggle: {
+    flexDirection: "row",
+    backgroundColor: Colors.background.primary,
+    borderRadius: 10,
+    padding: 3,
+  },
+  publishTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  publishTabActive: {
+    backgroundColor: Colors.primary[500],
+  },
+  publishTabText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+  },
+  publishTabTextActive: {
+    color: "#000000",
+  },
+  dateButton: {
+    backgroundColor: Colors.background.primary,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.text.tertiary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  dateButtonText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(14),
+    color: Colors.text.primary,
+  },
+  doneButton: {
+    backgroundColor: Colors.primary[500],
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    marginTop: 6,
+  },
+  doneButtonText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(14),
+    color: "#fff",
+  },
   /* Edit mode */
   editRawContainer: {
     paddingTop: 8,
@@ -1081,6 +1277,63 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
+  },
+  resultsSection: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "30",
+    gap: 10,
+  },
+  resultsSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  resultsSectionTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
+  },
+  resultCommentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "80",
+  },
+  resultCommentText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  resultRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  resultRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.neutral[700] + "60",
+    paddingBottom: 8,
+    marginBottom: 2,
+  },
+  resultExerciseName: {
+    fontFamily: FontFamilies.poppinsMedium,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    flex: 1,
+    marginRight: 12,
+  },
+  resultValue: {
+    fontFamily: FontFamilies.spartanSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
   },
   centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorText: {

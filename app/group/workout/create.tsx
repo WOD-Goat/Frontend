@@ -225,6 +225,13 @@ export default function CreateGroupWorkoutScreen() {
   const [scheduledFor, setScheduledFor] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [notes, setNotes] = useState("");
+  const [publishMode, setPublishMode] = useState<"now" | "scheduled">("now");
+  const [publishedAt, setPublishedAt] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d;
+  });
+  const [showPublishDatePicker, setShowPublishDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
   const [inputMode, setInputMode] = useState<"structured" | "freetext">(
@@ -473,6 +480,7 @@ export default function CreateGroupWorkoutScreen() {
         title: title.trim() || null,
         scheduledFor,
         notes: notes.trim() || null,
+        publishedAt: publishMode === "scheduled" ? publishedAt.toISOString() : null,
         wodType: inputMode === "freetext" ? "raw" : "structured",
         wods: finalWods,
       });
@@ -596,6 +604,69 @@ export default function CreateGroupWorkoutScreen() {
                 onChangeText={setNotes}
                 minHeight={120}
               />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Publish Timing</Text>
+              <View style={styles.modeToggle}>
+                <TouchableOpacity
+                  style={[styles.modeTab, publishMode === "now" && styles.modeTabActive]}
+                  onPress={() => setPublishMode("now")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.modeTabText, publishMode === "now" && styles.modeTabTextActive]}>
+                    Publish Now
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modeTab, publishMode === "scheduled" && styles.modeTabActive]}
+                  onPress={() => setPublishMode("scheduled")}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.modeTabText, publishMode === "scheduled" && styles.modeTabTextActive]}>
+                    Schedule
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {publishMode === "scheduled" && (
+                <>
+                  <TouchableOpacity
+                    style={styles.dateButton}
+                    onPress={() => setShowPublishDatePicker(true)}
+                  >
+                    <Text style={styles.dateText}>
+                      {publishedAt.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Text>
+                  </TouchableOpacity>
+                  {showPublishDatePicker && (
+                    <>
+                      <DateTimePicker
+                        value={publishedAt}
+                        mode="date"
+                        display={Platform.OS === "ios" ? "spinner" : "default"}
+                        minimumDate={new Date()}
+                        onChange={(_, selectedDate) => {
+                          if (Platform.OS === "android") setShowPublishDatePicker(false);
+                          if (selectedDate) setPublishedAt(selectedDate);
+                        }}
+                      />
+                      {Platform.OS === "ios" && (
+                        <TouchableOpacity
+                          style={styles.doneButton}
+                          onPress={() => setShowPublishDatePicker(false)}
+                        >
+                          <Text style={styles.doneButtonText}>Done</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </>
+              )}
             </View>
           </View>
 

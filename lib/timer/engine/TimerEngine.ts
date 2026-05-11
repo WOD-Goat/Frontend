@@ -27,6 +27,11 @@ interface ModeStrategy {
   compute(elapsedSeconds: number, previousElapsed: number): TickResult;
   /** Total duration in seconds, or null if open-ended (FOR_TIME / DEATH_BY). */
   totalDuration: number | null;
+  /**
+   * True for strategies that cycle through internal intervals (EMOM, Tabata, Custom, DeathBy).
+   * Used by LeadInStrategy to skip total-duration halfway (interval strategies fire it per interval).
+   */
+  hasIntervals: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -109,9 +114,9 @@ class LeadInStrategy implements ModeStrategy {
       result.audioEvents.push(beep("beep_go"));
     }
 
-    // Half-time alert — only for workouts with a known finite duration.
+    // Half-time alert for non-interval modes (interval strategies fire it per interval).
     const innerDuration = this.inner.totalDuration;
-    if (innerDuration !== null && innerDuration > 0) {
+    if (!this.inner.hasIntervals && innerDuration !== null && innerDuration > 0) {
       const half = innerDuration / 2;
       if (innerPrev < half && innerElapsed >= half) {
         result.audioEvents.push(beep("beep_warning"));
@@ -126,6 +131,7 @@ class LeadInStrategy implements ModeStrategy {
 // ─── FOR TIME STRATEGY ────────────────────────────────────────────────────────
 
 class ForTimeStrategy implements ModeStrategy {
+  readonly hasIntervals = false;
   constructor(private cap: number | null) {}
 
   get totalDuration(): number | null {
@@ -159,6 +165,8 @@ class ForTimeStrategy implements ModeStrategy {
         const remInt = Math.ceil(remaining);
         if (remInt === 60) {
           audioEvents.push(tts("One minute remaining", 5));
+        } else if (remInt === 10) {
+          audioEvents.push(tts("10", 7));
         } else if (remInt <= 5 && remInt > 0) {
           audioEvents.push(tts(`${remInt}`, 8));
         }
@@ -185,6 +193,7 @@ class ForTimeStrategy implements ModeStrategy {
 // ─── AMRAP STRATEGY ───────────────────────────────────────────────────────────
 
 class AMRAPStrategy implements ModeStrategy {
+  readonly hasIntervals = false;
   constructor(private durationSeconds: number) {}
 
   get totalDuration(): number {
@@ -216,7 +225,8 @@ class AMRAPStrategy implements ModeStrategy {
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(remaining);
       if (remInt === 60) audioEvents.push(tts("One minute remaining", 5));
-      if (remInt <= 5 && remInt > 0) audioEvents.push(tts(`${remInt}`, 8));
+      else if (remInt === 10) audioEvents.push(tts("10", 7));
+      else if (remInt <= 5 && remInt > 0) audioEvents.push(tts(`${remInt}`, 8));
     }
 
     return {
@@ -236,6 +246,7 @@ class AMRAPStrategy implements ModeStrategy {
 // ─── EMOM / EXMOM STRATEGY ────────────────────────────────────────────────────
 
 class EMOMStrategy implements ModeStrategy {
+  readonly hasIntervals = true;
   constructor(
     private intervalSeconds: number, // 60 for EMOM, custom for EXMOM
     private totalIntervals: number,
@@ -279,9 +290,19 @@ class EMOMStrategy implements ModeStrategy {
       audioEvents.push(tts(`Round ${round + 1}`, 8));
     }
 
+    // Per-interval halfway alert
+    const prevIntervalElapsed = previousElapsed % this.intervalSeconds;
+    const half = this.intervalSeconds / 2;
+    if (!isNewRound && prevIntervalElapsed < half && intervalElapsed >= half) {
+      audioEvents.push(beep("beep_warning"));
+      audioEvents.push(tts("Halfway!", 6));
+    }
+
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(intervalRemaining);
-      if (remInt <= 5 && remInt > 0 && !isNewRound) {
+      if (remInt === 10 && !isNewRound) {
+        audioEvents.push(tts("10", 7));
+      } else if (remInt <= 5 && remInt > 0 && !isNewRound) {
         audioEvents.push(tts(`${remInt}`, 8));
       }
     }
@@ -303,6 +324,7 @@ class EMOMStrategy implements ModeStrategy {
 // ─── TABATA STRATEGY ──────────────────────────────────────────────────────────
 
 class TabataStrategy implements ModeStrategy {
+  readonly hasIntervals = true;
   private intervalSeconds: number;
 
   constructor(
@@ -364,16 +386,30 @@ class TabataStrategy implements ModeStrategy {
       audioEvents.push(beep("horn_start"));
       audioEvents.push(tts(`Round ${round + 1}. Work!`, 8));
     } else if (phaseChanged && !isWork) {
-      audioEvents.push(beep("buzzer_transition"));
+      audioEvents.push(beep("beep_warning"));
       audioEvents.push(tts("Rest", 7));
     } else if (phaseChanged && isWork) {
       audioEvents.push(beep("horn_start"));
       audioEvents.push(tts("Work!", 8));
     }
 
+    // Per-phase halfway alert
+    const prevPhaseElapsed = prevIsWork
+      ? prevIntervalElapsed
+      : Math.max(0, prevIntervalElapsed - this.workSeconds);
+    if (!newRound && !phaseChanged) {
+      const half = phaseDuration / 2;
+      if (prevPhaseElapsed < half && phaseElapsed >= half) {
+        audioEvents.push(beep("beep_warning"));
+        audioEvents.push(tts("Halfway!", 6));
+      }
+    }
+
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(phaseRemaining);
-      if (remInt <= 3 && remInt > 0) {
+      if (remInt === 10 && !newRound && !phaseChanged) {
+        audioEvents.push(tts("10", 7));
+      } else if (remInt <= 3 && remInt > 0) {
         audioEvents.push(tts(`${remInt}`, 8));
       }
     }
@@ -397,6 +433,7 @@ class TabataStrategy implements ModeStrategy {
 import type { CustomBlock } from "../types";
 
 class CustomStrategy implements ModeStrategy {
+  readonly hasIntervals = true;
   private flatBlocks: CustomBlock[];
   private cycleDuration: number;
   private _totalDuration: number;
@@ -465,19 +502,28 @@ class CustomStrategy implements ModeStrategy {
       };
     }
 
-    const { block, blockRemaining, cycle } = this.resolveBlock(elapsedSeconds);
-    const { block: prevBlock } = this.resolveBlock(previousElapsed);
+    const { block, blockElapsed, blockRemaining, cycle } = this.resolveBlock(elapsedSeconds);
+    const { block: prevBlock, blockElapsed: prevBlockElapsed } = this.resolveBlock(previousElapsed);
 
     if (block.id !== prevBlock.id) {
-      audioEvents.push(beep("buzzer_transition"));
+      audioEvents.push(beep("beep_warning"));
       if (block.announce) {
         audioEvents.push(tts(block.label, 8));
+      }
+    } else {
+      // Per-block halfway alert
+      const half = block.durationSeconds / 2;
+      if (prevBlockElapsed < half && blockElapsed >= half) {
+        audioEvents.push(beep("beep_warning"));
+        audioEvents.push(tts("Halfway!", 6));
       }
     }
 
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(blockRemaining);
-      if (remInt <= 3 && remInt > 0 && block.id === prevBlock.id) {
+      if (remInt === 10 && block.id === prevBlock.id) {
+        audioEvents.push(tts("10", 7));
+      } else if (remInt <= 3 && remInt > 0 && block.id === prevBlock.id) {
         audioEvents.push(tts(`${remInt}`, 8));
       }
     }
@@ -502,6 +548,7 @@ class CustomStrategy implements ModeStrategy {
 // ─── DEATH BY STRATEGY ────────────────────────────────────────────────────────
 
 class DeathByStrategy implements ModeStrategy {
+  readonly hasIntervals = true;
   constructor(private maxMinutes: number) {}
 
   get totalDuration(): null {
@@ -541,7 +588,9 @@ class DeathByStrategy implements ModeStrategy {
 
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
       const remInt = Math.ceil(remaining);
-      if (remInt <= 5 && remInt > 0 && currentMinute === prevMinute) {
+      if (remInt === 10 && currentMinute === prevMinute) {
+        audioEvents.push(tts("10", 7));
+      } else if (remInt <= 5 && remInt > 0 && currentMinute === prevMinute) {
         audioEvents.push(tts(`${remInt}`, 8));
       }
     }

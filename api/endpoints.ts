@@ -15,6 +15,7 @@ export const API_ENDPOINTS = {
   WORKOUTS: {
     CREATE: "/api/workouts",
     GET_ALL: "/api/workouts",
+    GET_HISTORY: "/api/workouts/history",
     GET_BY_ID: (id: string) => `/api/workouts/${id}`,
     MARK_AS_COMPLETED: (id: string) => `/api/workouts/${id}/complete`,
     UPDATE: (id: string) => `/api/workouts/${id}`,
@@ -41,6 +42,7 @@ export const API_ENDPOINTS = {
     JOIN: "/api/groups/join",
     GENERATE_CODE: (id: string) => `/api/groups/${id}/generate-code`,
     GET_WORKOUTS: (id: string) => `/api/groups/${id}/workouts`,
+    GET_WORKOUT_HISTORY: (id: string) => `/api/groups/${id}/workouts/history`,
     CREATE_WORKOUT: (id: string) => `/api/groups/${id}/workouts`,
     GET_WORKOUT: (groupId: string, workoutId: string) =>
       `/api/groups/${groupId}/workouts/${workoutId}`,

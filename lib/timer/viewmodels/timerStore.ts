@@ -336,9 +336,14 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
 
 /** Returns the display-ready MM:SS string for the primary clock face. */
 export function selectPrimaryTime(store: TimerStore): string {
-  const { display, config } = store;
+  const { display } = store;
 
-  // Countdown modes: show remaining
+  // Interval modes: show interval remaining as the big number
+  if (display.intervalRemaining !== undefined) {
+    return formatSeconds(display.intervalRemaining);
+  }
+
+  // Non-interval modes: show total remaining (or elapsed for open-ended)
   if (display.remainingSeconds !== undefined) {
     return formatSeconds(display.remainingSeconds);
   }
@@ -346,11 +351,14 @@ export function selectPrimaryTime(store: TimerStore): string {
   return formatSeconds(display.elapsedSeconds);
 }
 
-/** Returns the interval countdown (EMOM/TABATA/CUSTOM secondary clock). */
+/** Returns the total remaining time (shown as sub-clock when interval modes are active). */
 export function selectIntervalTime(store: TimerStore): string | null {
   const { display } = store;
-  if (display.intervalRemaining === undefined) return null;
-  return formatSeconds(display.intervalRemaining);
+  // When there's an interval cycle, show total remaining as the sub-clock
+  if (display.intervalRemaining !== undefined && display.remainingSeconds !== undefined) {
+    return formatSeconds(display.remainingSeconds);
+  }
+  return null;
 }
 
 function formatSeconds(s: number): string {

@@ -28,7 +28,7 @@ export default function WorkoutsSkeleton({ userName, user }: { userName: string;
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Skeleton width={36} height={24} borderRadius={6} />
-          <Text style={styles.statLbl}>Missed</Text>
+          <Text style={styles.statLbl}>Longest Streak</Text>
         </View>
       </View>
 

@@ -170,7 +170,7 @@ export default function ProfileScreen() {
         {nickname && <Text style={styles.nickname}>@{nickname}</Text>}
       </View>
 
-      <Gap size={16} />
+      <Gap size={12} />
 
       {/* ── Coach Application Pending Banner ───────────── */}
       {coachApplicationStatus === "pending" && (
@@ -195,88 +195,7 @@ export default function ProfileScreen() {
         </>
       )}
 
-      {/* ── Quick Stats Row ─────────────────────────────── */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconBg,
-              { backgroundColor: Colors.primary[500] + "20" },
-            ]}
-          >
-            <Ionicons name="flame" size={18} color={Colors.primary[500]} />
-          </View>
-          <Text style={styles.statValue}>{stats?.currentStreak ?? 0}</Text>
-          <Text style={styles.statLabel}>Streak</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconBg,
-              { backgroundColor: Colors.fitness.strength + "20" },
-            ]}
-          >
-            <Ionicons name="barbell" size={18} color={Colors.text.success} />
-          </View>
-          <Text style={styles.statValue}>{stats?.completedWorkouts ?? 0}</Text>
-          <Text style={styles.statLabel}>Workouts</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconBg,
-              { backgroundColor: Colors.warning[500] + "20" },
-            ]}
-          >
-            <Ionicons name="trophy" size={18} color={Colors.warning[500]} />
-          </View>
-          <Text style={styles.statValue}>{stats?.longestStreak ?? 0}</Text>
-          <Text style={styles.statLabel}>Best Streak</Text>
-        </View>
-      </View>
-
-      <Gap size={24} />
-
-      {/* ── Latest PR Highlight (if exists) ─────────────── */}
-      {stats?.latestPR?.exerciseName && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="star" size={16} color={Colors.primary[500]} />
-            <Text style={styles.sectionTitle}>Latest PR</Text>
-          </View>
-          <Gap size={10} />
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() =>
-              router.push({
-                pathname: `/pr/${stats.latestPR.exerciseId}`,
-                params: { name: stats.latestPR.exerciseName },
-              } as any)
-            }
-          >
-            <View style={styles.prCard}>
-              <View style={styles.prAccent} />
-              <View style={styles.prBody}>
-                <Text style={styles.prName} numberOfLines={1}>
-                  {stats.latestPR.exerciseName}
-                </Text>
-                <Text style={styles.prSubtext}>Estimated 1RM</Text>
-              </View>
-              <View style={styles.prValueContainer}>
-                <Text style={styles.prValue}>{stats.latestPR.value}</Text>
-                <Text style={styles.prUnit}>KG</Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={Colors.neutral[600]}
-                style={{ marginRight: 14 }}
-              />
-            </View>
-          </TouchableOpacity>
-          <Gap size={24} />
-        </>
-      )}
+      <Gap size={16} />
 
       {/* ── Account Section ─────────────────────────────── */}
       <View style={styles.sectionHeader}>
@@ -320,7 +239,22 @@ export default function ProfileScreen() {
         />
       </View>
       <Gap size={24} />
-      {/* ── Account Section ─────────────────────────────── */}
+
+      {/* ── Activity Section ────────────────────────────── */}
+      <View style={styles.sectionHeader}>
+        <Ionicons name="barbell-outline" size={16} color={Colors.primary[500]} />
+        <Text style={styles.sectionTitle}>Activity</Text>
+      </View>
+      <Gap size={10} />
+      <View style={styles.detailsCard}>
+        <PressableDetailRow
+          icon="time-outline"
+          label="Workout History"
+          onPress={() => router.push("/workout/history" as any)}
+        />
+      </View>
+      <Gap size={24} />
+
       {plan !== "coach" && (
         <>
           <View style={styles.sectionHeader}>
@@ -502,7 +436,6 @@ const styles = StyleSheet.create({
   profileCard: {
     alignItems: "center",
     paddingTop: 20,
-    paddingBottom: 8,
   },
   avatarRing: {
     width: 100,

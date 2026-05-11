@@ -57,6 +57,7 @@ export interface AssignedWorkoutData {
   hasSubmitted?: boolean;
   completedAt: Date | null;
   notes: string | null;
+  comment?: string | null;
   wodType?: "structured" | "raw";
   rawText?: string | null;
   wods: WODData[]; // Today's session contains multiple WODs

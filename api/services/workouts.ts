@@ -36,6 +36,30 @@ export const workoutsService = {
   },
 
   /**
+   * Get past workouts history (newest first)
+   */
+  getWorkoutHistory: async (
+    limit?: number,
+    cursor?: string | null,
+  ): Promise<WorkoutsResponse> => {
+    try {
+      const params = new URLSearchParams();
+      if (limit !== undefined) params.append("limit", String(limit));
+      if (cursor) params.append("cursor", cursor);
+      const query = params.toString();
+      const endpoint = query
+        ? `${API_ENDPOINTS.WORKOUTS.GET_HISTORY}?${query}`
+        : API_ENDPOINTS.WORKOUTS.GET_HISTORY;
+
+      const response = await apiClient.get<WorkoutsResponse>(endpoint);
+      return response as unknown as WorkoutsResponse;
+    } catch (error) {
+      console.error("🏋️ WorkoutsService: Get workout history error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Get all workouts for the authenticated user
    * @param limit - Number of workouts to return per page
    * @param cursor - ISO-date cursor from previous response for pagination
@@ -95,6 +119,7 @@ export const workoutsService = {
   completeWorkout: async (
     workoutId: string,
     results: ResultData[],
+    comment?: string | null,
   ): Promise<ApiResponse> => {
     console.log("🏋️ WorkoutsService: Completing workout", {
       workoutId,
@@ -102,9 +127,11 @@ export const workoutsService = {
     });
 
     try {
+      const body: Record<string, unknown> = { results };
+      if (comment) body.comment = comment;
       const response = await apiClient.post<ApiResponse>(
         API_ENDPOINTS.WORKOUTS.MARK_AS_COMPLETED(workoutId),
-        { results },
+        body,
       );
 
       console.log("🏋️ WorkoutsService: Complete workout response:", response);

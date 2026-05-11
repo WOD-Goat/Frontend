@@ -27,7 +27,7 @@ import {
 
 const PAGE_SIZE = 7; // 1 week + today, adjust as needed
 
-type FilterTab = "all" | "not-started-yet" | "completed" | "missed";
+type FilterTab = "all" | "personal" | "group";
 
 interface WorkoutSectionData {
   date: string;
@@ -45,24 +45,8 @@ interface WorkoutSectionData {
 
 const TABS: { key: FilterTab; label: string; color: string; icon: any }[] = [
   { key: "all", label: "All", color: Colors.primary[500], icon: "apps" },
-  {
-    key: "not-started-yet",
-    label: "Upcoming",
-    color: Colors.primary[500],
-    icon: "time-outline",
-  },
-  {
-    key: "completed",
-    label: "Done",
-    color: Colors.primary[500],
-    icon: "checkmark-circle",
-  },
-  {
-    key: "missed",
-    label: "Missed",
-    color: Colors.primary[500],
-    icon: "trending-down",
-  },
+  { key: "personal", label: "Personal", color: Colors.primary[500], icon: "person-outline" },
+  { key: "group", label: "Group", color: Colors.primary[500], icon: "people-outline" },
 ];
 
 export default function WorkoutsScreen() {
@@ -219,10 +203,8 @@ export default function WorkoutsScreen() {
 
   const counts = useMemo(
     () => ({
-      upcoming: workoutSections.filter((s) => s.status === "not-started-yet")
-        .length,
+      upcoming: workoutSections.filter((s) => s.status === "not-started-yet").length,
       completed: workoutSections.filter((s) => s.status === "completed").length,
-      missed: workoutSections.filter((s) => s.status === "missed").length,
     }),
     [workoutSections],
   );
@@ -231,7 +213,7 @@ export default function WorkoutsScreen() {
     () =>
       activeTab === "all"
         ? workoutSections
-        : workoutSections.filter((s) => s.status === activeTab),
+        : workoutSections.filter((s) => s.source === activeTab),
     [workoutSections, activeTab],
   );
 
@@ -277,7 +259,7 @@ export default function WorkoutsScreen() {
       <Page
         showBackButton={false}
         contentStyle={{ flex: 1 }}
-        scrollable={false}
+        scrollable={true}
       >
         <HeaderSection
           userName={userName}
@@ -379,18 +361,18 @@ export default function WorkoutsScreen() {
           <Text style={[styles.statNum, { color: Colors.success[500] }]}>
             {user?.statsSummary.completedWorkouts ?? counts.completed}
           </Text>
-          <Text style={styles.statLbl}>Completed</Text>
+          <Text style={styles.statLbl}>Done</Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <Text style={[styles.statNum, { color: Colors.error[500] }]}>
-            {counts.missed}
+          <Text style={[styles.statNum, { color: Colors.primary[500] }]}>
+            {user?.statsSummary.longestStreak ?? 0}
           </Text>
-          <Text style={styles.statLbl}>Missed</Text>
+          <Text style={styles.statLbl}>Longest Streak</Text>
         </View>
       </View>
 
-      <Gap size={20} />
+      <Gap size={16} />
 
       {/* Filter tabs */}
       <ScrollView

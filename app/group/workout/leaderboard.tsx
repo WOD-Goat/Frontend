@@ -2,7 +2,10 @@ import { groupsService } from "@/api/services";
 import { Gap, Page } from "@/components";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useEntitlements } from "@/hooks/useEntitlements";
-import type { LeaderboardData, LeaderboardEntry, LeaderboardExercise } from "@/types";
+import type {
+  LeaderboardExerciseResult,
+  LeaderboardUserResult,
+} from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams } from "expo-router";
@@ -10,7 +13,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -18,21 +20,16 @@ import {
 } from "react-native";
 
 const GOLD = "#FFD700";
-const SILVER = "#C0C0C0";
-const BRONZE = "#CD7F32";
 
-function rankColor(rank: number) {
-  if (rank === 1) return GOLD;
-  if (rank === 2) return SILVER;
-  if (rank === 3) return BRONZE;
-  return Colors.text.secondary;
-}
-
-function rankIcon(rank: number) {
-  if (rank === 1) return "trophy";
-  if (rank === 2) return "medal-outline";
-  if (rank === 3) return "medal-outline";
-  return null;
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
 
 function formatTime(seconds: number): string {
@@ -46,128 +43,182 @@ function formatDistance(meters: number): string {
   return `${meters} m`;
 }
 
-function EntryValue({ entry, trackingType }: { entry: LeaderboardEntry; trackingType: string }) {
-  switch (trackingType) {
+function formatExerciseValue(ex: LeaderboardExerciseResult): string {
+  switch (ex.trackingType) {
     case "weight_reps":
-      return (
-        <View style={styles.entryValueGroup}>
-          {entry.weight != null && (
-            <Text style={styles.entryValueMain}>{entry.weight} kg × {entry.reps ?? "?"} reps</Text>
-          )}
-          {entry.estimated1RM != null && (
-            <Text style={styles.entryValueSub}>Est. 1RM: {entry.estimated1RM.toFixed(1)} kg</Text>
-          )}
-        </View>
-      );
+      if (ex.weight != null && ex.reps != null)
+        return `${ex.weight} kg × ${ex.reps} reps`;
+      if (ex.weight != null) return `${ex.weight} kg`;
+      if (ex.reps != null) return `${ex.reps} reps`;
+      return "—";
     case "reps":
-      return <Text style={styles.entryValueMain}>{entry.reps} reps</Text>;
+      return ex.reps != null ? `${ex.reps} reps` : "—";
     case "time":
     case "pace":
-      return (
-        <View style={styles.entryValueGroup}>
-          {entry.timeInSeconds != null && (
-            <Text style={styles.entryValueMain}>{formatTime(entry.timeInSeconds)}</Text>
-          )}
-          {trackingType === "pace" && entry.distanceMeters != null && (
-            <Text style={styles.entryValueSub}>{formatDistance(entry.distanceMeters)}</Text>
-          )}
-        </View>
-      );
+      return ex.timeInSeconds != null ? formatTime(ex.timeInSeconds) : "—";
     case "distance":
-      return entry.distanceMeters != null
-        ? <Text style={styles.entryValueMain}>{formatDistance(entry.distanceMeters)}</Text>
-        : null;
+      return ex.distanceMeters != null ? formatDistance(ex.distanceMeters) : "—";
     case "calories":
-      return <Text style={styles.entryValueMain}>{entry.calories} cal</Text>;
+      return ex.calories != null ? `${ex.calories} cal` : "—";
+    default:
+      return "—";
+  }
+}
+
+function calcImprovement(ex: LeaderboardExerciseResult): string | null {
+  if (!ex.isPR || !ex.previousBest) return null;
+  const pb = ex.previousBest;
+
+  switch (ex.trackingType) {
+    case "weight_reps": {
+      if (ex.weight == null || ex.reps == null || pb.estimated1RM == null) return null;
+      const curr1RM = ex.weight * (1 + ex.reps / 30);
+      const delta = curr1RM - pb.estimated1RM;
+      return `+${delta.toFixed(1)} kg 1RM`;
+    }
+    case "reps": {
+      if (ex.reps == null || pb.reps == null) return null;
+      const delta = ex.reps - pb.reps;
+      return delta > 0 ? `+${delta} reps` : null;
+    }
+    case "distance": {
+      if (ex.distanceMeters == null || pb.distanceMeters == null) return null;
+      const delta = ex.distanceMeters - pb.distanceMeters;
+      return delta > 0 ? `+${formatDistance(delta)}` : null;
+    }
+    case "calories": {
+      if (ex.calories == null || pb.calories == null) return null;
+      const delta = ex.calories - pb.calories;
+      return delta > 0 ? `+${delta} cal` : null;
+    }
+    case "time":
+    case "pace": {
+      if (ex.timeInSeconds == null || pb.timeInSeconds == null) return null;
+      const delta = pb.timeInSeconds - ex.timeInSeconds;
+      return delta > 0 ? `-${formatTime(delta)}` : null;
+    }
     default:
       return null;
   }
 }
 
-function RankingEntry({ entry, trackingType }: { entry: LeaderboardEntry; trackingType: string }) {
-  const color = rankColor(entry.rank);
-  const icon = rankIcon(entry.rank);
-  const isPodium = entry.rank <= 3;
-
+function ExerciseResultRow({ ex }: { ex: LeaderboardExerciseResult }) {
+  const improvement = calcImprovement(ex);
   return (
-    <View style={[styles.rankEntry, isPodium && styles.rankEntryPodium, isPodium && { borderColor: color + "50" }]}>
-      {/* Rank badge */}
-      <View style={[styles.rankBadge, isPodium && { backgroundColor: color + "20" }]}>
-        {icon ? (
-          <Ionicons name={icon as any} size={18} color={color} />
-        ) : (
-          <Text style={[styles.rankNumber, { color }]}>#{entry.rank}</Text>
-        )}
+    <View style={styles.exRow}>
+      <View style={styles.exLeft}>
+        <Text style={styles.exWodName} numberOfLines={1}>
+          {ex.wodName} · {ex.exerciseName}
+        </Text>
+        <Text style={styles.exValue}>{formatExerciseValue(ex)}</Text>
       </View>
-
-      {/* Avatar */}
-      <View style={styles.memberAvatar}>
-        {entry.profilePicture ? (
-          <Image source={{ uri: entry.profilePicture }} style={styles.memberAvatarImage} contentFit="cover" />
-        ) : (
-          <Text style={styles.memberAvatarText}>
-            {(entry.userName ?? "?")[0].toUpperCase()}
-          </Text>
-        )}
-      </View>
-
-      {/* Name */}
-      <Text style={styles.memberName} numberOfLines={1}>{entry.userName}</Text>
-
-      {/* Value */}
-      <View style={styles.entryValueWrapper}>
-        <EntryValue entry={entry} trackingType={trackingType} />
-      </View>
+      {ex.isPR && (
+        <View style={styles.prBadge}>
+          <Ionicons name="star" size={10} color="#000" />
+          <Text style={styles.prBadgeText}>PR</Text>
+          {improvement && (
+            <Text style={styles.prImprovement}>{improvement}</Text>
+          )}
+        </View>
+      )}
     </View>
   );
 }
 
-function ExerciseLeaderboard({ exercise }: { exercise: LeaderboardExercise }) {
-  const isTimeBased = exercise.trackingType === "time" || exercise.trackingType === "pace";
+function SubmissionCard({
+  result,
+  index,
+}: {
+  result: LeaderboardUserResult;
+  index: number;
+}) {
   return (
-    <View style={styles.exerciseSection}>
-      <View style={styles.exerciseSectionHeader}>
-        <View style={styles.exerciseSectionTitleRow}>
-          <Text style={styles.exerciseSectionWod}>{exercise.wodName}</Text>
-          <Text style={styles.exerciseSectionDot}>·</Text>
-          <Text style={styles.exerciseSectionName}>{exercise.exerciseName}</Text>
+    <View style={styles.card}>
+      {/* User info row */}
+      <View style={styles.cardHeader}>
+        <View style={styles.indexBadge}>
+          <Text style={styles.indexText}>{index + 1}</Text>
         </View>
-        <View style={styles.trackingBadge}>
-          <Text style={styles.trackingBadgeText}>
-            {isTimeBased ? "Fastest" : exercise.trackingType.replace("_", " ")}
+        <View style={styles.avatarWrap}>
+          {result.profilePicture ? (
+            <Image
+              source={{ uri: result.profilePicture }}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          ) : (
+            <Text style={styles.avatarInitial}>
+              {(result.userName ?? "?")[0].toUpperCase()}
+            </Text>
+          )}
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName} numberOfLines={1}>
+            {result.userName}
           </Text>
+          <Text style={styles.submitTime}>{timeAgo(result.submittedAt)}</Text>
         </View>
       </View>
 
-      {exercise.rankings.length === 0 ? (
-        <View style={styles.noSubmissions}>
-          <Ionicons name="hourglass-outline" size={24} color={Colors.text.secondary} />
-          <Text style={styles.noSubmissionsText}>No submissions yet</Text>
+      {/* Comment */}
+      {result.comment ? (
+        <View style={styles.commentRow}>
+          <Ionicons
+            name="chatbubble-outline"
+            size={12}
+            color={Colors.text.secondary}
+          />
+          <Text style={styles.commentText} numberOfLines={2}>
+            {result.comment}
+          </Text>
         </View>
-      ) : (
-        exercise.rankings.map((entry) => (
-          <RankingEntry key={entry.userId} entry={entry} trackingType={exercise.trackingType} />
-        ))
+      ) : null}
+
+      {/* Exercise results */}
+      {result.exercises.length > 0 && (
+        <View style={styles.exList}>
+          {result.exercises.map((ex, i) => (
+            <ExerciseResultRow key={i} ex={ex} />
+          ))}
+        </View>
       )}
     </View>
   );
 }
 
 export default function LeaderboardScreen() {
-  const { groupId, workoutId } = useLocalSearchParams<{ groupId: string; workoutId: string }>();
-  const [data, setData] = useState<LeaderboardData | null>(null);
+  const { groupId, workoutId } = useLocalSearchParams<{
+    groupId: string;
+    workoutId: string;
+  }>();
+
+  const [results, setResults] = useState<LeaderboardUserResult[]>([]);
+  const [workoutTitle, setWorkoutTitle] = useState("");
+  const [scheduledFor, setScheduledFor] = useState("");
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const { canAccess } = useEntitlements();
 
-  const loadLeaderboard = async () => {
+  const loadLeaderboard = async (cursor?: string) => {
     try {
-      setLoading(true);
+      if (cursor) setLoadingMore(true);
+      else setLoading(true);
       setError(null);
-      const response = await groupsService.getLeaderboard(groupId, workoutId);
+
+      const response = await groupsService.getLeaderboard(groupId, workoutId, {
+        limit: 20,
+        ...(cursor ? { startAfter: cursor } : {}),
+      });
+
       if (response.success && response.data) {
-        setData(response.data);
+        const d = response.data;
+        setWorkoutTitle(d.workoutTitle);
+        setScheduledFor(d.scheduledFor);
+        setNextCursor(d.nextCursor ?? null);
+        setResults((prev) => (cursor ? [...prev, ...d.results] : d.results));
       } else {
         setError(response.message || "Failed to load leaderboard");
       }
@@ -175,6 +226,7 @@ export default function LeaderboardScreen() {
       setError(err.message || "Failed to load leaderboard");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -192,15 +244,25 @@ export default function LeaderboardScreen() {
           <Gap size={16} />
           <Text style={styles.lockTitle}>Coach Feature</Text>
           <Text style={styles.lockMessage}>
-            Leaderboards are a coach feature. Apply to become a coach from your profile.
+            Leaderboards are a coach feature. Apply to become a coach from your
+            profile.
           </Text>
           <Gap size={20} />
           <TouchableOpacity
             style={styles.upgradeBtn}
-            onPress={() => Alert.alert("Coach Feature", "Leaderboards are a coach feature. Apply to become a coach from your profile.")}
+            onPress={() =>
+              Alert.alert(
+                "Coach Feature",
+                "Leaderboards are a coach feature. Apply to become a coach from your profile.",
+              )
+            }
             activeOpacity={0.8}
           >
-            <Ionicons name="information-circle-outline" size={14} color="#000" />
+            <Ionicons
+              name="information-circle-outline"
+              size={14}
+              color="#000"
+            />
             <Text style={styles.upgradeBtnText}>Learn More</Text>
           </TouchableOpacity>
         </View>
@@ -218,19 +280,23 @@ export default function LeaderboardScreen() {
     );
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <Page showBackButton={true} title="Leaderboard">
         <View style={styles.centerContainer}>
-          <Ionicons name="alert-circle-outline" size={48} color={Colors.error[500]} />
+          <Ionicons
+            name="alert-circle-outline"
+            size={48}
+            color={Colors.error[500]}
+          />
           <Gap size={16} />
-          <Text style={styles.errorText}>{error || "Leaderboard not available"}</Text>
+          <Text style={styles.errorText}>{error}</Text>
         </View>
       </Page>
     );
   }
 
-  const scheduledDate = new Date(data.scheduledFor);
+  const scheduledDate = scheduledFor ? new Date(scheduledFor) : null;
 
   return (
     <Page showBackButton={true} title="Leaderboard" scrollable={true}>
@@ -240,22 +306,57 @@ export default function LeaderboardScreen() {
           <Ionicons name="trophy" size={32} color={GOLD} />
         </View>
         <Gap size={12} />
-        <Text style={styles.lbTitle}>{data.workoutTitle || "Group Workout"}</Text>
-        <Text style={styles.lbDate}>
-          {scheduledDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
+        <Text style={styles.lbTitle}>{workoutTitle || "Group Workout"}</Text>
+        {scheduledDate && (
+          <Text style={styles.lbDate}>
+            {scheduledDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
+          </Text>
+        )}
+        <View style={styles.countBadge}>
+          <Text style={styles.countBadgeText}>
+            {results.length} submission{results.length !== 1 ? "s" : ""}
+          </Text>
+        </View>
       </View>
 
-      <Gap size={20} />
+      <Gap size={16} />
 
-      {/* Per-exercise leaderboards */}
-      {data.exercises.map((exercise, i) => (
-        <ExerciseLeaderboard key={i} exercise={exercise} />
-      ))}
+      {results.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Ionicons
+            name="hourglass-outline"
+            size={40}
+            color={Colors.text.secondary}
+          />
+          <Gap size={12} />
+          <Text style={styles.emptyText}>No submissions yet</Text>
+        </View>
+      ) : (
+        <>
+          {results.map((result, i) => (
+            <SubmissionCard key={result.userId} result={result} index={i} />
+          ))}
+
+          {nextCursor && (
+            <TouchableOpacity
+              style={styles.loadMoreBtn}
+              onPress={() => loadLeaderboard(nextCursor)}
+              disabled={loadingMore}
+              activeOpacity={0.8}
+            >
+              {loadingMore ? (
+                <ActivityIndicator size="small" color={Colors.primary[500]} />
+              ) : (
+                <Text style={styles.loadMoreText}>Load More</Text>
+              )}
+            </TouchableOpacity>
+          )}
+        </>
+      )}
 
       <Gap size={80} />
     </Page>
@@ -264,7 +365,12 @@ export default function LeaderboardScreen() {
 
 const styles = StyleSheet.create({
   centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
-  errorText: { fontFamily: FontFamilies.poppinsSemiBold, fontSize: FontSizes.bodyMD, color: Colors.text.secondary },
+  errorText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.secondary,
+    textAlign: "center",
+  },
   lbHeader: { alignItems: "center", paddingVertical: 20 },
   trophyRing: {
     width: 72,
@@ -288,114 +394,156 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     marginTop: 4,
   },
-  exerciseSection: {
+  countBadge: {
+    marginTop: 10,
+    backgroundColor: Colors.primary[500] + "18",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  countBadgeText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(12),
+    color: Colors.primary[500],
+  },
+  /* Submission card */
+  card: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 14,
     padding: 14,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
-  },
-  exerciseSectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  exerciseSectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
-  exerciseSectionWod: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: responsiveSize(11),
-    color: Colors.text.secondary,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  exerciseSectionDot: { color: Colors.text.secondary },
-  exerciseSectionName: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.primary,
-    flex: 1,
-  },
-  trackingBadge: {
-    backgroundColor: Colors.primary[500] + "15",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-  },
-  trackingBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: responsiveSize(10),
-    color: Colors.primary[500],
-    textTransform: "capitalize",
-  },
-  rankEntry: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.background.primary,
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
     gap: 10,
-    borderWidth: 1,
-    borderColor: Colors.neutral[700],
   },
-  rankEntryPodium: {
-    borderWidth: 1.5,
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  rankBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  indexBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: Colors.neutral[700],
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.background.secondary,
   },
-  rankNumber: {
+  indexText: {
     fontFamily: FontFamilies.poppinsBold,
-    fontSize: responsiveSize(13),
+    fontSize: responsiveSize(11),
+    color: Colors.text.secondary,
   },
-  memberAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  avatarWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: Colors.primary[500] + "20",
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
-  memberAvatarImage: { width: 36, height: 36, borderRadius: 18 },
-  memberAvatarText: { fontFamily: FontFamilies.poppinsBold, fontSize: FontSizes.bodySM, color: Colors.primary[500] },
-  memberName: {
+  avatar: { width: 38, height: 38, borderRadius: 19 },
+  avatarInitial: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
+  },
+  userInfo: { flex: 1, gap: 1 },
+  userName: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
-    flex: 1,
   },
-  entryValueWrapper: { alignItems: "flex-end" },
-  entryValueGroup: { alignItems: "flex-end", gap: 2 },
-  entryValueMain: {
-    fontFamily: FontFamilies.poppinsBold,
+  submitTime: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(11),
+    color: Colors.text.secondary,
+  },
+  commentRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    backgroundColor: Colors.neutral[800] + "60",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+  commentText: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.secondary,
+    flex: 1,
+    lineHeight: 18,
+  },
+  exList: {
+    gap: 6,
+  },
+  exRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  exLeft: { flex: 1, gap: 1 },
+  exWodName: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(11),
+    color: Colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
+  exValue: {
+    fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
   },
-  entryValueSub: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodyXS,
-    color: Colors.text.secondary,
-  },
-  noSubmissions: {
+  prBadge: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 20,
-    gap: 8,
+    gap: 4,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
-  noSubmissionsText: {
+  prBadgeText: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: responsiveSize(10),
+    color: "#000",
+  },
+  prImprovement: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(10),
+    color: "#000",
+  },
+  /* Load more */
+  loadMoreBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+    marginBottom: 8,
+    minHeight: 48,
+  },
+  loadMoreText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
+  },
+  /* Empty */
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 48,
+  },
+  emptyText: {
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
   },
+  /* Lock screen */
   lockRing: {
     width: 80,
     height: 80,

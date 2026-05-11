@@ -275,7 +275,7 @@ export default function PRsScreen() {
 
   if (prs.length === 0) {
     return (
-      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={false}>
+      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={true}>
         <PRHeader />
         <Gap size={responsiveSize(24)} />
 
@@ -313,12 +313,12 @@ export default function PRsScreen() {
 
         <TouchableOpacity
           style={styles.emptyCtaButton}
-          onPress={() => router.push("/(tabs)/" as any)}
+          onPress={() => router.push("/pr/create" as any)}
           activeOpacity={0.85}
         >
           <View style={styles.emptyCtaGlow} />
-          <Ionicons name="barbell-outline" size={responsiveSize(20)} color="#0D0D14" />
-          <Text style={styles.emptyCtaText}>Go to Workouts</Text>
+          <Ionicons name="add-outline" size={responsiveSize(20)} color="#0D0D14" />
+          <Text style={styles.emptyCtaText}>Add New PR</Text>
         </TouchableOpacity>
 
         <Gap size={responsiveSize(160)} />

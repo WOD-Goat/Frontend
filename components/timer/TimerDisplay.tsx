@@ -65,11 +65,11 @@ export const TimerDisplay = memo(function TimerDisplay({
         {primaryTime}
       </Text>
 
-      {/* Secondary interval clock (EMOM / Tabata / Custom) */}
+      {/* Total remaining sub-clock (EMOM / Tabata / Custom) */}
       {intervalTime !== null && (
         <View style={styles.intervalRow}>
           <Text style={[styles.intervalLabel, { color: theme.secondaryText }]}>
-            INTERVAL
+            TOTAL
           </Text>
           <Text style={[styles.intervalTime, { color: theme.secondaryText }]}>
             {intervalTime}

@@ -5,7 +5,7 @@
 //   IDLE      → Dark background, neutral text
 //   COUNTDOWN → Warning yellow — signals imminent start
 //   WORK      → Primary orange — athletic energy
-//   REST      → Cool blue-green — recovery
+//   REST      → Near-white on dark — calm recovery
 //   COMPLETE  → Success green — celebration
 //   FINAL_5s  → Flash between current phase color and red — urgency
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,9 +37,9 @@ const PHASE_THEMES: Record<TimerPhase, TimerTheme> = {
     flashColor: "#FF3B30",
   },
   REST: {
-    background: "#001A1A", // Very dark teal-tinted
-    primaryText: "#4ECDC4", // fitness.strength
-    secondaryText: "#3BABA3",
+    background: "#16161A", // Very dark neutral
+    primaryText: "#EBEBF0", // near-white
+    secondaryText: "#A0A0AA", // medium grey
     flashColor: "#FF3B30",
   },
   COMPLETE: {

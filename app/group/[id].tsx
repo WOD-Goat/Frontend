@@ -21,7 +21,7 @@ import {
 } from "react-native";
 
 
-type DetailTab = "workouts" | "members";
+type DetailTab = "upcoming" | "past" | "members";
 
 function WorkoutItem({ workout, groupId, isAdmin }: { workout: GroupWorkout; groupId: string; isAdmin: boolean }) {
   const date = parseFirebaseDate(workout.scheduledFor);
@@ -114,13 +114,21 @@ function MemberItem({ member, groupId, isAdmin }: { member: GroupMember; groupId
   );
 }
 
+const PAST_PAGE_SIZE = 20;
+
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [group, setGroup] = useState<GroupWithMembers | null>(null);
   const [workouts, setWorkouts] = useState<GroupWorkout[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<DetailTab>("workouts");
+  const [activeTab, setActiveTab] = useState<DetailTab>("upcoming");
   const [regenerating, setRegenerating] = useState(false);
+  const [pastWorkouts, setPastWorkouts] = useState<GroupWorkout[]>([]);
+  const [pastCursor, setPastCursor] = useState<string | null>(null);
+  const [pastHasMore, setPastHasMore] = useState(false);
+  const [loadingPast, setLoadingPast] = useState(false);
+  const [loadingMorePast, setLoadingMorePast] = useState(false);
+  const [pastLoaded, setPastLoaded] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
   const currentUserId = globalState.get("user")?.uid ?? "";
@@ -145,6 +153,33 @@ export default function GroupDetailScreen() {
       showToast({ type: "error", label: err.message || "Failed to load group" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPastWorkouts = async (cursorParam: string | null, isLoadMore: boolean) => {
+    try {
+      isLoadMore ? setLoadingMorePast(true) : setLoadingPast(true);
+      const res = await groupsService.getGroupWorkoutHistory(id, PAST_PAGE_SIZE, cursorParam);
+      if (res.success && res.data) {
+        setPastWorkouts((prev) => isLoadMore ? [...prev, ...res.data] : res.data);
+        setPastCursor(res.nextCursor ?? null);
+        setPastHasMore(!!res.nextCursor);
+      } else {
+        showToast({ type: "error", label: res.message || "Failed to load history" });
+      }
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to load history" });
+    } finally {
+      setLoadingPast(false);
+      setLoadingMorePast(false);
+      setPastLoaded(true);
+    }
+  };
+
+  const handleTabChange = (tab: DetailTab) => {
+    setActiveTab(tab);
+    if (tab === "past" && !pastLoaded) {
+      loadPastWorkouts(null, false);
     }
   };
 
@@ -307,19 +342,19 @@ export default function GroupDetailScreen() {
 
       {/* Tabs */}
       <View style={styles.tabRow}>
-        {(["workouts", "members"] as DetailTab[]).map((tab) => (
+        {(["upcoming", "past", "members"] as DetailTab[]).map((tab) => (
           <Pressable
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => handleTabChange(tab)}
           >
             <Ionicons
-              name={tab === "workouts" ? "barbell-outline" : "people-outline"}
+              name={tab === "upcoming" ? "time-outline" : tab === "past" ? "archive-outline" : "people-outline"}
               size={14}
               color={activeTab === tab ? Colors.primary[500] : Colors.text.secondary}
             />
             <Text style={[styles.tabLabel, activeTab === tab && styles.tabLabelActive]}>
-              {tab === "workouts" ? "Workouts" : "Members"}
+              {tab === "upcoming" ? "Upcoming" : tab === "past" ? "Past" : "Members"}
             </Text>
           </Pressable>
         ))}
@@ -328,16 +363,16 @@ export default function GroupDetailScreen() {
       <Gap size={16} />
 
       {/* Tab content */}
-      {activeTab === "workouts" ? (
+      {activeTab === "upcoming" ? (
         workouts.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="barbell-outline" size={40} color={Colors.text.secondary} />
             <Gap size={12} />
-            <Text style={styles.emptyTitle}>No workouts yet</Text>
+            <Text style={styles.emptyTitle}>No upcoming workouts</Text>
             <Text style={styles.emptySubtext}>
               {isAdmin
                 ? "Post your first group workout using the button below."
-                : "The admin hasn't posted any workouts yet."}
+                : "The admin hasn't posted any upcoming workouts yet."}
             </Text>
           </View>
         ) : (
@@ -345,6 +380,46 @@ export default function GroupDetailScreen() {
             {workouts.map((workout) => (
               <WorkoutItem key={workout.id} workout={workout} groupId={id} isAdmin={isAdmin} />
             ))}
+            <Gap size={160} />
+          </ScrollView>
+        )
+      ) : activeTab === "past" ? (
+        loadingPast ? (
+          <View style={styles.centerContainer}>
+            <ActivityIndicator size="large" color={Colors.primary[500]} />
+          </View>
+        ) : pastWorkouts.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="archive-outline" size={40} color={Colors.text.secondary} />
+            <Gap size={12} />
+            <Text style={styles.emptyTitle}>No past workouts</Text>
+            <Text style={styles.emptySubtext}>Completed group workouts will appear here.</Text>
+          </View>
+        ) : (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {pastWorkouts.map((workout) => (
+              <WorkoutItem key={workout.id} workout={workout} groupId={id} isAdmin={isAdmin} />
+            ))}
+            {pastHasMore && (
+              <>
+                <Gap size={12} />
+                <TouchableOpacity
+                  style={styles.loadMoreButton}
+                  onPress={() => loadPastWorkouts(pastCursor, true)}
+                  disabled={loadingMorePast}
+                  activeOpacity={0.75}
+                >
+                  {loadingMorePast ? (
+                    <ActivityIndicator size="small" color={Colors.primary[500]} />
+                  ) : (
+                    <>
+                      <Ionicons name="chevron-down" size={16} color={Colors.primary[500]} />
+                      <Text style={styles.loadMoreText}>Load More</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
             <Gap size={160} />
           </ScrollView>
         )
@@ -642,6 +717,22 @@ const styles = StyleSheet.create({
   adminBadgeText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: responsiveSize(10),
+    color: Colors.primary[500],
+  },
+  loadMoreButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.primary[500] + "40",
+    backgroundColor: Colors.background.secondary,
+  },
+  loadMoreText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
     color: Colors.primary[500],
   },
   emptyState: {

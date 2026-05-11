@@ -33,7 +33,7 @@ const PHASE_ACCENT: Record<string, string> = {
   IDLE: "#FF6B2C",
   COUNTDOWN: "#FF6B2C",
   WORK: "#FF6B2C",
-  REST: "#4ECDC4",
+  REST: "#EBEBF0",
   COMPLETE: "#34C759",
 };
 

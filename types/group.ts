@@ -58,6 +58,7 @@ export interface UserResult {
   userProfilePictureUrl?: string | null;
   submittedAt: Date;
   results: ResultData[];
+  comment?: string | null;
 }
 
 // Group Workout types
@@ -67,6 +68,7 @@ export interface GroupWorkout {
   title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
+  publishedAt?: string | null;
   wodType?: "structured" | "raw";
   rawText?: string | null;
   wods: WODData[];
@@ -87,6 +89,7 @@ export interface GroupWorkoutResponse {
 export interface GroupWorkoutsResponse {
   success: boolean;
   data: GroupWorkout[];
+  nextCursor?: string | null;
   message?: string;
 }
 
@@ -94,6 +97,7 @@ export interface CreateGroupWorkoutData {
   title?: string | null;
   scheduledFor: Date;
   notes?: string | null;
+  publishedAt?: string | null;
   wodType?: "structured" | "raw";
   rawText?: string | null;
   wods: WODData[];
@@ -106,6 +110,7 @@ export interface MemberSubmission {
   scheduledFor: Date;
   submittedAt: Date;
   results: import("./workout").ResultData[];
+  comment?: string | null;
   wods?: import("./workout").WODData[];
 }
 
@@ -140,32 +145,47 @@ export interface MemberDetailResponse {
 }
 
 // Leaderboard types
-export interface LeaderboardEntry {
-  rank: number;
-  userId: string;
-  userName: string;
-  profilePicture?: string | null;
+export interface LeaderboardPreviousBest {
   weight?: number | null;
   reps?: number | null;
   estimated1RM?: number | null;
   timeInSeconds?: number | null;
   distanceMeters?: number | null;
   calories?: number | null;
+  pace?: number | null;
+  achievedAt: string;
 }
 
-export interface LeaderboardExercise {
+export interface LeaderboardExerciseResult {
   wodIndex: number;
   wodName: string;
   exerciseIndex: number;
   exerciseName: string;
   trackingType: TrackingType;
-  rankings: LeaderboardEntry[];
+  reps?: number | null;
+  weight?: number | null;
+  timeInSeconds?: number | null;
+  distanceMeters?: number | null;
+  calories?: number | null;
+  isPR: boolean;
+  previousBest?: LeaderboardPreviousBest | null;
+}
+
+export interface LeaderboardUserResult {
+  userId: string;
+  userName: string;
+  profilePicture?: string | null;
+  submittedAt: string;
+  comment?: string | null;
+  exercises: LeaderboardExerciseResult[];
 }
 
 export interface LeaderboardData {
+  workoutId: string;
   workoutTitle: string;
-  scheduledFor: Date;
-  exercises: LeaderboardExercise[];
+  scheduledFor: string;
+  nextCursor?: string | null;
+  results: LeaderboardUserResult[];
 }
 
 export interface LeaderboardResponse {
