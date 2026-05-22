@@ -96,6 +96,7 @@ export const authService = {
     try {
       const response = await apiClient.post<LogoutResponse>(
         API_ENDPOINTS.AUTH.LOGOUT,
+        { refreshToken: apiClient.getRefreshToken() },
       );
 
       console.log("🔐 AuthService: Logout response:", response);
