@@ -1,0 +1,32 @@
+> **Context**
+> I'm rebuilding the home page of WODGoat (CrossFit-style training app, dark theme, orange accent `#FF6A1A`). The home page shows the athlete's training plan: a horizontal week strip, the day's workout card, a "make it up" callout for any missed past workout, and lightweight lists of upcoming + past workouts. A bottom tab bar already exists.
+>
+> Treat each day's workout as **one whole session** that contains multiple WOD blocks — never split a session into separate cards. WOD body text is the raw multi-line string the coach typed (e.g. `Back Squat 10 x 3 @ 90% up to max`); do NOT parse into structured exercise objects.
+>
+> **What to build**
+>
+> 1. **Week strip** — 7-day grid (Sun → Sat) showing the current week. Each cell:
+>    - Day letter ("MON") + day number ("20")
+>    - Status dot: green = done, red = missed, yellow = upcoming, gray = no workout, "REST" label for rest days
+>    - Today's cell is filled orange (`#FF6A1A`) with white text and shows both completion dots if the day has multiple states (e.g. partially done)
+>    - Tappable: tapping a day selects it as the "selected day" and the card below reflects that day
+>    - Default selection on load = today
+>
+> 2. **Selected-day workout card** — one large card. Sections top-to-bottom:
+>    - Eyebrow row: `Today` (or the day name) + the date, with a small status pill on the right (`UPCOMING` / `COMPLETED` / `MISSED`) — colored to match.
+>    - Card body (dark gradient + orange rim, radius 22, `border: 1px solid rgba(255,106,26,0.42)`):
+>      - Title line: the session title (e.g. "Pull day · Olympic mix"), 24px bold.
+>      - Sub line: `Coach {name} · {duration} · {N} WOD(s)`, faint.
+>      - WOD list (max 3 visible): for each WOD:
+>        - Big orange numeral `01` / `02` / `03` on the left (38px, JetBrains Mono, weight 900).
+>        - Right column: kind in bold 16px (`Strength`, `Olympic`, etc.), then the raw `body` string rendered with `white-space: pre-line` so newlines render as line breaks.
+>      - If there are more than 3 WODs: render `+ N more WODs` as a plain muted text label beneath the list (NOT a button — just a label that says how many extras exist).
+>      - **No** "Start workout" button, **no** progress bar, **no** "TODAY'S WORKOUT" eyebrow inside the card, **no** completion indicators.
+>
+> 3. **Make-up callout** — when the most recent past session has `status: 'missed'`, show a red-tinted strip below the today card:
+>    - Red icon, "MISSED · {day} {date}" eyebrow in red caps, session title, "N WOD · {dur}" subline.
+>    - Two buttons: primary red **"Make it up today"** + outline **"Skip"**.
+>    - Hide entirely if no missed sessions.
+>
+> 4. **Header** — week label ("May 2025 · Week 21") + greeting ("Hi, Yahyouh") on the left; streak pill on the right (flame icon + day count in orange-tinted capsule).
+
