@@ -994,17 +994,13 @@ export default function WorkoutDetailScreen() {
         wod={activeTimerWod}
         onMinimize={handleMinimize}
         onStop={handleTimerStop}
-        onWodComplete={() => {
-          if (!activeTimerWod) return;
-          const idx = wods.findIndex((w) => w.id === activeTimerWod.id);
-          if (idx !== -1) toggleWodCompleted(idx);
-        }}
       />
     )}
     {timerMinimized && (
       <MiniTimer
         onExpand={handleExpand}
         onPlayPause={timerIsRunning ? timerPause : timerResume}
+        onStop={handleTimerStop}
       />
     )}
     </View>
@@ -1107,7 +1103,7 @@ const styles = StyleSheet.create({
   },
   /* WOD accordion card */
   wodCardWrapper: {
-    marginBottom: 12,
+    marginBottom: 28,
   },
   wodCard: {
     backgroundColor: Colors.background.secondary,

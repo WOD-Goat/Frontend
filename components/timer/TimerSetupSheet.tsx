@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   UIManager,
   View,
 } from "react-native";
@@ -63,6 +64,14 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
     return () => { show.remove(); hide.remove(); };
   }, []);
 
+  useEffect(() => {
+    if (visible) {
+      slideAnim.setValue(0);
+      setStep(0);
+      setSelectedMode(null);
+    }
+  }, [visible]);
+
   const configureLayout = () =>
     LayoutAnimation.configureNext({
       duration: 260,
@@ -107,6 +116,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
       onBackButtonPress={handleClose}
       onBackdropPress={handleClose}
     >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={[styles.sheet, { paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom + 16 }]}>
 
         {/* Fixed header */}
@@ -209,6 +219,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
         )}
 
       </View>
+      </TouchableWithoutFeedback>
     </RNBottomSheet>
   );
 }

@@ -1,4 +1,4 @@
-import { FontFamilies, responsiveSize } from "@/constants";
+import { Colors, responsiveSize } from "@/constants";
 import {
   selectPrimaryTime,
   useTimerStore,
@@ -18,13 +18,22 @@ const PHASE_COLORS: Record<string, string> = {
 interface MiniTimerProps {
   onExpand: () => void;
   onPlayPause: () => void;
+  onStop: () => void;
 }
 
-export function MiniTimer({ onExpand, onPlayPause }: MiniTimerProps) {
+export function MiniTimer({ onExpand, onPlayPause, onStop }: MiniTimerProps) {
   const primaryTime = useTimerStore(selectPrimaryTime);
   const phase = useTimerStore((s) => s.display.phase);
   const isRunning = useTimerStore((s) => s.isRunning);
+  const isComplete = useTimerStore((s) => s.isComplete);
+  const currentRound = useTimerStore((s) => s.display.currentRound);
+  const totalRounds = useTimerStore((s) => s.display.totalRounds);
   const insets = useSafeAreaInsets();
+
+  const showRound = currentRound > 0 && !isComplete;
+  const roundLabel = totalRounds != null
+    ? `Round ${currentRound}/${totalRounds}`
+    : `Round ${currentRound}`;
 
   const phaseColor = PHASE_COLORS[phase] ?? "#FF6B2C";
 
@@ -34,23 +43,36 @@ export function MiniTimer({ onExpand, onPlayPause }: MiniTimerProps) {
       onPress={onExpand}
       activeOpacity={0.9}
     >
-      <View style={[styles.dot, { backgroundColor: phaseColor }]} />
-      <Text style={styles.time}>{primaryTime}</Text>
-      <TouchableOpacity
-        style={[styles.playPauseBtn, { backgroundColor: phaseColor }]}
-        onPress={(e) => {
-          e.stopPropagation();
-          onPlayPause();
-        }}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        activeOpacity={0.8}
-      >
-        <Ionicons
-          name={isRunning ? "pause" : "play"}
-          size={responsiveSize(14)}
-          color="#000"
-        />
-      </TouchableOpacity>
+      <View style={styles.centerContent}>
+        <Text style={styles.time}>{primaryTime}</Text>
+        {showRound && (
+          <Text style={styles.roundText}>{roundLabel}</Text>
+        )}
+      </View>
+
+      {isComplete ? (
+        <TouchableOpacity
+          style={styles.doneBtn}
+          onPress={(e) => { e.stopPropagation(); onStop(); }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="checkmark" size={responsiveSize(18)} color="#000" />
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          style={[styles.playPauseBtn, { backgroundColor: phaseColor }]}
+          onPress={(e) => { e.stopPropagation(); onPlayPause(); }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.8}
+        >
+          <Ionicons
+            name={isRunning ? "pause" : "play"}
+            size={responsiveSize(14)}
+            color="#000"
+          />
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 }
@@ -74,10 +96,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#3A3A3C",
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  centerContent: {
+    alignItems: "center",
+    gap: 2,
   },
   time: {
     fontFamily: "LeagueSpartan-Bold",
@@ -91,5 +112,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
+  },
+  roundText: {
+    fontFamily: "LeagueSpartan-Bold",
+    fontSize: responsiveSize(13),
+    color: Colors.primary[500],
+    letterSpacing: 0.6,
+  },
+  doneBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: PHASE_COLORS.COMPLETE,
   },
 });

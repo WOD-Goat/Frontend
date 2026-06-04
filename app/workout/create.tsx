@@ -28,6 +28,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TextStyle,
   TouchableOpacity,
   View,
@@ -602,67 +603,67 @@ export default function CreateWorkoutScreen() {
         <View style={styles.container}>
           {/* Workout Details */}
           <View style={styles.detailsSection}>
-            <Text style={[styles.sectionTitle, Typography.headingSmall]}>
-              Workout Details
-            </Text>
+            <TextInput
+              style={styles.titleInput}
+              placeholder="Name this workout..."
+              placeholderTextColor={Colors.text.tertiary}
+              value={title}
+              onChangeText={setTitle}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Title (optional)</Text>
-              <Input
-                placeholder='e.g., "Monday Metcon" or "Fran"'
-                value={title}
-                onChangeText={setTitle}
-              />
-            </View>
+            <View style={styles.fieldDivider} />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Scheduled Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>
-                  {scheduledFor.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </Text>
-              </TouchableOpacity>
-              {showDatePicker && (
-                <>
-                  <DateTimePicker
-                    value={scheduledFor}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    minimumDate={new Date()}
-                    onChange={(event, selectedDate) => {
-                      if (Platform.OS === "android") setShowDatePicker(false);
-                      if (selectedDate) setScheduledFor(selectedDate);
-                    }}
-                  />
-                  {Platform.OS === "ios" && (
-                    <TouchableOpacity
-                      style={styles.doneButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.doneButtonText}>Done</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-            </View>
+            <TouchableOpacity
+              style={styles.inlineFieldRow}
+              onPress={() => setShowDatePicker((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.dateRowLeft}>
+                <Ionicons name="calendar-outline" size={responsiveSize(18)} color={Colors.primary[500]} />
+                <View>
+                  <Text style={styles.inlineFieldLabel}>Scheduled for</Text>
+                  <Text style={styles.dateRowValue}>
+                    {scheduledFor.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={responsiveSize(14)} color={Colors.text.secondary} />
+            </TouchableOpacity>
+            {showDatePicker && (
+              <>
+                <DateTimePicker
+                  value={scheduledFor}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  minimumDate={new Date()}
+                  onChange={(event, selectedDate) => {
+                    if (Platform.OS === "android") setShowDatePicker(false);
+                    if (selectedDate) setScheduledFor(selectedDate);
+                  }}
+                />
+                {Platform.OS === "ios" && (
+                  <TouchableOpacity
+                    style={styles.doneButton}
+                    onPress={() => setShowDatePicker(false)}
+                  >
+                    <Text style={styles.doneButtonText}>Done</Text>
+                  </TouchableOpacity>
+                )}
+              </>
+            )}
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes (optional)</Text>
-              <BulletTextArea
-                placeholder="Any notes for this workout..."
-                value={notes}
-                onChangeText={setNotes}
-                minHeight={120}
-              />
-            </View>
+            <View style={styles.fieldDivider} />
+
+            <BulletTextArea
+              placeholder="Any notes for this workout..."
+              value={notes}
+              onChangeText={setNotes}
+              minHeight={100}
+            />
           </View>
 
           {/* Mode Toggle */}
@@ -1052,17 +1053,39 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: "500",
   } as TextStyle,
-  dateButton: {
-    backgroundColor: Colors.background.primary,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.text.tertiary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  } as ViewStyle,
-  dateText: {
+  titleInput: {
     color: Colors.text.primary,
-    fontSize: responsiveSize(16),
+    fontSize: responsiveSize(18),
+    fontWeight: "600",
+    paddingVertical: 4,
+  } as TextStyle,
+  fieldDivider: {
+    height: 1,
+    backgroundColor: Colors.text.tertiary,
+    opacity: 0.25,
+    marginVertical: 14,
+  } as ViewStyle,
+  inlineFieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  } as ViewStyle,
+  inlineFieldLabel: {
+    color: Colors.text.secondary,
+    fontSize: responsiveSize(13),
+    fontWeight: "500",
+    marginBottom: 2,
+  } as TextStyle,
+  dateRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  } as ViewStyle,
+  dateRowValue: {
+    color: Colors.text.primary,
+    fontSize: responsiveSize(14),
+    fontWeight: "500",
   } as TextStyle,
   doneButton: {
     backgroundColor: Colors.primary[500],

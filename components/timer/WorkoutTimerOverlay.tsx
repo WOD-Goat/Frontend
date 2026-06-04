@@ -46,7 +46,6 @@ interface WorkoutTimerOverlayProps {
   wod: TimerWOD | null;
   onMinimize: () => void;
   onStop: () => void;
-  onWodComplete: () => void;
 }
 
 export function WorkoutTimerOverlay({
@@ -54,7 +53,6 @@ export function WorkoutTimerOverlay({
   wod,
   onMinimize,
   onStop,
-  onWodComplete,
 }: WorkoutTimerOverlayProps) {
   // All hooks must run unconditionally before any early return
   const timer = useTimer();
@@ -258,25 +256,6 @@ export function WorkoutTimerOverlay({
                   ))
                 )}
 
-                <TouchableOpacity
-                  style={[
-                    styles.completeBtn,
-                    { borderColor: accentColor + "60" },
-                  ]}
-                  onPress={onWodComplete}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={responsiveSize(17)}
-                    color={accentColor}
-                  />
-                  <Text
-                    style={[styles.completeBtnText, { color: accentColor }]}
-                  >
-                    Mark WOD Complete
-                  </Text>
-                </TouchableOpacity>
               </ScrollView>
             )}
           </View>
@@ -374,19 +353,5 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.poppinsRegular,
     fontSize: FontSizes.bodyXS,
     lineHeight: 16,
-  },
-  completeBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 14,
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
-  },
-  completeBtnText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
   },
 });
