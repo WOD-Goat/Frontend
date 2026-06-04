@@ -25,7 +25,9 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
+  TextInput,
   TextStyle,
   TouchableOpacity,
   View,
@@ -545,129 +547,129 @@ export default function CreateGroupWorkoutScreen() {
         <View style={styles.container}>
           {/* Details section */}
           <View style={styles.detailsSection}>
-            <Text style={[styles.sectionTitle, Typography.headingSmall]}>
-              Workout Details
-            </Text>
+            <TextInput
+              style={styles.titleInput}
+              placeholder="Name this workout..."
+              placeholderTextColor={Colors.text.tertiary}
+              value={title}
+              onChangeText={setTitle}
+            />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Title (optional)</Text>
-              <Input
-                placeholder='e.g., "Murph" or "Monday Strength"'
-                value={title}
-                onChangeText={setTitle}
-              />
-            </View>
+            <View style={styles.fieldDivider} />
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Scheduled Date</Text>
-              <TouchableOpacity
-                style={styles.dateButton}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>
-                  {scheduledFor.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </Text>
-              </TouchableOpacity>
-              {showDatePicker && (
-                <>
-                  <DateTimePicker
-                    value={scheduledFor}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
-                    onChange={(_, selectedDate) => {
-                      if (Platform.OS === "android") setShowDatePicker(false);
-                      if (selectedDate) setScheduledFor(selectedDate);
-                    }}
-                  />
-                  {Platform.OS === "ios" && (
-                    <TouchableOpacity
-                      style={styles.doneButton}
-                      onPress={() => setShowDatePicker(false)}
-                    >
-                      <Text style={styles.doneButtonText}>Done</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Notes (optional)</Text>
-              <BulletTextArea
-                placeholder="Any notes for the group..."
-                value={notes}
-                onChangeText={setNotes}
-                minHeight={120}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Publish Timing</Text>
-              <View style={styles.modeToggle}>
-                <TouchableOpacity
-                  style={[styles.modeTab, publishMode === "now" && styles.modeTabActive]}
-                  onPress={() => setPublishMode("now")}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.modeTabText, publishMode === "now" && styles.modeTabTextActive]}>
-                    Publish Now
+            <TouchableOpacity
+              style={styles.inlineFieldRow}
+              onPress={() => setShowDatePicker((v) => !v)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.dateRowLeft}>
+                <Ionicons name="calendar-outline" size={responsiveSize(18)} color={Colors.primary[500]} />
+                <View>
+                  <Text style={styles.inlineFieldLabel}>Scheduled for</Text>
+                  <Text style={styles.dateRowValue}>
+                    {scheduledFor.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modeTab, publishMode === "scheduled" && styles.modeTabActive]}
-                  onPress={() => setPublishMode("scheduled")}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.modeTabText, publishMode === "scheduled" && styles.modeTabTextActive]}>
-                    Schedule
-                  </Text>
-                </TouchableOpacity>
+                </View>
               </View>
-              {publishMode === "scheduled" && (
-                <>
+              <Ionicons name="chevron-forward" size={responsiveSize(14)} color={Colors.text.secondary} />
+            </TouchableOpacity>
+            {showDatePicker && (
+              <>
+                <DateTimePicker
+                  value={scheduledFor}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "spinner" : "default"}
+                  onChange={(_, selectedDate) => {
+                    if (Platform.OS === "android") setShowDatePicker(false);
+                    if (selectedDate) setScheduledFor(selectedDate);
+                  }}
+                />
+                {Platform.OS === "ios" && (
                   <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowPublishDatePicker(true)}
+                    style={styles.doneButton}
+                    onPress={() => setShowDatePicker(false)}
                   >
-                    <Text style={styles.dateText}>
-                      {publishedAt.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </Text>
+                    <Text style={styles.doneButtonText}>Done</Text>
                   </TouchableOpacity>
-                  {showPublishDatePicker && (
-                    <>
-                      <DateTimePicker
-                        value={publishedAt}
-                        mode="date"
-                        display={Platform.OS === "ios" ? "spinner" : "default"}
-                        minimumDate={new Date()}
-                        onChange={(_, selectedDate) => {
-                          if (Platform.OS === "android") setShowPublishDatePicker(false);
-                          if (selectedDate) setPublishedAt(selectedDate);
-                        }}
-                      />
-                      {Platform.OS === "ios" && (
-                        <TouchableOpacity
-                          style={styles.doneButton}
-                          onPress={() => setShowPublishDatePicker(false)}
-                        >
-                          <Text style={styles.doneButtonText}>Done</Text>
-                        </TouchableOpacity>
-                      )}
-                    </>
-                  )}
-                </>
-              )}
+                )}
+              </>
+            )}
+
+            <View style={styles.fieldDivider} />
+
+            <BulletTextArea
+              placeholder="Leave notes for your group — scaling options, warm-up tips, reminders..."
+              value={notes}
+              onChangeText={setNotes}
+              minHeight={100}
+            />
+
+            <View style={styles.fieldDivider} />
+
+            <View style={styles.publishSwitchRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={styles.publishSwitchLabel}>Schedule Publishing</Text>
+                <Text style={styles.publishSwitchSubtext}>
+                  {publishMode === "now" ? "Visible to members right away" : "Visible from the selected date"}
+                </Text>
+              </View>
+              <Switch
+                value={publishMode === "scheduled"}
+                onValueChange={(val) => setPublishMode(val ? "scheduled" : "now")}
+                trackColor={{ false: Colors.background.primary, true: Colors.primary[500] }}
+                thumbColor={publishMode === "scheduled" ? "#ffffff" : Colors.text.secondary}
+              />
             </View>
+            {publishMode === "scheduled" && (
+              <>
+                <TouchableOpacity
+                  style={[styles.inlineFieldRow, { marginTop: 14 }]}
+                  onPress={() => setShowPublishDatePicker((v) => !v)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.dateRowLeft}>
+                    <Ionicons name="calendar-outline" size={responsiveSize(18)} color={Colors.primary[500]} />
+                    <View>
+                      <Text style={styles.inlineFieldLabel}>Publish on</Text>
+                      <Text style={styles.dateRowValue}>
+                        {publishedAt.toLocaleDateString("en-US", {
+                          weekday: "long",
+                          month: "long",
+                          day: "numeric",
+                        })}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={responsiveSize(14)} color={Colors.text.secondary} />
+                </TouchableOpacity>
+                {showPublishDatePicker && (
+                  <>
+                    <DateTimePicker
+                      value={publishedAt}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      minimumDate={new Date()}
+                      onChange={(_, selectedDate) => {
+                        if (Platform.OS === "android") setShowPublishDatePicker(false);
+                        if (selectedDate) setPublishedAt(selectedDate);
+                      }}
+                    />
+                    {Platform.OS === "ios" && (
+                      <TouchableOpacity
+                        style={styles.doneButton}
+                        onPress={() => setShowPublishDatePicker(false)}
+                      >
+                        <Text style={styles.doneButtonText}>Done</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+              </>
+            )}
           </View>
 
           {/* Mode Toggle */}
@@ -1079,5 +1081,64 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   freeTextInput: {
     color: Colors.text.primary,
+  } as TextStyle,
+  publishSwitchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  } as ViewStyle,
+  publishSwitchLabel: {
+    color: Colors.text.primary,
+    fontSize: responsiveSize(14),
+    fontWeight: "600",
+  } as TextStyle,
+  publishSwitchSubtext: {
+    color: Colors.text.secondary,
+    fontSize: responsiveSize(12),
+    marginTop: 2,
+  } as TextStyle,
+  titleInput: {
+    color: Colors.text.primary,
+    fontSize: responsiveSize(18),
+    fontWeight: "600",
+    paddingVertical: 4,
+  } as TextStyle,
+  fieldDivider: {
+    height: 1,
+    backgroundColor: Colors.text.tertiary,
+    opacity: 0.25,
+    marginVertical: 14,
+  } as ViewStyle,
+  inlineFieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  } as ViewStyle,
+  inlineFieldLabel: {
+    color: Colors.text.secondary,
+    fontSize: responsiveSize(13),
+    fontWeight: "500",
+    marginBottom: 2,
+  } as TextStyle,
+  inlineFieldRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  } as ViewStyle,
+  inlineFieldValue: {
+    color: Colors.text.primary,
+    fontSize: responsiveSize(13),
+    fontWeight: "500",
+  } as TextStyle,
+  dateRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  } as ViewStyle,
+  dateRowValue: {
+    color: Colors.text.primary,
+    fontSize: responsiveSize(15),
+    fontWeight: "600",
   } as TextStyle,
 });

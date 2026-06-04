@@ -1,10 +1,11 @@
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import type { WODConfig, WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Keyboard,
   LayoutAnimation,
   Platform,
   Pressable,
@@ -48,10 +49,19 @@ interface TimerSetupSheetProps {
 
 export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheetProps) {
   const [step, setStep] = useState<0 | 1>(0);
-  const [selectedMode, setSelectedMode] = useState<WODMode>("FOR_TIME");
+  const [selectedMode, setSelectedMode] = useState<WODMode | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const formRef = useRef<WODConfigFormHandle>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const show = Keyboard.addListener(showEvent, (e) => setKeyboardHeight(e.endCoordinates.height));
+    const hide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const configureLayout = () =>
     LayoutAnimation.configureNext({
@@ -87,6 +97,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
   const handleClose = () => {
     slideAnim.setValue(0);
     setStep(0);
+    setSelectedMode(null);
     onClose();
   };
 
@@ -96,7 +107,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
       onBackButtonPress={handleClose}
       onBackdropPress={handleClose}
     >
-      <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.sheet, { paddingBottom: keyboardHeight > 0 ? keyboardHeight : insets.bottom + 16 }]}>
 
         {/* Fixed header */}
         <View style={styles.headerRow}>
@@ -176,7 +187,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
                 </View>
                 <View style={styles.sectionGap} />
                 <View style={styles.configCard}>
-                  <WODConfigForm ref={formRef} mode={selectedMode} onConfirm={onConfirm} />
+                  <WODConfigForm ref={formRef} mode={selectedMode!} onConfirm={onConfirm} />
                 </View>
               </View>
             )}
@@ -191,7 +202,7 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
               onPress={() => formRef.current?.confirm()}
               activeOpacity={0.85}
             >
-              <Ionicons name="timer-outline" size={responsiveSize(20)} color="#000" />
+              <Ionicons name="play" size={responsiveSize(18)} color="#fff" />
               <Text style={styles.startBtnText}>Start Timer</Text>
             </TouchableOpacity>
           </View>
@@ -279,7 +290,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2.5,
   },
   sectionGap: {
-    height: 10,
+    height: 6,
   },
 
   /* Mode cards */
@@ -368,7 +379,7 @@ const styles = StyleSheet.create({
   startBtnText: {
     fontFamily: FontFamilies.spartanBold,
     fontSize: FontSizes.bodyLG,
-    color: "#000",
+    color: "#fff",
     letterSpacing: 0.5,
   },
 });

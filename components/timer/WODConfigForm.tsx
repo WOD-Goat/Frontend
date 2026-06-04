@@ -589,7 +589,9 @@ export const WODConfigForm = forwardRef<WODConfigFormHandle, WODConfigFormProps>
 
 const s = StyleSheet.create({
   formContent: {
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 18,
     gap: 2,
   },
 
