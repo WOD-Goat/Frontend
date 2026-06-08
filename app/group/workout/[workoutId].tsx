@@ -1,18 +1,27 @@
 import { groupsService } from "@/api/services";
+import { tabIcons } from "@/assets/images";
 import { BulletTextArea, Button, Gap, Page } from "@/components";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
+import { MiniTimer } from "@/components/timer/MiniTimer";
+import { TimerSetupSheet } from "@/components/timer/TimerSetupSheet";
+import { WorkoutTimerOverlay } from "@/components/timer/WorkoutTimerOverlay";
+import type { TimerWOD } from "@/components/timer/WorkoutTimerOverlay";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { audioService } from "@/lib/timer/services/AudioService";
+import type { WODConfig } from "@/lib/timer/types";
+import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
 import type { GroupWorkout, ResultData, WODData } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image,
   LayoutAnimation,
   Platform,
   StyleSheet,
@@ -53,6 +62,7 @@ function ExerciseCard({
   hideMarkComplete,
   onToggle,
   onMarkComplete,
+  onOpenTimer,
 }: {
   wod: WODData;
   wodIndex: number;
@@ -61,6 +71,7 @@ function ExerciseCard({
   hideMarkComplete?: boolean;
   onToggle: () => void;
   onMarkComplete: () => void;
+  onOpenTimer?: () => void;
 }) {
   const rotateAnim = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
 
@@ -80,6 +91,7 @@ function ExerciseCard({
   const accentColor = isCompleted ? Colors.success[500] : Colors.primary[500];
 
   return (
+    <View style={styles.wodCardWrapper}>
     <View
       style={[
         styles.wodCard,
@@ -193,6 +205,23 @@ function ExerciseCard({
         </View>
       )}
     </View>
+
+    {/* Timer corner button — floats outside card top-right */}
+    {!hideMarkComplete && onOpenTimer && (
+      <TouchableOpacity
+        style={styles.timerCornerBtn}
+        onPress={onOpenTimer}
+        activeOpacity={0.85}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Image
+          source={tabIcons.timer}
+          style={styles.timerCornerIcon}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+    )}
+    </View>
   );
 }
 
@@ -216,6 +245,7 @@ export default function GroupWorkoutDetailScreen() {
     workoutId: string;
     groupId: string;
   }>();
+  const navigation = useNavigation();
   const [workout, setWorkout] = useState<GroupWorkout | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
@@ -228,6 +258,91 @@ export default function GroupWorkoutDetailScreen() {
   const [showPublishDatePicker, setShowPublishDatePicker] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
+
+  // ─── Workout timer state ───────────────────────────────────────────────────
+  const [timerSetupVisible, setTimerSetupVisible] = useState(false);
+  const [timerOverlayVisible, setTimerOverlayVisible] = useState(false);
+  const [timerMinimized, setTimerMinimized] = useState(false);
+  const [activeTimerWod, setActiveTimerWod] = useState<TimerWOD | null>(null);
+  const timerIsRunning = useTimerStore((s) => s.isRunning);
+  const timerHasStarted = useTimerStore((s) => s.hasStarted);
+  const timerIsComplete = useTimerStore((s) => s.isComplete);
+  const timerConfigure = useTimerStore((s) => s.configure);
+  const timerStart = useTimerStore((s) => s.start);
+  const timerStop = useTimerStore((s) => s.stop);
+  const timerReset = useTimerStore((s) => s.reset);
+  const timerPause = useTimerStore((s) => s.pause);
+  const timerResume = useTimerStore((s) => s.resume);
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !timerOverlayVisible });
+  }, [timerOverlayVisible, navigation]);
+
+  const handleOpenTimerSetup = useCallback(
+    (wod: WOD) => {
+      const timerWod: TimerWOD = {
+        id: wod.id,
+        title: wod.title,
+        exercises: wod.exercises,
+        rawText: wod.rawText,
+        completed: wod.completed,
+      };
+      if ((timerIsRunning || timerHasStarted) && !timerIsComplete) {
+        Alert.alert(
+          "Timer Already Running",
+          "A timer is already running. Stop it to start a new one.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Stop Timer",
+              style: "destructive",
+              onPress: () => {
+                timerStop();
+                setTimerOverlayVisible(false);
+                setTimerMinimized(false);
+                setActiveTimerWod(timerWod);
+                setTimerSetupVisible(true);
+              },
+            },
+          ],
+        );
+        return;
+      }
+      setActiveTimerWod(timerWod);
+      setTimerSetupVisible(true);
+    },
+    [timerIsRunning, timerHasStarted, timerIsComplete, timerStop],
+  );
+
+  const handleTimerStart = useCallback(
+    async (config: WODConfig) => {
+      await audioService.init();
+      timerConfigure(config);
+      timerStart();
+      setTimerSetupVisible(false);
+      setTimerOverlayVisible(true);
+      setTimerMinimized(false);
+    },
+    [timerConfigure, timerStart],
+  );
+
+  const handleTimerStop = useCallback(() => {
+    timerStop();
+    timerReset();
+    setTimerOverlayVisible(false);
+    setTimerMinimized(false);
+    setActiveTimerWod(null);
+  }, [timerStop, timerReset]);
+
+  const handleMinimize = useCallback(() => {
+    setTimerOverlayVisible(false);
+    setTimerMinimized(true);
+  }, []);
+
+  const handleExpand = useCallback(() => {
+    setTimerOverlayVisible(true);
+    setTimerMinimized(false);
+  }, []);
 
   useEffect(() => {
     if (workoutId && groupId) loadWorkout();
@@ -677,6 +792,7 @@ export default function GroupWorkoutDetailScreen() {
   ) : null;
 
   return (
+    <View style={{ flex: 1 }}>
     <Page
       showBackButton={true}
       title={"Workout Details"}
@@ -865,22 +981,30 @@ export default function GroupWorkoutDetailScreen() {
                   ]}
                 />
               </View>
-              <Gap size={12} />
+              <Gap size={24} />
             </>
           )}
 
-          {workout.wods.map((wod, i) => (
-            <ExerciseCard
-              key={i}
-              wod={wod}
-              wodIndex={i}
-              isExpanded={expandedWods[i] ?? false}
-              isCompleted={wods[i]?.completed ?? false}
-              hideMarkComplete={submitted}
-              onToggle={() => toggleWodExpanded(i)}
-              onMarkComplete={() => toggleWodCompleted(i)}
-            />
-          ))}
+          {workout.wods.map((wod, i) => {
+            const wodState = wods[i];
+            return (
+              <ExerciseCard
+                key={i}
+                wod={wod}
+                wodIndex={i}
+                isExpanded={expandedWods[i] ?? false}
+                isCompleted={wodState?.completed ?? false}
+                hideMarkComplete={submitted}
+                onToggle={() => toggleWodExpanded(i)}
+                onMarkComplete={() => toggleWodCompleted(i)}
+                onOpenTimer={
+                  !submitted && wodState
+                    ? () => handleOpenTimerSetup(wodState)
+                    : undefined
+                }
+              />
+            );
+          })}
 
           {submitted && workout.userResult && (workout.userResult.results?.length > 0 || workout.userResult.comment) && (
             <>
@@ -918,6 +1042,31 @@ export default function GroupWorkoutDetailScreen() {
         </>
       )}
     </Page>
+
+    {/* ── Timer setup sheet ── */}
+    <TimerSetupSheet
+      visible={timerSetupVisible}
+      onClose={() => setTimerSetupVisible(false)}
+      onConfirm={handleTimerStart}
+    />
+
+    {/* ── Timer overlay + mini pill ── */}
+    {(timerOverlayVisible || timerMinimized) && (
+      <WorkoutTimerOverlay
+        visible={timerOverlayVisible}
+        wod={activeTimerWod}
+        onMinimize={handleMinimize}
+        onStop={handleTimerStop}
+      />
+    )}
+    {timerMinimized && (
+      <MiniTimer
+        onExpand={handleExpand}
+        onPlayPause={timerIsRunning ? timerPause : timerResume}
+        onStop={handleTimerStop}
+      />
+    )}
+    </View>
   );
 }
 
@@ -931,7 +1080,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 8,
   },
-  workoutHeaderTop: { flexDirection: "row", alignItems: "center" },
+  workoutHeaderTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   groupBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -1002,14 +1151,36 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   /* WOD accordion card */
+  wodCardWrapper: {
+    marginBottom: 28,
+  },
   wodCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 14,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
     borderLeftWidth: 3,
     overflow: "hidden",
+  },
+  timerCornerBtn: {
+    position: "absolute",
+    top: -16,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary[500],
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  timerCornerIcon: {
+    width: 20,
+    height: 20,
   },
   wodCardCompleted: {
     borderColor: Colors.success[500] + "35",

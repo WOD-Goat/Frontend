@@ -1,17 +1,26 @@
+import { tabIcons } from "@/assets/images";
 import { workoutsService } from "@/api/services";
 import { BulletTextArea, Button, Gap, Page } from "@/components";
 import { useToast } from "@/components/lib/toast/ToastProvider";
+import { MiniTimer } from "@/components/timer/MiniTimer";
+import { TimerSetupSheet } from "@/components/timer/TimerSetupSheet";
+import { WorkoutTimerOverlay } from "@/components/timer/WorkoutTimerOverlay";
+import type { TimerWOD } from "@/components/timer/WorkoutTimerOverlay";
 import WorkoutView from "@/components/workouts/WorkoutView";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
+import { audioService } from "@/lib/timer/services/AudioService";
+import type { WODConfig } from "@/lib/timer/types";
+import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
 import type { AssignedWorkoutData, ResultData, WODData } from "@/types";
 import { parseFirebaseDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { router, useLocalSearchParams, useNavigation } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image,
   LayoutAnimation,
   Platform,
   StyleSheet,
@@ -52,6 +61,7 @@ function ExerciseCard({
   hideMarkComplete,
   onToggle,
   onMarkComplete,
+  onOpenTimer,
 }: {
   wod: WODData;
   wodIndex: number;
@@ -60,6 +70,7 @@ function ExerciseCard({
   hideMarkComplete?: boolean;
   onToggle: () => void;
   onMarkComplete: () => void;
+  onOpenTimer?: () => void;
 }) {
   const rotateAnim = useRef(new Animated.Value(isExpanded ? 1 : 0)).current;
 
@@ -79,76 +90,77 @@ function ExerciseCard({
   const accentColor = isCompleted ? Colors.success[500] : Colors.primary[500];
 
   return (
-    <View
-      style={[
-        styles.wodCard,
-        { borderLeftColor: accentColor },
-        isCompleted && styles.wodCardCompleted,
-      ]}
-    >
-      {/* Mark as Completed */}
-      {!hideMarkComplete && (
+    <View style={styles.wodCardWrapper}>
+      <View
+        style={[
+          styles.wodCard,
+          { borderLeftColor: accentColor },
+          isCompleted && styles.wodCardCompleted,
+        ]}
+      >
+        {/* Mark as Completed */}
+        {!hideMarkComplete && (
+          <TouchableOpacity
+            style={[
+              styles.markCompleteRow,
+              isCompleted && styles.markCompleteRowDone,
+            ]}
+            onPress={onMarkComplete}
+            activeOpacity={0.75}
+          >
+            <Ionicons
+              name={isCompleted ? "checkmark-circle" : "ellipse-outline"}
+              size={17}
+              color={isCompleted ? Colors.success[500] : Colors.text.secondary}
+            />
+            <Text
+              style={[
+                styles.markCompleteText,
+                isCompleted && styles.markCompleteTextDone,
+              ]}
+            >
+              {isCompleted ? "Completed" : "Mark as Completed"}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* WOD name header – tappable accordion toggle */}
         <TouchableOpacity
           style={[
-            styles.markCompleteRow,
-            isCompleted && styles.markCompleteRowDone,
+            styles.wodCardHeader,
+            !hideMarkComplete && { borderTopColor: Colors.neutral[700] },
           ]}
-          onPress={onMarkComplete}
-          activeOpacity={0.75}
+          onPress={onToggle}
+          activeOpacity={0.7}
         >
-          <Ionicons
-            name={isCompleted ? "checkmark-circle" : "ellipse-outline"}
-            size={17}
-            color={isCompleted ? Colors.success[500] : Colors.text.secondary}
-          />
           <Text
             style={[
-              styles.markCompleteText,
-              isCompleted && styles.markCompleteTextDone,
+              styles.wodCardTitle,
+              isCompleted && { color: Colors.success[500] },
             ]}
           >
-            {isCompleted ? "Completed" : "Mark as Completed"}
+            {wod.name || `WOD ${wodIndex + 1}`}
           </Text>
+          <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
+            <Ionicons
+              name="chevron-down"
+              size={20}
+              color={isCompleted ? Colors.success[500] : Colors.text.secondary}
+            />
+          </Animated.View>
         </TouchableOpacity>
-      )}
 
-      {/* WOD name header – tappable accordion toggle */}
-      <TouchableOpacity
-        style={[
-          styles.wodCardHeader,
-          !hideMarkComplete && { borderTopColor: Colors.neutral[700] },
-        ]}
-        onPress={onToggle}
-        activeOpacity={0.7}
-      >
-        <Text
-          style={[
-            styles.wodCardTitle,
-            isCompleted && { color: Colors.success[500] },
-          ]}
-        >
-          {wod.name || `WOD ${wodIndex + 1}`}
-        </Text>
-        <Animated.View style={{ transform: [{ rotate: chevronRotation }] }}>
-          <Ionicons
-            name="chevron-down"
-            size={20}
-            color={isCompleted ? Colors.success[500] : Colors.text.secondary}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-
-      {/* Expandable content */}
-      {isExpanded && (
-        <View style={styles.wodCardContent}>
-          {wod.rawText ? (
-            <Text style={styles.wodRawText}>{wod.rawText}</Text>
-          ) : (
-            wod.exercises.map((ex, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.exerciseRow,
+        {/* Expandable content */}
+        {isExpanded && (
+          <View style={styles.wodCardContent}>
+            {wod.rawText ? (
+              <Text style={styles.wodRawText}>{wod.rawText}</Text>
+            ) : (
+              wod.exercises.map((ex, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.exerciseRow,
                   i < wod.exercises.length - 1 && styles.exerciseRowBorder,
                 ]}
               >
@@ -193,6 +205,23 @@ function ExerciseCard({
         </View>
       )}
     </View>
+
+    {/* Timer corner button — floats outside card top-right */}
+    {!hideMarkComplete && onOpenTimer && (
+      <TouchableOpacity
+        style={styles.timerCornerBtn}
+        onPress={onOpenTimer}
+        activeOpacity={0.85}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Image
+          source={tabIcons.timer}
+          style={styles.timerCornerIcon}
+          resizeMode="contain"
+        />
+      </TouchableOpacity>
+    )}
+  </View>
   );
 }
 
@@ -214,6 +243,7 @@ const formatResultValue = (r: ResultData): string => {
 export default function WorkoutDetailScreen() {
   const params = useLocalSearchParams();
   const { id } = params;
+  const navigation = useNavigation();
 
   const [workout, setWorkout] = useState<AssignedWorkoutData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -225,6 +255,91 @@ export default function WorkoutDetailScreen() {
 
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
+
+  // ─── Workout timer state ───────────────────────────────────────────────────
+  const [timerSetupVisible, setTimerSetupVisible] = useState(false);
+  const [timerOverlayVisible, setTimerOverlayVisible] = useState(false);
+  const [timerMinimized, setTimerMinimized] = useState(false);
+  const [activeTimerWod, setActiveTimerWod] = useState<TimerWOD | null>(null);
+  const timerIsRunning = useTimerStore((s) => s.isRunning);
+  const timerHasStarted = useTimerStore((s) => s.hasStarted);
+  const timerIsComplete = useTimerStore((s) => s.isComplete);
+  const timerConfigure = useTimerStore((s) => s.configure);
+  const timerStart = useTimerStore((s) => s.start);
+  const timerStop = useTimerStore((s) => s.stop);
+  const timerReset = useTimerStore((s) => s.reset);
+  const timerPause = useTimerStore((s) => s.pause);
+  const timerResume = useTimerStore((s) => s.resume);
+
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !timerOverlayVisible });
+  }, [timerOverlayVisible, navigation]);
+
+  const handleOpenTimerSetup = useCallback(
+    (wod: WOD) => {
+      const timerWod: TimerWOD = {
+        id: wod.id,
+        title: wod.title,
+        exercises: wod.exercises,
+        rawText: wod.rawText,
+        completed: wod.completed,
+      };
+      if ((timerIsRunning || timerHasStarted) && !timerIsComplete) {
+        Alert.alert(
+          "Timer Already Running",
+          "A timer is already running. Stop it to start a new one.",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Stop Timer",
+              style: "destructive",
+              onPress: () => {
+                timerStop();
+                setTimerOverlayVisible(false);
+                setTimerMinimized(false);
+                setActiveTimerWod(timerWod);
+                setTimerSetupVisible(true);
+              },
+            },
+          ],
+        );
+        return;
+      }
+      setActiveTimerWod(timerWod);
+      setTimerSetupVisible(true);
+    },
+    [timerIsRunning, timerHasStarted, timerIsComplete, timerStop],
+  );
+
+  const handleTimerStart = useCallback(
+    async (config: WODConfig) => {
+      await audioService.init();
+      timerConfigure(config);
+      timerStart();
+      setTimerSetupVisible(false);
+      setTimerOverlayVisible(true);
+      setTimerMinimized(false);
+    },
+    [timerConfigure, timerStart],
+  );
+
+  const handleTimerStop = useCallback(() => {
+    timerStop();
+    timerReset();
+    setTimerOverlayVisible(false);
+    setTimerMinimized(false);
+    setActiveTimerWod(null);
+  }, [timerStop, timerReset]);
+
+  const handleMinimize = useCallback(() => {
+    setTimerOverlayVisible(false);
+    setTimerMinimized(true);
+  }, []);
+
+  const handleExpand = useCallback(() => {
+    setTimerOverlayVisible(true);
+    setTimerMinimized(false);
+  }, []);
 
   useEffect(() => {
     if (id && typeof id === "string") {
@@ -578,6 +693,7 @@ export default function WorkoutDetailScreen() {
   const scheduledDate = parseFirebaseDate(workout.scheduledFor);
 
   return (
+    <View style={{ flex: 1 }}>
     <Page
       title={workout.title || "Workout Details"}
       showBackButton={true}
@@ -671,6 +787,7 @@ export default function WorkoutDetailScreen() {
         )
       }
     >
+      {/* ── Workout content ── */}
       {isEditingWorkout ? (
         workout.wodType === "raw" ? (
           <View style={styles.editRawContainer}>
@@ -801,22 +918,30 @@ export default function WorkoutDetailScreen() {
                   ]}
                 />
               </View>
-              <Gap size={12} />
+              <Gap size={24} />
             </>
           )}
 
-          {workout.wods.map((wod, i) => (
-            <ExerciseCard
-              key={i}
-              wod={wod}
-              wodIndex={i}
-              isExpanded={expandedWods[i] ?? false}
-              isCompleted={wods[i]?.completed ?? false}
-              hideMarkComplete={workout.completed}
-              onToggle={() => toggleWodExpanded(i)}
-              onMarkComplete={() => toggleWodCompleted(i)}
-            />
-          ))}
+          {workout.wods.map((wod, i) => {
+            const wodState = wods[i];
+            return (
+              <ExerciseCard
+                key={i}
+                wod={wod}
+                wodIndex={i}
+                isExpanded={expandedWods[i] ?? false}
+                isCompleted={wodState?.completed ?? false}
+                hideMarkComplete={workout.completed}
+                onToggle={() => toggleWodExpanded(i)}
+                onMarkComplete={() => toggleWodCompleted(i)}
+                onOpenTimer={
+                  !workout.completed && wodState
+                    ? () => handleOpenTimerSetup(wodState)
+                    : undefined
+                }
+              />
+            );
+          })}
 
           {workout.completed && (workout.results?.length > 0 || workout.comment) && (
             <>
@@ -854,6 +979,31 @@ export default function WorkoutDetailScreen() {
         </>
       )}
     </Page>
+
+    {/* ── Timer setup sheet ── */}
+    <TimerSetupSheet
+      visible={timerSetupVisible}
+      onClose={() => setTimerSetupVisible(false)}
+      onConfirm={handleTimerStart}
+    />
+
+    {/* ── Timer overlay + mini pill ── */}
+    {(timerOverlayVisible || timerMinimized) && (
+      <WorkoutTimerOverlay
+        visible={timerOverlayVisible}
+        wod={activeTimerWod}
+        onMinimize={handleMinimize}
+        onStop={handleTimerStop}
+      />
+    )}
+    {timerMinimized && (
+      <MiniTimer
+        onExpand={handleExpand}
+        onPlayPause={timerIsRunning ? timerPause : timerResume}
+        onStop={handleTimerStop}
+      />
+    )}
+    </View>
   );
 }
 
@@ -952,14 +1102,36 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   /* WOD accordion card */
+  wodCardWrapper: {
+    marginBottom: 28,
+  },
   wodCard: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 14,
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
     borderLeftWidth: 3,
     overflow: "hidden",
+  },
+  timerCornerBtn: {
+    position: "absolute",
+    top: -16,
+    right: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.primary[500],
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 6,
+  },
+  timerCornerIcon: {
+    width: 20,
+    height: 20,
   },
   wodCardCompleted: {
     borderColor: Colors.success[500] + "35",
