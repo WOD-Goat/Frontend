@@ -58,8 +58,6 @@ export const TimerDisplay = memo(function TimerDisplay({
       {/* Primary clock — largest element on screen */}
       <Text
         style={[styles.primaryTime, { color: theme.primaryText }]}
-        adjustsFontSizeToFit
-        minimumFontScale={0.5}
         numberOfLines={1}
       >
         {primaryTime}
@@ -114,12 +112,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  // Target: readable from 5+ meters. 128pt at full size on a 390pt-wide screen.
+  // Target: readable from 5+ meters. 116pt fits "00:00" on all supported widths
+  // without adjustsFontSizeToFit, which caused a shrink flash on phase transition.
   primaryTime: {
     fontFamily: "LeagueSpartan-Bold",
-    fontSize: responsiveSize(128),
+    fontSize: responsiveSize(116),
     letterSpacing: -4,
-    lineHeight: responsiveSize(130),
+    lineHeight: responsiveSize(120),
     textAlign: "center",
     width: SCREEN_WIDTH - 32,
   },

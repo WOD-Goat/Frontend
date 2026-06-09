@@ -623,11 +623,7 @@ export default function CreateWorkoutScreen() {
                 <View>
                   <Text style={styles.inlineFieldLabel}>Scheduled for</Text>
                   <Text style={styles.dateRowValue}>
-                    {scheduledFor.toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {scheduledFor.toLocaleDateString("en-GB")}
                   </Text>
                 </View>
               </View>

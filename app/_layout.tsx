@@ -3,6 +3,7 @@ import { useFonts } from "expo-font";
 import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as Updates from "expo-updates";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
 import Purchases from "react-native-purchases";
@@ -30,6 +31,7 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [otaChecked, setOtaChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [networkChecked, setNetworkChecked] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
@@ -77,6 +79,28 @@ export default function RootLayout() {
     } catch (error) {
       console.error("❌ RevenueCat: Failed to configure SDK", error);
     }
+  }, []);
+
+  // Check for OTA updates and reload immediately if one is available
+  useEffect(() => {
+    if (__DEV__) {
+      setOtaChecked(true);
+      return;
+    }
+    const checkOtaUpdate = async () => {
+      try {
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+          return; // app restarts — nothing below runs
+        }
+      } catch {
+        // network failure or unsupported environment — continue normally
+      }
+      setOtaChecked(true);
+    };
+    checkOtaUpdate();
   }, []);
 
   // Check if a store update is required
@@ -197,7 +221,7 @@ export default function RootLayout() {
 
   // Hide splash screen and navigate when everything is ready
   useEffect(() => {
-    if ((loaded || error) && imagesLoaded && authChecked && networkChecked) {
+    if ((loaded || error) && imagesLoaded && authChecked && networkChecked && otaChecked) {
       SplashScreen.hideAsync();
 
       if (!isOnline) return;
@@ -222,7 +246,7 @@ export default function RootLayout() {
     }
   }, [loaded, error, imagesLoaded, authChecked, networkChecked, isAuthenticated]);
 
-  if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked) {
+  if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked || !otaChecked) {
     return null;
   }
 

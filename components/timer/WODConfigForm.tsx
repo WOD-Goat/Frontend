@@ -79,9 +79,17 @@ function TimeInput({
 
   const pushDigit = (d: number) => {
     const next: Digits = [digits[1], digits[2], digits[3], d];
-    if (next[2] * 10 + next[3] > 59) return;
     setDigits(next);
     onChange(fromDigits(next));
+  };
+
+  const normalizeOnBlur = () => {
+    // Clamp seconds > 59 by rolling them into minutes (e.g. "00:80" → "01:20").
+    const secs = fromDigits(digits);
+    const fixed = toDigits(Math.min(secs, 5999));
+    setDigits(fixed);
+    onChange(fromDigits(fixed));
+    setIsFocused(false);
   };
 
   const backspace = () => {
@@ -149,7 +157,7 @@ function TimeInput({
               else if (/^[0-9]$/.test(key)) pushDigit(Number(key));
             }}
             onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            onBlur={normalizeOnBlur}
             caretHidden
           />
         </Pressable>

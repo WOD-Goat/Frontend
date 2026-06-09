@@ -826,12 +826,7 @@ export default function GroupWorkoutDetailScreen() {
                   onPress={() => setShowPublishDatePicker(true)}
                 >
                   <Text style={styles.dateButtonText}>
-                    {publishedAt.toLocaleDateString("en-US", {
-                      weekday: "short",
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {publishedAt.toLocaleDateString("en-GB")}
                   </Text>
                 </TouchableOpacity>
                 {showPublishDatePicker && (

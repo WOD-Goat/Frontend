@@ -485,12 +485,7 @@ export default function CreatePRScreen() {
                 activeOpacity={0.7}
               >
                 <Text style={styles.dateBtnText}>
-                  {achievedAt.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {achievedAt.toLocaleDateString("en-GB")}
                 </Text>
                 <Ionicons
                   name="chevron-down"

@@ -567,11 +567,7 @@ export default function CreateGroupWorkoutScreen() {
                 <View>
                   <Text style={styles.inlineFieldLabel}>Scheduled for</Text>
                   <Text style={styles.dateRowValue}>
-                    {scheduledFor.toLocaleDateString("en-US", {
-                      weekday: "long",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    {scheduledFor.toLocaleDateString("en-GB")}
                   </Text>
                 </View>
               </View>
@@ -636,11 +632,7 @@ export default function CreateGroupWorkoutScreen() {
                     <View>
                       <Text style={styles.inlineFieldLabel}>Publish on</Text>
                       <Text style={styles.dateRowValue}>
-                        {publishedAt.toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
+                        {publishedAt.toLocaleDateString("en-GB")}
                       </Text>
                     </View>
                   </View>
