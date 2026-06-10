@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     CREATE: "/api/workouts",
     GET_ALL: "/api/workouts",
     GET_HISTORY: "/api/workouts/history",
+    GET_WEEK: "/api/workouts/week",
     GET_BY_ID: (id: string) => `/api/workouts/${id}`,
     MARK_AS_COMPLETED: (id: string) => `/api/workouts/${id}/complete`,
     UPDATE: (id: string) => `/api/workouts/${id}`,

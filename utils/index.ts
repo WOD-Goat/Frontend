@@ -1,6 +1,13 @@
 export {
     formatDate,
     formatShortDate,
+    getDayLetter,
+    getWeekDays,
+    getWeekEnd,
+    getWeekLabel,
+    getWeekNumber,
+    getWeekStart,
+    isSameDay,
     isToday,
     isYesterday,
     parseFirebaseDate

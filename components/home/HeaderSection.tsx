@@ -6,6 +6,7 @@ import { StyleSheet, Text, View } from "react-native";
 interface HeaderSectionProps {
   userName: string;
   streakDays?: number;
+  weekLabel?: string;
 }
 
 const getGreeting = (): string => {
@@ -33,6 +34,7 @@ const getMotivation = (): string => {
 export default function HeaderSection({
   userName,
   streakDays = 0,
+  weekLabel,
 }: HeaderSectionProps) {
   return (
     <View style={styles.container}>
@@ -40,7 +42,7 @@ export default function HeaderSection({
         <View style={styles.greetingSection}>
           <Text style={styles.greetingLabel}>{getGreeting()}</Text>
           <Text style={styles.userName}>{userName}</Text>
-          <Text style={styles.motivation}>{getMotivation()}</Text>
+          <Text style={styles.motivation}>{weekLabel ?? getMotivation()}</Text>
         </View>
 
         <View style={[styles.streakChip, streakDays > 0 ? styles.streakActive : styles.streakInactive]}>

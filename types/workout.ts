@@ -78,6 +78,7 @@ export interface WorkoutsResponse {
   message?: string;
 }
 
+
 // Workout creation/update types
 export interface CreateWorkoutData {
   groupId?: string | null;

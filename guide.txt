@@ -1,5 +1,5 @@
 > **Context**
-> I'm rebuilding the home page of WODGoat (CrossFit-style training app, dark theme, orange accent `#FF6A1A`). The home page shows the athlete's training plan: a horizontal week strip, the day's workout card, a "make it up" callout for any missed past workout, and lightweight lists of upcoming + past workouts. A bottom tab bar already exists.
+> I'm rebuilding the home page of WODGoat. The home page shows the athlete's training plan: a horizontal week strip, the day's workout card, a "make it up" callout for any missed past workout, and lightweight lists of upcoming + past workouts. A bottom tab bar already exists.
 >
 > Treat each day's workout as **one whole session** that contains multiple WOD blocks — never split a session into separate cards. WOD body text is the raw multi-line string the coach typed (e.g. `Back Squat 10 x 3 @ 90% up to max`); do NOT parse into structured exercise objects.
 >

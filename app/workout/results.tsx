@@ -1,10 +1,23 @@
 import { authService, groupsService, workoutsService } from "@/api/services";
-import { BottomSheetSelect, Button, ExerciseSearchInput, Gap, Input, Page } from "@/components";
+import {
+  BottomSheetSelect,
+  Button,
+  ExerciseSearchInput,
+  Gap,
+  Input,
+  Page,
+} from "@/components";
 import { storage, useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
-import type { ExerciseData, ResultData, StandardExercise, TrackingType, WODData } from "@/types";
+import type {
+  ExerciseData,
+  ResultData,
+  StandardExercise,
+  TrackingType,
+  WODData,
+} from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useRef, useState } from "react";
@@ -73,7 +86,9 @@ export default function PRsScreen() {
     type === "group" ? (params.workoutId ?? "") : (parsed.id ?? "");
   const groupId = params.groupId ?? "";
 
-  const [results, setResults] = useState<ResultEntry[]>([blankEntry("result-1")]);
+  const [results, setResults] = useState<ResultEntry[]>([
+    blankEntry("result-1"),
+  ]);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -110,7 +125,11 @@ export default function PRsScreen() {
 
   // ── update helpers ──────────────────────────────────────────────────────────
 
-  const updateResult = (id: string, field: keyof ResultEntry, value: string | number) => {
+  const updateResult = (
+    id: string,
+    field: keyof ResultEntry,
+    value: string | number,
+  ) => {
     setResults((prev) =>
       prev.map((r) => {
         if (r.id !== id) return r;
@@ -122,9 +141,16 @@ export default function PRsScreen() {
           const first = (wods[newWodIndex]?.exercises ?? []).findIndex(
             (_, idx) => !selected.includes(idx),
           );
-          return { ...r, wodIndex: newWodIndex, exerciseIndex: first !== -1 ? first : 0 };
+          return {
+            ...r,
+            wodIndex: newWodIndex,
+            exerciseIndex: first !== -1 ? first : 0,
+          };
         }
-        return { ...r, [field]: field === "exerciseIndex" ? value : value.toString() };
+        return {
+          ...r,
+          [field]: field === "exerciseIndex" ? value : value.toString(),
+        };
       }),
     );
   };
@@ -133,7 +159,12 @@ export default function PRsScreen() {
     setResults((prev) =>
       prev.map((r) =>
         r.id === id
-          ? { ...r, exerciseName: exercise.name, exerciseId: exercise.id, trackingType: exercise.trackingType }
+          ? {
+              ...r,
+              exerciseName: exercise.name,
+              exerciseId: exercise.id,
+              trackingType: exercise.trackingType,
+            }
           : r,
       ),
     );
@@ -155,7 +186,11 @@ export default function PRsScreen() {
       }
       setResults((prev) => [
         ...prev,
-        { ...blankEntry(`result-${Date.now()}`), wodIndex: newWodIndex, exerciseIndex: newExerciseIndex },
+        {
+          ...blankEntry(`result-${Date.now()}`),
+          wodIndex: newWodIndex,
+          exerciseIndex: newExerciseIndex,
+        },
       ]);
     } else {
       setResults((prev) => [...prev, blankEntry(`result-${Date.now()}`)]);
@@ -194,7 +229,7 @@ export default function PRsScreen() {
 
   const navigateHome = () => {
     router.dismissAll();
-    router.replace(type === "group" ? "/(tabs)/groups" : "/(tabs)");
+    router.replace("/(tabs)");
   };
 
   const refreshProfile = async () => {
@@ -208,14 +243,26 @@ export default function PRsScreen() {
     try {
       setSubmitting(true);
       if (type === "group") {
-        await groupsService.submitGroupWorkout(groupId, resolvedWorkoutId, [], trimmedComment);
+        await groupsService.submitGroupWorkout(
+          groupId,
+          resolvedWorkoutId,
+          [],
+          trimmedComment,
+        );
       } else {
-        await workoutsService.completeWorkout(resolvedWorkoutId, [], trimmedComment);
+        await workoutsService.completeWorkout(
+          resolvedWorkoutId,
+          [],
+          trimmedComment,
+        );
         await refreshProfile();
       }
       navigateHome();
     } catch (err: any) {
-      showToast({ type: "error", label: err.message || "Failed to complete workout" });
+      showToast({
+        type: "error",
+        label: err.message || "Failed to complete workout",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -226,11 +273,22 @@ export default function PRsScreen() {
       return results.some(
         (r) =>
           r.exerciseName.trim() !== "" &&
-          (r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories),
+          (r.reps ||
+            r.weight ||
+            r.timeMins ||
+            r.timeSecs ||
+            r.distanceKm ||
+            r.calories),
       );
     }
     return results.some(
-      (r) => r.reps || r.weight || r.timeMins || r.timeSecs || r.distanceKm || r.calories,
+      (r) =>
+        r.reps ||
+        r.weight ||
+        r.timeMins ||
+        r.timeSecs ||
+        r.distanceKm ||
+        r.calories,
     );
   };
 
@@ -263,7 +321,10 @@ export default function PRsScreen() {
         showToast({ type: "success", label: "PRs saved!" });
         navigateHome();
       } else {
-        showToast({ type: "error", label: (response as any).message || "Failed to save" });
+        showToast({
+          type: "error",
+          label: (response as any).message || "Failed to save",
+        });
       }
     } catch (err: any) {
       showToast({ type: "error", label: err.message || "Failed to save PRs" });
@@ -287,11 +348,21 @@ export default function PRsScreen() {
           <View style={styles.inputRow}>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Weight (kg)</Text>
-              <Input placeholder="0" value={result.weight} onChangeText={(t) => updateResult(result.id, "weight", t)} keyboardType="numeric" />
+              <Input
+                placeholder="0"
+                value={result.weight}
+                onChangeText={(t) => updateResult(result.id, "weight", t)}
+                keyboardType="numeric"
+              />
             </View>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Reps</Text>
-              <Input placeholder="0" value={result.reps} onChangeText={(t) => updateResult(result.id, "reps", t)} keyboardType="numeric" />
+              <Input
+                placeholder="0"
+                value={result.reps}
+                onChangeText={(t) => updateResult(result.id, "reps", t)}
+                keyboardType="numeric"
+              />
             </View>
           </View>
         );
@@ -299,7 +370,12 @@ export default function PRsScreen() {
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Reps</Text>
-            <Input placeholder="0" value={result.reps} onChangeText={(t) => updateResult(result.id, "reps", t)} keyboardType="numeric" />
+            <Input
+              placeholder="0"
+              value={result.reps}
+              onChangeText={(t) => updateResult(result.id, "reps", t)}
+              keyboardType="numeric"
+            />
           </View>
         );
       case "time":
@@ -307,11 +383,21 @@ export default function PRsScreen() {
           <View style={styles.inputRow}>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Minutes</Text>
-              <Input placeholder="0" value={result.timeMins} onChangeText={(t) => updateResult(result.id, "timeMins", t)} keyboardType="numeric" />
+              <Input
+                placeholder="0"
+                value={result.timeMins}
+                onChangeText={(t) => updateResult(result.id, "timeMins", t)}
+                keyboardType="numeric"
+              />
             </View>
             <View style={styles.inputHalf}>
               <Text style={styles.inputLabel}>Seconds</Text>
-              <Input placeholder="0" value={result.timeSecs} onChangeText={(t) => updateResult(result.id, "timeSecs", t)} keyboardType="numeric" />
+              <Input
+                placeholder="0"
+                value={result.timeSecs}
+                onChangeText={(t) => updateResult(result.id, "timeSecs", t)}
+                keyboardType="numeric"
+              />
             </View>
           </View>
         );
@@ -319,7 +405,12 @@ export default function PRsScreen() {
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Distance (km)</Text>
-            <Input placeholder="0.0" value={result.distanceKm} onChangeText={(t) => updateResult(result.id, "distanceKm", t)} keyboardType="decimal-pad" />
+            <Input
+              placeholder="0.0"
+              value={result.distanceKm}
+              onChangeText={(t) => updateResult(result.id, "distanceKm", t)}
+              keyboardType="decimal-pad"
+            />
           </View>
         );
       case "pace":
@@ -328,16 +419,31 @@ export default function PRsScreen() {
             <View style={styles.inputRow}>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Minutes</Text>
-                <Input placeholder="0" value={result.timeMins} onChangeText={(t) => updateResult(result.id, "timeMins", t)} keyboardType="numeric" />
+                <Input
+                  placeholder="0"
+                  value={result.timeMins}
+                  onChangeText={(t) => updateResult(result.id, "timeMins", t)}
+                  keyboardType="numeric"
+                />
               </View>
               <View style={styles.inputHalf}>
                 <Text style={styles.inputLabel}>Seconds</Text>
-                <Input placeholder="0" value={result.timeSecs} onChangeText={(t) => updateResult(result.id, "timeSecs", t)} keyboardType="numeric" />
+                <Input
+                  placeholder="0"
+                  value={result.timeSecs}
+                  onChangeText={(t) => updateResult(result.id, "timeSecs", t)}
+                  keyboardType="numeric"
+                />
               </View>
             </View>
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Distance (km)</Text>
-              <Input placeholder="0.0" value={result.distanceKm} onChangeText={(t) => updateResult(result.id, "distanceKm", t)} keyboardType="decimal-pad" />
+              <Input
+                placeholder="0.0"
+                value={result.distanceKm}
+                onChangeText={(t) => updateResult(result.id, "distanceKm", t)}
+                keyboardType="decimal-pad"
+              />
             </View>
           </>
         );
@@ -345,7 +451,12 @@ export default function PRsScreen() {
         return (
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Calories</Text>
-            <Input placeholder="0" value={result.calories} onChangeText={(t) => updateResult(result.id, "calories", t)} keyboardType="numeric" />
+            <Input
+              placeholder="0"
+              value={result.calories}
+              onChangeText={(t) => updateResult(result.id, "calories", t)}
+              keyboardType="numeric"
+            />
           </View>
         );
       default:
@@ -360,7 +471,11 @@ export default function PRsScreen() {
       scrollable={true}
       scrollRef={scrollRef}
       headerRight={
-        <TouchableOpacity onPress={handleSkip} disabled={submitting} style={styles.skipLink}>
+        <TouchableOpacity
+          onPress={handleSkip}
+          disabled={submitting}
+          style={styles.skipLink}
+        >
           <Text style={styles.skipLinkText}>Skip</Text>
         </TouchableOpacity>
       }
@@ -407,12 +522,20 @@ export default function PRsScreen() {
         <View key={result.id} style={styles.resultCard}>
           <View style={styles.resultCardHeader}>
             <View style={styles.prBadge}>
-              <Ionicons name="medal-outline" size={14} color={Colors.primary[500]} />
+              <Ionicons
+                name="medal-outline"
+                size={14}
+                color={Colors.primary[500]}
+              />
               <Text style={styles.prBadgeText}>PR #{index + 1}</Text>
             </View>
             {results.length > 1 && (
               <TouchableOpacity onPress={() => removeResultEntry(result.id)}>
-                <Ionicons name="trash-outline" size={18} color={Colors.error[500]} />
+                <Ionicons
+                  name="trash-outline"
+                  size={18}
+                  color={Colors.error[500]}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -423,7 +546,9 @@ export default function PRsScreen() {
                 <Text style={styles.inputLabel}>Exercise</Text>
                 <ExerciseSearchInput
                   value={result.exerciseName}
-                  onSelectExercise={(ex) => handleSelectRawExercise(result.id, ex)}
+                  onSelectExercise={(ex) =>
+                    handleSelectRawExercise(result.id, ex)
+                  }
                   placeholder="Search for an exercise"
                 />
               </View>
@@ -448,7 +573,9 @@ export default function PRsScreen() {
                 placeholder="Select Exercise"
                 value={result.exerciseIndex}
                 options={getAvailableExercises(result.id, result.wodIndex)}
-                onValueChange={(v) => updateResult(result.id, "exerciseIndex", v)}
+                onValueChange={(v) =>
+                  updateResult(result.id, "exerciseIndex", v)
+                }
               />
               {renderInputFields(result)}
             </>
@@ -468,10 +595,16 @@ export default function PRsScreen() {
       {/* Workout comment */}
       <View
         style={styles.commentCard}
-        onLayout={(e) => { commentCardY.current = e.nativeEvent.layout.y; }}
+        onLayout={(e) => {
+          commentCardY.current = e.nativeEvent.layout.y;
+        }}
       >
         <View style={styles.commentHeader}>
-          <Ionicons name="chatbubble-outline" size={15} color={Colors.text.secondary} />
+          <Ionicons
+            name="chatbubble-outline"
+            size={15}
+            color={Colors.text.secondary}
+          />
           <Text style={styles.commentLabel}>How did it go? (optional)</Text>
         </View>
         <TextInput
@@ -485,7 +618,10 @@ export default function PRsScreen() {
           textAlignVertical="top"
           onFocus={() => {
             setTimeout(() => {
-              scrollRef.current?.scrollTo({ y: commentCardY.current - 20, animated: true });
+              scrollRef.current?.scrollTo({
+                y: commentCardY.current - 20,
+                animated: true,
+              });
             }, 150);
           }}
         />
