@@ -1,4 +1,4 @@
-import { groupsService, workoutsService } from "@/api/services";
+import { workoutsService } from "@/api/services";
 import {
   DayWorkoutCard,
   Gap,
@@ -10,8 +10,8 @@ import {
   WorkoutsSkeleton,
 } from "@/components";
 import { useGlobalState } from "@/components/lib";
-import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import type { AssignedWorkoutData } from "@/types";
 import {
   getWeekDays,
@@ -39,10 +39,6 @@ export default function WorkoutsScreen() {
   const weekLabel = useMemo(() => getWeekLabel(today), [today]);
 
   const [weekWorkouts, setWeekWorkouts] = useState<AssignedWorkoutData[]>([]);
-  const [myGroupIds, setMyGroupIds] = useState<Set<string>>(new Set());
-  const [joinedGroupsForLocking, setJoinedGroupsForLocking] = useState<
-    { id: string; createdAt: any }[]
-  >([]);
   const [selectedDate, setSelectedDate] = useState<Date>(today);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +49,7 @@ export default function WorkoutsScreen() {
   const user = globalState.get("user");
   const rawUserName = user?.nickname ?? "User";
   const userName = rawUserName.charAt(0).toUpperCase() + rawUserName.slice(1);
-  const { canAccess, withinLimit, isReady } = useFeatureGuard();
+  const { isReady } = useFeatureGuard();
 
   const navigation = useNavigation();
   useEffect(() => {
@@ -69,21 +65,7 @@ export default function WorkoutsScreen() {
       setLoading(true);
       setError(null);
 
-      const [workoutsRes, groupsResult] = await Promise.all([
-        workoutsService.getWeekWorkouts(weekStart, weekEnd),
-        Promise.all([groupsService.getMyGroups(), groupsService.getMemberGroups()]),
-      ]);
-
-      const [myRes, memberRes] = groupsResult;
-      const myGroups = myRes.success ? myRes.data ?? [] : [];
-      setMyGroupIds(new Set(myGroups.map((g) => g.id).filter((id): id is string => id !== undefined)));
-      const joinedGroups = (memberRes.success ? memberRes.data ?? [] : [])
-        .filter((g) => g.createdBy !== user?.uid);
-      setJoinedGroupsForLocking(
-        joinedGroups
-          .filter((g): g is typeof g & { id: string } => g.id !== undefined)
-          .map((g) => ({ id: g.id, createdAt: g.createdAt })),
-      );
+      const workoutsRes = await workoutsService.getWeekWorkouts(weekStart, weekEnd);
 
       if (workoutsRes.success && workoutsRes.data) {
         setWeekWorkouts(workoutsRes.data);
@@ -96,22 +78,6 @@ export default function WorkoutsScreen() {
       setLoading(false);
     }
   };
-
-  const locked = useMemo(() => {
-    const map = new Map<string, "join" | "create">();
-    if (!canAccess("createGroup")) {
-      myGroupIds.forEach((id) => map.set(id, "create"));
-    }
-    const sorted = [...joinedGroupsForLocking].sort((a, b) => {
-      const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
-      const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
-      return aDate - bDate;
-    });
-    sorted.forEach((g, i) => {
-      if (!withinLimit("groupJoinMax", i)) map.set(g.id, "join");
-    });
-    return map;
-  }, [myGroupIds, joinedGroupsForLocking, canAccess, withinLimit]);
 
   const workoutStatus = (workout: AssignedWorkoutData): "completed" | "missed" | "not-started-yet" => {
     const done = workout.source === "group" ? workout.hasSubmitted : workout.completed;
