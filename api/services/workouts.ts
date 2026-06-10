@@ -60,6 +60,28 @@ export const workoutsService = {
   },
 
   /**
+   * Get workouts for a specific week
+   * @param startDate - Start of the week (midnight)
+   * @param endDate   - End of the week (end of day)
+   */
+  getWeekWorkouts: async (
+    startDate: Date,
+    endDate: Date,
+  ): Promise<WorkoutsResponse> => {
+    try {
+      const params = new URLSearchParams();
+      params.append("startDate", startDate.toISOString());
+      params.append("endDate", endDate.toISOString());
+      const endpoint = `${API_ENDPOINTS.WORKOUTS.GET_WEEK}?${params.toString()}`;
+      const response = await apiClient.get<WorkoutsResponse>(endpoint);
+      return response as unknown as WorkoutsResponse;
+    } catch (error) {
+      console.error("🏋️ WorkoutsService: Get week workouts error:", error);
+      throw error;
+    }
+  },
+
+  /**
    * Get all workouts for the authenticated user
    * @param limit - Number of workouts to return per page
    * @param cursor - ISO-date cursor from previous response for pagination

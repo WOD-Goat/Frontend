@@ -1,0 +1,27 @@
+## HomePage V2 — Remaining items to address
+
+1. Multi-workout day strip dot priority
+   When a day has more than one workout (e.g. a personal + a group workout), the week strip dot
+   currently reflects whichever workout appears first in the array. It should instead show the
+   worst-case status so the user is never misled by a green dot when a missed workout is hiding
+   behind it. Priority order: missed > upcoming > completed > empty.
+
+2. Pull-to-refresh
+   The week loads once on mount with no way to refresh. If a coach assigns a workout mid-day, or
+   the user completes a workout in another tab/device, the home screen stays stale until the app
+   restarts. Add pull-to-refresh (ScrollView refreshControl) that re-calls loadWeek().
+
+4. Expired subscription — workout access gating
+   Users whose subscription has expired should not be able to open or interact with workouts.
+   Currently the home screen shows all week workouts regardless of subscription status. Need to
+   check the user's subscription state (via useFeatureGuard or a dedicated check) and either:
+   - Block the day card tap and show an upsell prompt, or
+   - Show a locked overlay on the card with a "Renew plan" CTA.
+   Also applies to the MakeupCallout — tapping a missed workout should not navigate to the
+   workout detail if the subscription is expired.
+
+3. Today goes stale across midnight
+   `today` is memoized with empty deps — frozen at the moment the component first mounts. A user
+   who keeps the app open past midnight will still see the previous day highlighted as today and
+   isToday will be wrong. Fix by deriving today inside a useEffect that recalculates at midnight
+   (e.g. setTimeout to next midnight) or by refreshing on AppState "active" transition.

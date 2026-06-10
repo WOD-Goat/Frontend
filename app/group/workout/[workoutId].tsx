@@ -487,7 +487,8 @@ export default function GroupWorkoutDetailScreen() {
                 workoutId,
               );
               if (response.success) {
-                router.back();
+                router.dismissAll();
+                router.replace(`/(tabs)`);
                 showToast({
                   type: "success",
                   label: "Workout deleted successfully!",
