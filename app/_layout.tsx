@@ -6,6 +6,7 @@ import { StatusBar } from "expo-status-bar";
 import * as Updates from "expo-updates";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect, useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Purchases from "react-native-purchases";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { apiClient } from "../api/client";
@@ -31,12 +32,13 @@ SplashScreen.preventAutoHideAsync();
 export default function RootLayout() {
   const [imagesLoaded, setImagesLoaded] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
-  const [otaChecked, setOtaChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [networkChecked, setNetworkChecked] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateReady, setUpdateReady] = useState(false);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
   const { get: getStorage } = useStorage();
   const globalState = useGlobalState();
   const user = useZustandGlobalState((state) => state.user);
@@ -81,27 +83,28 @@ export default function RootLayout() {
     }
   }, []);
 
-  // Check for OTA updates and reload immediately if one is available
+  // Check for OTA updates in the background — never blocks the splash screen.
+  // Runs only after the app is fully initialized and online.
+  // If an update is ready, shows a non-blocking banner; user can restart or defer.
   useEffect(() => {
-    if (__DEV__) {
-      setOtaChecked(true);
-      return;
-    }
+    if (__DEV__ || !authChecked || !networkChecked || !isOnline) return;
+
     const checkOtaUpdate = async () => {
       try {
-        const update = await Updates.checkForUpdateAsync();
-        if (update.isAvailable) {
-          await Updates.fetchUpdateAsync();
-          await Updates.reloadAsync();
-          return; // app restarts — nothing below runs
-        }
+        const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000));
+        const check = Updates.checkForUpdateAsync();
+        const result = await Promise.race([check, timeout]);
+        if (!result?.isAvailable) return;
+
+        await Updates.fetchUpdateAsync();
+        setUpdateReady(true);
       } catch {
-        // network failure or unsupported environment — continue normally
+        // Network failure or unsupported environment — ignore silently
       }
-      setOtaChecked(true);
     };
+
     checkOtaUpdate();
-  }, []);
+  }, [authChecked, networkChecked, isOnline]);
 
   // Check if a store update is required
   useEffect(() => {
@@ -221,7 +224,7 @@ export default function RootLayout() {
 
   // Hide splash screen and navigate when everything is ready
   useEffect(() => {
-    if ((loaded || error) && imagesLoaded && authChecked && networkChecked && otaChecked) {
+    if ((loaded || error) && imagesLoaded && authChecked && networkChecked) {
       SplashScreen.hideAsync();
 
       if (!isOnline) return;
@@ -244,9 +247,9 @@ export default function RootLayout() {
         router.replace("/onboarding");
       }
     }
-  }, [loaded, error, imagesLoaded, authChecked, networkChecked, isAuthenticated]);
+  }, [loaded, error, imagesLoaded, authChecked, networkChecked, isAuthenticated, isOnline]);
 
-  if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked || !otaChecked) {
+  if ((!loaded && !error) || !imagesLoaded || !authChecked || !networkChecked) {
     return null;
   }
 
@@ -274,7 +277,83 @@ export default function RootLayout() {
         {!isOnline && (
           <NoInternetScreen onRetry={handleRetry} loading={isRetrying} />
         )}
+
+        {updateReady && !updateDismissed && (
+          <View style={updateStyles.banner}>
+            <View style={updateStyles.textRow}>
+              <Text style={updateStyles.title}>In-App Update is ready</Text>
+              <Text style={updateStyles.sub}>Press refresh to apply the latest updates.0</Text>
+            </View>
+            <TouchableOpacity
+              style={updateStyles.restartBtn}
+              onPress={() => Updates.reloadAsync()}
+            >
+              <Text style={updateStyles.restartText}>Restart</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={updateStyles.dismiss}
+              onPress={() => setUpdateDismissed(true)}
+            >
+              <Text style={updateStyles.dismissText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </ToastProvider>
     </SafeAreaProvider>
   );
 }
+
+const updateStyles = StyleSheet.create({
+  banner: {
+    position: "absolute",
+    bottom: 110,
+    left: 8,
+    right: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1C1C1C",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FF6B2C40",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  textRow: {
+    flex: 1,
+    gap: 2,
+  },
+  title: {
+    fontFamily: "LeagueSpartan-Bold",
+    fontSize: 14,
+    color: "#FFFFFF",
+  },
+  sub: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 12,
+    color: "#8E8E93",
+  },
+  restartBtn: {
+    backgroundColor: "#FF6B2C",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  restartText: {
+    fontFamily: "LeagueSpartan-Bold",
+    fontSize: 13,
+    color: "#0D0D14",
+  },
+  dismiss: {
+    padding: 4,
+  },
+  dismissText: {
+    fontSize: 13,
+    color: "#8E8E93",
+  },
+});
