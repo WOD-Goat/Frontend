@@ -76,6 +76,20 @@ export const groupsService = {
   },
 
   /**
+   * Get this week's workouts for a group (Sat–Fri window)
+   */
+  getGroupWeekWorkouts: async (
+    groupId: string,
+    weekStart?: string,
+  ): Promise<GroupWorkoutsResponse> => {
+    const query = weekStart ? `?weekStart=${weekStart}` : "";
+    const response = await apiClient.get<GroupWorkoutsResponse>(
+      `${API_ENDPOINTS.GROUPS.GET_WEEK_WORKOUTS(groupId)}${query}`,
+    );
+    return response as unknown as GroupWorkoutsResponse;
+  },
+
+  /**
    * Get all workouts for a group
    */
   getGroupWorkouts: async (groupId: string): Promise<GroupWorkoutsResponse> => {

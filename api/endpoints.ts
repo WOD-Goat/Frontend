@@ -43,6 +43,7 @@ export const API_ENDPOINTS = {
     JOIN: "/api/groups/join",
     GENERATE_CODE: (id: string) => `/api/groups/${id}/generate-code`,
     GET_WORKOUTS: (id: string) => `/api/groups/${id}/workouts`,
+    GET_WEEK_WORKOUTS: (id: string) => `/api/groups/${id}/workouts/week`,
     GET_WORKOUT_HISTORY: (id: string) => `/api/groups/${id}/workouts/history`,
     CREATE_WORKOUT: (id: string) => `/api/groups/${id}/workouts`,
     GET_WORKOUT: (groupId: string, workoutId: string) =>
