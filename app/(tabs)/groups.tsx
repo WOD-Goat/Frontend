@@ -102,8 +102,8 @@ function GroupCard({ group }: { group: Group & { isAdmin: boolean } }) {
           <View style={styles.statPill}>
             <Ionicons name="people" size={11} color={Colors.text.secondary} />
             <Text style={styles.statPillText}>
-              {group.memberIds?.length ?? 0} member
-              {(group.memberIds?.length ?? 0) !== 1 ? "s" : ""}
+              {group.totalMembers ?? 0} Athlete
+              {(group.totalMembers ?? 0) !== 1 ? "s" : ""}
             </Text>
           </View>
           {lastWorkout && (

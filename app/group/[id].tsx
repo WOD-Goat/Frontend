@@ -29,7 +29,7 @@ const W38 = "rgba(255,255,255,0.38)";
 const W8  = "rgba(255,255,255,0.08)";
 const W5  = "rgba(255,255,255,0.05)";
 
-type DetailTab = "workouts" | "past" | "members";
+type DetailTab = "workouts" | "past" | "athletes";
 
 // ── DayVM ────────────────────────────────────────────────────────────────────
 interface DayVM {
@@ -762,7 +762,7 @@ export default function GroupDetailScreen() {
   const adminMember = group.members?.find((m) => m.uid === group.createdBy);
   const rawCoachName = adminMember?.name ?? adminMember?.nickname ?? "Coach";
   const coachName    = rawCoachName.split(" ").slice(0, 2).join(" ");
-  const memberCount = group.members?.length ?? 0;
+  const memberCount = group.totalMembers ?? 0;
 
   const sortedMembers = group.members
     ? [
@@ -799,7 +799,7 @@ export default function GroupDetailScreen() {
         <View style={styles.groupHeaderInfo}>
           <Text style={styles.groupName} numberOfLines={1}>{group.name}</Text>
           <Text style={styles.groupSubLine}>
-            Coach {coachName} · {memberCount} member{memberCount !== 1 ? "s" : ""}
+            Coach {coachName} · {memberCount} Athlete{memberCount !== 1 ? "s" : ""}
           </Text>
         </View>
         {isAdmin ? (
@@ -849,7 +849,7 @@ export default function GroupDetailScreen() {
 
       {/* ── Tabs ── */}
       <View style={styles.tabRow}>
-        {(["workouts", "past", "members"] as DetailTab[]).map((tab) => (
+        {(["workouts", "past", "athletes"] as DetailTab[]).map((tab) => (
           <Pressable
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
@@ -867,7 +867,7 @@ export default function GroupDetailScreen() {
               color={activeTab === tab ? Colors.primary[500] : Colors.text.secondary}
             />
             <Text style={[styles.tabLabel, activeTab === tab && styles.tabLabelActive]}>
-              {tab === "workouts" ? "Workouts" : tab === "past" ? "Past" : "Members"}
+              {tab === "workouts" ? "Workouts" : tab === "past" ? "Past" : "Athletes"}
             </Text>
           </Pressable>
         ))}
@@ -925,8 +925,8 @@ export default function GroupDetailScreen() {
         <View style={styles.centerContainer}>
           <Ionicons name="people-outline" size={40} color={Colors.text.secondary} />
           <Gap size={12} />
-          <Text style={styles.emptyTitle}>No members found</Text>
-          <Text style={styles.emptySubtext}>Member details could not be loaded.</Text>
+          <Text style={styles.emptyTitle}>No athletes found</Text>
+          <Text style={styles.emptySubtext}>Athlete details could not be loaded.</Text>
         </View>
       ) : (
         <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
