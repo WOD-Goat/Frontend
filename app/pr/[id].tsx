@@ -347,10 +347,10 @@ export default function PRDetailScreen() {
                   </View>
                 </View>
                 <View style={styles.percentageValueContainer}>
-                  <Text style={styles.percentageValue}>
-                    {formatted.display}
+                  <Text style={styles.percentageValue} numberOfLines={1}>
+                    {formatted.display}{" "}
+                    <Text style={styles.percentageUnit}>{formatted.unit}</Text>
                   </Text>
-                  <Text style={styles.percentageUnit}>{formatted.unit}</Text>
                 </View>
               </View>
             );
@@ -755,11 +755,11 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
   percentageValueContainer: {
-    width: 100,
+    flexShrink: 0,
     alignItems: "flex-end",
   },
   percentageValue: {
-    fontSize: FontSizes.display2XL,
+    fontSize: FontSizes.displayLG,
     fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },

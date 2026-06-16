@@ -303,9 +303,9 @@ export default function PRShareModal({
               activeOpacity={0.75}
             >
               {capturing ? (
-                <ActivityIndicator size="small" color="#000" />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="share-social-outline" size={20} color="#000" />
+                <Ionicons name="share-social-outline" size={20} color="#fff" />
               )}
               <Text style={[styles.actionBtnText, styles.shareText]}>
                 Share Now
@@ -498,6 +498,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   shareText: {
-    color: "#000000",
+    color: "#ffffff",
   },
 });

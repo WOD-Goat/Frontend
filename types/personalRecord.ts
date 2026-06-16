@@ -51,6 +51,7 @@ export interface CreatePersonalRecordData {
   exerciseId: string;
   exerciseName: string;
   trackingType: PRTrackingType;
+  achievedAt?: Date;
   bestWeight?: number | null;
   bestReps?: number | null;
   bestEstimated1RM?: number | null;
