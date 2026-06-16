@@ -7,6 +7,7 @@ export interface Group {
   createdBy: string;
   memberIds?: string[];   // list endpoints (getMyGroups / getMemberGroups)
   members?: GroupMember[]; // detail endpoint (getGroupById)
+  totalMembers?: number;
   joinCode?: string;
   createdAt: Date;
   latestWorkoutDate?: Date | null;
