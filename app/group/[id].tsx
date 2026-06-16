@@ -234,10 +234,14 @@ function WeekTimelineView({
   weekWorkouts,
   loading,
   groupId,
+  isAdmin,
+  coachName,
 }: {
   weekWorkouts: GroupWorkout[];
   loading: boolean;
   groupId: string;
+  isAdmin: boolean;
+  coachName: string;
 }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -324,6 +328,52 @@ function WeekTimelineView({
     );
   }
 
+  if (weekWorkouts.length === 0) {
+    return (
+      <View>
+        <Text style={tlStyles.thisWeekLabel}>THIS WEEK</Text>
+        <Gap size={14} />
+        <View style={tlStyles.emptyCard}>
+          <View style={tlStyles.emptyIconWrap}>
+            <Ionicons
+              name={isAdmin ? "calendar-outline" : "document-text-outline"}
+              size={responsiveSize(30)}
+              color={ORANGE}
+            />
+          </View>
+          <Gap size={responsiveSize(16)} />
+          <Text style={tlStyles.emptyCardTitle}>
+            {isAdmin ? "Program your first workout" : "No workouts yet"}
+          </Text>
+          <Text style={tlStyles.emptyCardSubtext}>
+            {isAdmin
+              ? "This group is ready for training. Add a workout so your athletes know what to do."
+              : `${coachName} hasn't programmed anything for this group yet. You'll be notified the moment they do.`}
+          </Text>
+          <Gap size={responsiveSize(20)} />
+          {isAdmin ? (
+            <TouchableOpacity
+              style={tlStyles.emptyPrimaryBtn}
+              onPress={() => router.push(`/group/workout/create?groupId=${groupId}`)}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="add" size={18} color="#fff" />
+              <Text style={tlStyles.emptyPrimaryBtnText}>Add a workout</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={tlStyles.emptySecondaryBtn}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="notifications-outline" size={16} color={W62} />
+              <Text style={tlStyles.emptySecondaryBtnText}>Notify me when posted</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View>
       {/* Toolbar */}
@@ -365,6 +415,77 @@ function WeekTimelineView({
 
 const tlStyles = StyleSheet.create({
   loadingWrap: { paddingTop: 40, alignItems: "center" },
+  emptyCard: {
+    backgroundColor: W5,
+    borderRadius: responsiveSize(20),
+    borderWidth: 1,
+    borderColor: W8,
+    padding: responsiveSize(28),
+    alignItems: "center",
+  },
+  emptyIconWrap: {
+    width: responsiveSize(68),
+    height: responsiveSize(68),
+    borderRadius: responsiveSize(18),
+    backgroundColor: ORANGE + "20",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCardTitle: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(20),
+    color: "#fff",
+    textAlign: "center",
+    letterSpacing: -0.3,
+  },
+  emptyCardSubtext: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(13.5),
+    color: W62,
+    textAlign: "center",
+    lineHeight: responsiveSize(20),
+    paddingHorizontal: responsiveSize(4),
+    marginTop: responsiveSize(6),
+  },
+  emptyPrimaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: responsiveSize(8),
+    backgroundColor: ORANGE,
+    borderRadius: responsiveSize(14),
+    paddingVertical: responsiveSize(14),
+    width: "100%",
+  },
+  emptyPrimaryBtnText: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: FontSizes.bodyMD,
+    color: "#fff",
+  },
+  emptySecondaryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: responsiveSize(8),
+    backgroundColor: W8,
+    borderRadius: responsiveSize(14),
+    paddingVertical: responsiveSize(14),
+    paddingHorizontal: responsiveSize(20),
+    borderWidth: 1,
+    borderColor: W8,
+  },
+  emptySecondaryBtnText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: W62,
+  },
+  thisWeekLabel: {
+    fontFamily: FontFamilies.poppinsBold,
+    fontSize: responsiveSize(13),
+    color: "#fff",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+  },
   toolbar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   toolbarLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   thisWeek: {
@@ -657,7 +778,7 @@ export default function GroupDetailScreen() {
     .join("")
     .slice(0, 3);
 
-  const fab = isAdmin ? (
+  const fab = isAdmin && weekWorkouts.length > 0 ? (
     <TouchableOpacity
       style={styles.fabButton}
       onPress={() => router.push(`/group/workout/create?groupId=${id}`)}
@@ -757,7 +878,7 @@ export default function GroupDetailScreen() {
       {/* ── Tab content ── */}
       {activeTab === "workouts" ? (
         <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-          <WeekTimelineView weekWorkouts={weekWorkouts} loading={loadingWeek} groupId={id} />
+          <WeekTimelineView weekWorkouts={weekWorkouts} loading={loadingWeek} groupId={id} isAdmin={isAdmin} coachName={coachName} />
           <Gap size={120} />
         </ScrollView>
       ) : activeTab === "past" ? (
@@ -853,7 +974,7 @@ const styles = StyleSheet.create({
   },
   groupHeaderInfo: { flex: 1 },
   groupName: {
-    fontFamily: FontFamilies.poppinsExtraBold,
+    fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: responsiveSize(18),
     color: "#fff",
     lineHeight: responsiveSize(22),

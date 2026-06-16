@@ -147,53 +147,53 @@ export default function WorkoutsScreen() {
 
   if (weekWorkouts.length === 0) {
     return (
-      <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={true}>
+      <Page showBackButton={false} scrollable={true}>
         <HeaderSection userName={userName} streakDays={user?.statsSummary.currentStreak} weekLabel={weekLabel} />
-        <Gap size={8} />
+        <Gap size={12} />
 
-        <View style={styles.heroCard}>
-          <View style={styles.heroGlow} />
-          <View style={styles.heroIconRing}>
-            <Ionicons name="barbell-outline" size={responsiveSize(48)} color={Colors.primary[500]} />
+        <WeekStrip
+          days={weekDays}
+          selectedDate={selectedDate}
+          onDaySelect={setSelectedDate}
+        />
+        <Gap size={24} />
+
+        <View style={styles.emptyCard}>
+          <View style={styles.emptyIconWrap}>
+            <Ionicons name="barbell-outline" size={responsiveSize(32)} color={Colors.primary[500]} />
           </View>
-          <Gap size={responsiveSize(18)} />
-          <Text style={styles.heroTitle}>Your training starts here</Text>
-          <Text style={styles.heroSubtitle}>
-            No workouts yet — let's change that. Tap the mic and describe your first WOD.
+          <Gap size={responsiveSize(16)} />
+          <Text style={styles.emptyTitle}>No workouts this week</Text>
+          <Text style={styles.emptySubtext}>
+            You're not following a program right now. Join a group to get coached workouts — or log your own training.
           </Text>
+          <Gap size={responsiveSize(20)} />
+
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push("/(tabs)/groups")}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="people-outline" size={18} color="#fff" />
+            <Text style={styles.primaryButtonText}>Join a group</Text>
+          </TouchableOpacity>
+
+          <Gap size={responsiveSize(10)} />
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => router.push("/workout/create")}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="add" size={18} color={Colors.text.primary} />
+            <Text style={styles.secondaryButtonText}>Log a workout</Text>
+          </TouchableOpacity>
         </View>
 
-        <Gap size={responsiveSize(24)} />
-
-        {(
-          [
-            { icon: "mic-outline", label: "Speak your workout", desc: "Describe it naturally — reps, rounds, exercises" },
-            { icon: "flash-outline", label: "AI structures it", desc: "We turn your words into a proper WOD instantly" },
-            { icon: "trophy-outline", label: "Log & track progress", desc: "Every PR and streak automatically recorded" },
-          ] as const
-        ).map((step, i) => (
-          <View key={i} style={styles.stepRow}>
-            <View style={styles.stepIconWrap}>
-              <Ionicons name={step.icon} size={18} color={Colors.primary[500]} />
-            </View>
-            <View style={styles.stepTextWrap}>
-              <Text style={styles.stepLabel}>{step.label}</Text>
-              <Text style={styles.stepDesc}>{step.desc}</Text>
-            </View>
-          </View>
-        ))}
-
-        <Gap size={responsiveSize(32)} />
-
-        <TouchableOpacity
-          style={styles.ctaButton}
-          onPress={() => router.push("/workout/create")}
-          activeOpacity={0.85}
-        >
-          <View style={styles.ctaGlow} />
-          <Ionicons name="mic" size={20} color="#0D0D14" />
-          <Text style={styles.ctaText}>Create My First Workout</Text>
-        </TouchableOpacity>
+        <Gap size={responsiveSize(20)} />
+        <Text style={styles.emptyFooter}>
+          Workouts your coach programs will show up here automatically.
+        </Text>
       </Page>
     );
   }
@@ -256,102 +256,61 @@ export default function WorkoutsScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroCard: {
-    backgroundColor: Colors.secondary[600],
+  emptyCard: {
+    backgroundColor: Colors.secondary[700],
     borderRadius: responsiveSize(24),
     padding: responsiveSize(28),
     alignItems: "center",
     borderWidth: 1,
-    borderColor: Colors.primary[500] + "25",
-    overflow: "hidden",
+    borderColor: Colors.neutral[700],
   },
-  heroGlow: {
-    position: "absolute",
-    top: -40,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: Colors.primary[500] + "18",
-  },
-  heroIconRing: {
-    width: responsiveSize(88),
-    height: responsiveSize(88),
-    borderRadius: 44,
-    backgroundColor: Colors.primary[500] + "15",
-    borderWidth: 1.5,
-    borderColor: Colors.primary[500] + "40",
+  emptyIconWrap: {
+    width: responsiveSize(72),
+    height: responsiveSize(72),
+    borderRadius: responsiveSize(18),
+    backgroundColor: Colors.secondary[600],
     alignItems: "center",
     justifyContent: "center",
   },
-  heroTitle: {
-    fontFamily: FontFamilies.spartanBold,
-    fontSize: FontSizes.headingXL,
-    color: Colors.text.primary,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  heroSubtitle: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.text.secondary,
-    textAlign: "center",
-    lineHeight: responsiveSize(22),
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: responsiveSize(14),
-    paddingVertical: responsiveSize(12),
-    paddingHorizontal: responsiveSize(4),
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.neutral[700] + "60",
-  },
-  stepIconWrap: {
-    width: responsiveSize(40),
-    height: responsiveSize(40),
-    borderRadius: responsiveSize(20),
-    backgroundColor: Colors.primary[500] + "15",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  stepTextWrap: { flex: 1 },
-  stepLabel: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodySM,
-    color: Colors.text.primary,
-    marginBottom: 2,
-  },
-  stepDesc: {
-    fontFamily: FontFamilies.poppinsRegular,
-    fontSize: FontSizes.bodyXS,
-    color: Colors.text.secondary,
-    lineHeight: responsiveSize(18),
-  },
-  ctaButton: {
+  primaryButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: responsiveSize(10),
+    gap: responsiveSize(8),
     backgroundColor: Colors.primary[500],
-    borderRadius: responsiveSize(16),
-    paddingVertical: responsiveSize(16),
-    overflow: "hidden",
+    borderRadius: responsiveSize(14),
+    paddingVertical: responsiveSize(14),
+    width: "100%",
   },
-  ctaGlow: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: responsiveSize(30),
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderTopLeftRadius: responsiveSize(16),
-    borderTopRightRadius: responsiveSize(16),
-  },
-  ctaText: {
+  primaryButtonText: {
     fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.bodyMD,
-    color: "#0D0D14",
+    color: "#fff",
+  },
+  secondaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: responsiveSize(8),
+    backgroundColor: Colors.secondary[600],
+    borderRadius: responsiveSize(14),
+    paddingVertical: responsiveSize(14),
+    width: "100%",
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+  },
+  secondaryButtonText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: FontSizes.bodyMD,
+    color: Colors.text.primary,
+  },
+  emptyFooter: {
+    fontFamily: FontFamilies.spartanRegular,
+    fontSize: FontSizes.bodyXS,
+    color: Colors.text.secondary,
+    textAlign: "center",
+    lineHeight: responsiveSize(18),
+    paddingHorizontal: responsiveSize(16),
   },
   centerContainer: {
     flex: 1,
@@ -360,14 +319,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingXL,
     color: Colors.text.primary,
     textAlign: "center",
     marginBottom: 8,
   },
   emptySubtext: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
     textAlign: "center",

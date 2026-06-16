@@ -11,7 +11,7 @@
 
 import { useTimer } from "@/lib/timer/hooks/useTimer";
 import { useTimerTheme } from "@/lib/timer/hooks/useTimerTheme";
-import { responsiveSize } from "@/constants";
+import { FontFamilies, responsiveSize } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect } from "react";
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   changeModeText: {
-    fontFamily: "LeagueSpartan-SemiBold",
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(18),
     color: "#f00",
   },

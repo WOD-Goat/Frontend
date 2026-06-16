@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   } as ViewStyle,
   addWodButtonText: {
-    color: Colors.text.primary,
+    color: "#fff",
     fontSize: responsiveSize(16),
     fontWeight: "700",
   } as TextStyle,
@@ -1080,8 +1080,8 @@ const styles = StyleSheet.create({
   } as ViewStyle,
   dateRowValue: {
     color: Colors.text.primary,
-    fontSize: responsiveSize(14),
-    fontWeight: "500",
+    fontSize: responsiveSize(15),
+    fontWeight: "600",
   } as TextStyle,
   doneButton: {
     backgroundColor: Colors.primary[500],
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   } as ViewStyle,
   doneButtonText: {
-    color: Colors.text.primary,
+    color: "#fff",
     fontSize: responsiveSize(16),
     fontWeight: "600",
   } as TextStyle,

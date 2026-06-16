@@ -748,16 +748,6 @@ export default function GroupWorkoutDetailScreen() {
     <View style={{ flexDirection: "row", gap: 12 }}>
       {!isEditingWorkout ? (
         <>
-          <TouchableOpacity
-            onPress={handleViewLeaderboard}
-            style={styles.headerIconBtn}
-          >
-            <Ionicons
-              name="podium-outline"
-              size={22}
-              color={Colors.primary[500]}
-            />
-          </TouchableOpacity>
           {!submitted && (
             <TouchableOpacity
               onPress={handleEditWorkout}
@@ -1087,7 +1077,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   groupBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
   },
@@ -1097,7 +1087,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   workoutDate: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
@@ -1108,7 +1098,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   notesText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     flex: 1,
@@ -1131,7 +1121,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   progressBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
   },
@@ -1193,7 +1183,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success[500] + "12",
   },
   markCompleteText: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
   },
@@ -1224,7 +1214,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.neutral[700],
   },
   wodRawText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     lineHeight: 22,
@@ -1249,7 +1239,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   exerciseNumText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
   },
   exerciseInfo: { flex: 1, gap: 4 },
@@ -1259,7 +1249,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   exerciseInstructions: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     lineHeight: 16,
@@ -1271,7 +1261,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   trackingBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(10),
     textTransform: "capitalize",
   },
@@ -1287,7 +1277,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   publishSectionLabel: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
   },
@@ -1307,7 +1297,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[500],
   },
   publishTabText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
   },
@@ -1323,7 +1313,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dateButtonText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(14),
     color: Colors.text.primary,
   },
@@ -1336,7 +1326,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   doneButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(14),
     color: "#fff",
   },
@@ -1361,7 +1351,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   editRawWodLabel: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
@@ -1372,7 +1362,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   editRemoveWodText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(12),
     color: "#fff",
   },
@@ -1380,7 +1370,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   editInputLabel: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
     marginBottom: 6,
@@ -1394,7 +1384,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     color: Colors.text.primary,
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
   },
   editRawTextarea: {
     minHeight: 160,
@@ -1402,7 +1392,7 @@ const styles = StyleSheet.create({
   editRawTextareaInput: {
     color: Colors.text.primary,
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
   },
   editAddWodBtn: {
     backgroundColor: Colors.primary[500],
@@ -1412,7 +1402,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   editAddWodText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#000",
   },
@@ -1441,7 +1431,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   footerButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
   },
@@ -1472,7 +1462,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.neutral[700] + "80",
   },
   resultCommentText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     flex: 1,
@@ -1491,7 +1481,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   resultExerciseName: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     flex: 1,
@@ -1504,7 +1494,7 @@ const styles = StyleSheet.create({
   },
   centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
   },

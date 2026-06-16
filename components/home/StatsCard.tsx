@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   label: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     textAlign: "center",

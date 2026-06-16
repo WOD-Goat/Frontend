@@ -365,13 +365,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerTitle: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingXL,
     color: Colors.text.primary,
     letterSpacing: 0.5,
   },
   headerSubtitle: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     marginTop: 2,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   },
 
   swipeHint: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     textAlign: "center",
@@ -438,12 +438,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   variantName: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingMD,
     letterSpacing: 1,
   },
   variantDesc: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
   },

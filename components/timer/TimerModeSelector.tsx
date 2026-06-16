@@ -3,7 +3,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { Colors } from "@/constants/Colors";
-import { responsiveSize } from "@/constants/Typography";
+import { FontFamilies, responsiveSize } from "@/constants/Typography";
 import type { WODMode } from "@/lib/timer/types";
 import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
 
   /* Text */
   label: {
-    fontFamily: "LeagueSpartan-Bold",
+    fontFamily: FontFamilies.spartanBold,
     fontSize: responsiveSize(15),
     color: Colors.text.primary,
     letterSpacing: 0.3,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
   },
   desc: {
-    fontFamily: "Poppins-Regular",
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(11),
     color: Colors.neutral[500],
     lineHeight: responsiveSize(15),

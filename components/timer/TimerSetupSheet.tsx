@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[500],
   },
   modeLabel: {
-    fontFamily: "LeagueSpartan-Bold",
+    fontFamily: FontFamilies.spartanBold,
     fontSize: responsiveSize(15),
     color: Colors.text.primary,
     letterSpacing: 0.3,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
   },
   modeDesc: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(11),
     color: Colors.neutral[500],
     lineHeight: responsiveSize(16),
