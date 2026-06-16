@@ -282,7 +282,7 @@ export default function RootLayout() {
           <View style={updateStyles.banner}>
             <View style={updateStyles.textRow}>
               <Text style={updateStyles.title}>In-App Update is ready</Text>
-              <Text style={updateStyles.sub}>Press refresh to apply the latest updates.0</Text>
+              <Text style={updateStyles.sub}>Press refresh to apply the latest updates.</Text>
             </View>
             <TouchableOpacity
               style={updateStyles.restartBtn}

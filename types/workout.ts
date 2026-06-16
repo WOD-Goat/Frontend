@@ -92,6 +92,7 @@ export interface CreateWorkoutData {
 
 export interface UpdateWorkoutData {
   groupId?: string | null;
+  title?: string | null;
   scheduledFor?: Date;
   completed?: boolean;
   completedAt?: Date | null;

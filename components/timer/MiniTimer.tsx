@@ -1,4 +1,4 @@
-import { Colors, responsiveSize } from "@/constants";
+import { Colors, FontFamilies, responsiveSize } from "@/constants";
 import {
   selectPrimaryTime,
   useTimerStore,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   time: {
-    fontFamily: "LeagueSpartan-Bold",
+    fontFamily: FontFamilies.spartanBold,
     fontSize: responsiveSize(20),
     color: "#EBEBF0",
     letterSpacing: -0.5,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   roundText: {
-    fontFamily: "LeagueSpartan-Bold",
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: responsiveSize(13),
     color: Colors.primary[500],
     letterSpacing: 0.6,

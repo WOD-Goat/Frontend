@@ -126,6 +126,7 @@ export default function CreatePRScreen() {
       exerciseId: selectedExercise!.id,
       exerciseName: selectedExercise!.name,
       trackingType: type,
+      achievedAt,
     };
     switch (type) {
       case "weight_reps": {

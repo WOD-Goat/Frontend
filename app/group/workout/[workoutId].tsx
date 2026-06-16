@@ -25,6 +25,7 @@ import {
   LayoutAnimation,
   Platform,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -256,6 +257,10 @@ export default function GroupWorkoutDetailScreen() {
   const [publishMode, setPublishMode] = useState<"unchanged" | "now" | "scheduled">("unchanged");
   const [publishedAt, setPublishedAt] = useState<Date>(new Date());
   const [showPublishDatePicker, setShowPublishDatePicker] = useState(false);
+  const [editedTitle, setEditedTitle] = useState<string>("");
+  const [editedNotes, setEditedNotes] = useState<string>("");
+  const [editedDate, setEditedDate] = useState<Date>(new Date());
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
   const { showToast } = useToast();
   const globalState = useGlobalState();
 
@@ -460,13 +465,24 @@ export default function GroupWorkoutDetailScreen() {
 
   const handleEditWorkout = () => {
     setEditedWods(JSON.parse(JSON.stringify(wods)));
-    setPublishMode("unchanged");
+    setEditedTitle(workout.title ?? "");
+    setEditedNotes(workout.notes ?? "");
+    setEditedDate(new Date(workout.scheduledFor));
+    if (workout.publishedAt) {
+      setPublishedAt(new Date(workout.publishedAt));
+      setPublishMode("scheduled");
+    } else {
+      setPublishMode("unchanged");
+    }
     setIsEditingWorkout(true);
   };
 
   const handleCancelEdit = () => {
     setIsEditingWorkout(false);
     setEditedWods([]);
+    setEditedTitle("");
+    setEditedNotes("");
+    setShowEditDatePicker(false);
     setPublishMode("unchanged");
   };
 
@@ -537,7 +553,12 @@ export default function GroupWorkoutDetailScreen() {
               })),
             }));
 
-      const updatePayload: Parameters<typeof groupsService.updateGroupWorkout>[2] = { wods: updatedWods };
+      const updatePayload: Parameters<typeof groupsService.updateGroupWorkout>[2] = {
+        title: editedTitle || null,
+        notes: editedNotes || null,
+        scheduledFor: editedDate,
+        wods: updatedWods,
+      };
       if (publishMode === "now") updatePayload.publishedAt = null;
       else if (publishMode === "scheduled") updatePayload.publishedAt = publishedAt.toISOString();
 
@@ -547,8 +568,8 @@ export default function GroupWorkoutDetailScreen() {
         updatePayload,
       );
       if (response.success) {
-        setIsEditingWorkout(false);
-        await loadWorkout();
+        router.dismissAll();
+        router.replace("/(tabs)");
         showToast({ type: "success", label: "Workout updated successfully!" });
       } else {
         showToast({
@@ -692,7 +713,7 @@ export default function GroupWorkoutDetailScreen() {
       </View>
       <View style={{ flex: 1 }}>
         <Button
-          title="Save Changes"
+          title="Save"
           size="large"
           onPress={handleSaveWorkout}
           disabled={loading}
@@ -746,18 +767,8 @@ export default function GroupWorkoutDetailScreen() {
 
   const headerRight = isAdmin ? (
     <View style={{ flexDirection: "row", gap: 12 }}>
-      {!isEditingWorkout ? (
+      {!isEditingWorkout && (
         <>
-          <TouchableOpacity
-            onPress={handleViewLeaderboard}
-            style={styles.headerIconBtn}
-          >
-            <Ionicons
-              name="podium-outline"
-              size={22}
-              color={Colors.primary[500]}
-            />
-          </TouchableOpacity>
           {!submitted && (
             <TouchableOpacity
               onPress={handleEditWorkout}
@@ -781,13 +792,6 @@ export default function GroupWorkoutDetailScreen() {
             />
           </TouchableOpacity>
         </>
-      ) : (
-        <TouchableOpacity
-          onPress={handleCancelEdit}
-          style={styles.headerIconBtn}
-        >
-          <Ionicons name="close" size={24} color={Colors.text.primary} />
-        </TouchableOpacity>
       )}
     </View>
   ) : null;
@@ -805,30 +809,37 @@ export default function GroupWorkoutDetailScreen() {
         <>
           {/* Publish controls — always visible in edit mode */}
           <View style={styles.publishSection}>
-            <Text style={styles.publishSectionLabel}>Notification</Text>
-            <View style={styles.publishToggle}>
-              {(["unchanged", "now", "scheduled"] as const).map((mode) => (
-                <TouchableOpacity
-                  key={mode}
-                  style={[styles.publishTab, publishMode === mode && styles.publishTabActive]}
-                  onPress={() => setPublishMode(mode)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.publishTabText, publishMode === mode && styles.publishTabTextActive]}>
-                    {mode === "unchanged" ? "Keep" : mode === "now" ? "Send Now" : "Reschedule"}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+            <View style={styles.publishSwitchRow}>
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={styles.publishSwitchLabel}>Schedule Publishing</Text>
+                <Text style={styles.publishSwitchSubtext}>
+                  {publishMode === "scheduled" ? "Visible from the selected date" : "No changes to publish settings"}
+                </Text>
+              </View>
+              <Switch
+                value={publishMode === "scheduled"}
+                onValueChange={(val) => setPublishMode(val ? "scheduled" : "unchanged")}
+                trackColor={{ false: Colors.background.primary, true: Colors.primary[500] }}
+                thumbColor={publishMode === "scheduled" ? "#ffffff" : Colors.text.secondary}
+              />
             </View>
             {publishMode === "scheduled" && (
               <>
                 <TouchableOpacity
-                  style={styles.dateButton}
-                  onPress={() => setShowPublishDatePicker(true)}
+                  style={[styles.publishInlineRow, { marginTop: 14 }]}
+                  onPress={() => setShowPublishDatePicker((v) => !v)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={styles.dateButtonText}>
-                    {publishedAt.toLocaleDateString("en-GB")}
-                  </Text>
+                  <View style={styles.publishDateRowLeft}>
+                    <Ionicons name="calendar-outline" size={responsiveSize(18)} color={Colors.primary[500]} />
+                    <View>
+                      <Text style={styles.publishInlineLabel}>Publish on</Text>
+                      <Text style={styles.publishDateValue}>
+                        {publishedAt.toLocaleDateString("en-GB")}
+                      </Text>
+                    </View>
+                  </View>
+                  <Ionicons name="chevron-forward" size={responsiveSize(14)} color={Colors.text.secondary} />
                 </TouchableOpacity>
                 {showPublishDatePicker && (
                   <>
@@ -856,6 +867,62 @@ export default function GroupWorkoutDetailScreen() {
             )}
           </View>
 
+          {/* Workout meta fields */}
+          <View style={styles.editMetaCard}>
+            <View style={styles.editInputGroup}>
+              <Text style={styles.editInputLabel}>Workout Title</Text>
+              <TextInput
+                style={styles.editInput}
+                value={editedTitle}
+                onChangeText={setEditedTitle}
+                placeholder="e.g., Monday Strength"
+                placeholderTextColor={Colors.text.tertiary}
+              />
+            </View>
+            <View style={styles.editInputGroup}>
+              <Text style={styles.editInputLabel}>Date</Text>
+              <TouchableOpacity
+                style={styles.editInput}
+                onPress={() => setShowEditDatePicker(true)}
+              >
+                <Text style={{ color: Colors.text.primary, fontFamily: FontFamilies.poppinsRegular, fontSize: FontSizes.bodySM }}>
+                  {editedDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+                </Text>
+              </TouchableOpacity>
+              {showEditDatePicker && (
+                <>
+                  <DateTimePicker
+                    value={editedDate}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(_, selectedDate) => {
+                      if (Platform.OS === "android") setShowEditDatePicker(false);
+                      if (selectedDate) setEditedDate(selectedDate);
+                    }}
+                  />
+                  {Platform.OS === "ios" && (
+                    <TouchableOpacity
+                      style={styles.doneButton}
+                      onPress={() => setShowEditDatePicker(false)}
+                    >
+                      <Text style={styles.doneButtonText}>Done</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              )}
+            </View>
+            <View style={[styles.editInputGroup, { marginBottom: 0 }]}>
+              <Text style={styles.editInputLabel}>Notes</Text>
+              <TextInput
+                style={[styles.editInput, { minHeight: 80, textAlignVertical: "top", paddingTop: 10 }]}
+                value={editedNotes}
+                onChangeText={setEditedNotes}
+                placeholder="Add notes for this workout..."
+                placeholderTextColor={Colors.text.tertiary}
+                multiline
+              />
+            </View>
+          </View>
         {workout.wodType === "raw" ? (
           <View style={styles.editRawContainer}>
             {editedWods.map((wod, i) => (
@@ -1087,7 +1154,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   groupBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
   },
@@ -1097,7 +1164,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   workoutDate: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.primary,
   },
@@ -1108,7 +1175,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   notesText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     flex: 1,
@@ -1131,7 +1198,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   progressBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
     color: Colors.primary[500],
   },
@@ -1193,7 +1260,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success[500] + "12",
   },
   markCompleteText: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
   },
@@ -1224,7 +1291,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.neutral[700],
   },
   wodRawText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     lineHeight: 22,
@@ -1249,7 +1316,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   exerciseNumText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(11),
   },
   exerciseInfo: { flex: 1, gap: 4 },
@@ -1259,7 +1326,7 @@ const styles = StyleSheet.create({
     color: Colors.text.primary,
   },
   exerciseInstructions: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     lineHeight: 16,
@@ -1271,7 +1338,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   trackingBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(10),
     textTransform: "capitalize",
   },
@@ -1279,40 +1346,49 @@ const styles = StyleSheet.create({
   publishSection: {
     backgroundColor: Colors.background.secondary,
     borderRadius: 12,
-    padding: 14,
+    padding: 16,
     marginBottom: 12,
     marginTop: 8,
     borderWidth: 1,
     borderColor: Colors.neutral[700],
+  },
+  publishSwitchRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  publishSwitchLabel: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(14),
+    color: Colors.text.primary,
+  },
+  publishSwitchSubtext: {
+    fontFamily: FontFamilies.poppinsRegular,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  publishInlineRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  publishDateRowLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
   },
-  publishSectionLabel: {
-    fontFamily: FontFamilies.poppinsMedium,
+  publishInlineLabel: {
+    fontFamily: FontFamilies.poppinsRegular,
     fontSize: responsiveSize(12),
     color: Colors.text.secondary,
+    marginBottom: 2,
   },
-  publishToggle: {
-    flexDirection: "row",
-    backgroundColor: Colors.background.primary,
-    borderRadius: 10,
-    padding: 3,
-  },
-  publishTab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  publishTabActive: {
-    backgroundColor: Colors.primary[500],
-  },
-  publishTabText: {
+  publishDateValue: {
     fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: responsiveSize(12),
-    color: Colors.text.secondary,
-  },
-  publishTabTextActive: {
-    color: "#000000",
+    fontSize: responsiveSize(15),
+    color: Colors.text.primary,
   },
   dateButton: {
     backgroundColor: Colors.background.primary,
@@ -1323,7 +1399,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   dateButtonText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(14),
     color: Colors.text.primary,
   },
@@ -1336,11 +1412,19 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   doneButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(14),
     color: "#fff",
   },
   /* Edit mode */
+  editMetaCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+  },
   editRawContainer: {
     paddingTop: 8,
   },
@@ -1414,7 +1498,7 @@ const styles = StyleSheet.create({
   editAddWodText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
-    color: "#000",
+    color: "#fff",
   },
   headerIconBtn: {
     padding: 4,
@@ -1441,7 +1525,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   footerButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodyMD,
     color: "#fff",
   },
@@ -1472,7 +1556,7 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.neutral[700] + "80",
   },
   resultCommentText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     flex: 1,
@@ -1491,7 +1575,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   resultExerciseName: {
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     flex: 1,
@@ -1504,7 +1588,7 @@ const styles = StyleSheet.create({
   },
   centerContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
   errorText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanMedium,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
   },

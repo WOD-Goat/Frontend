@@ -672,12 +672,12 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: FontSizes.bodyMD,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   errorText: {
     fontSize: FontSizes.bodyMD,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.error[500],
     textAlign: "center",
   },
@@ -693,14 +693,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FontSizes.headingXL,
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     color: Colors.text.primary,
     textAlign: "center",
   },
   emptyText: {
     marginTop: 8,
     fontSize: FontSizes.bodyMD,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
     textAlign: "center",
   },
@@ -734,14 +734,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   emptyHeroTitle: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingXL,
     color: Colors.text.primary,
     textAlign: "center",
     marginBottom: 10,
   },
   emptyHeroSubtitle: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyMD,
     color: Colors.text.secondary,
     textAlign: "center",
@@ -769,13 +769,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emptyStepLabel: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.text.primary,
     marginBottom: 2,
   },
   emptyStepDesc: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     lineHeight: responsiveSize(18),
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 16,
   },
   emptyCtaText: {
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     fontSize: FontSizes.bodyMD,
     color: "#0D0D14",
   },
@@ -833,7 +833,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: FontSizes.bodyXS,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
 
@@ -901,7 +901,7 @@ const styles = StyleSheet.create({
   },
   heroDate: {
     fontSize: FontSizes.bodyXS,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   heroValueContainer: {
@@ -915,7 +915,7 @@ const styles = StyleSheet.create({
   },
   heroUnit: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     color: Colors.text.secondary,
     marginTop: -2,
   },
@@ -941,7 +941,7 @@ const styles = StyleSheet.create({
   },
   heroImprovementLabel: {
     fontSize: FontSizes.bodyXS,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   heroChevron: {
@@ -986,7 +986,7 @@ const styles = StyleSheet.create({
   },
   cardDate: {
     fontSize: FontSizes.bodyXS,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   cardImprovementPill: {
@@ -1015,7 +1015,7 @@ const styles = StyleSheet.create({
   },
   cardUnit: {
     fontSize: FontSizes.bodyXS,
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     color: Colors.text.secondary,
     marginTop: -4,
   },
@@ -1059,7 +1059,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary[600],
   },
   loadMoreText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodyMD,
     color: Colors.primary[500],
   },

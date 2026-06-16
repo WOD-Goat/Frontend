@@ -35,6 +35,8 @@ export const mascotAssets = {
   help: require("./help.png"),
   coach: require("./coach.png"),
   track: require("./track.png"),
+  community: require("./community.png"),
+  egypt: require("./egypt.png"),
   "hands-free": require("./hands-free.png"),
   rest: require("./rest.png"),
   female: require("./female.png"),

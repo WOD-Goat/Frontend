@@ -303,9 +303,9 @@ export default function PRShareModal({
               activeOpacity={0.75}
             >
               {capturing ? (
-                <ActivityIndicator size="small" color="#000" />
+                <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Ionicons name="share-social-outline" size={20} color="#000" />
+                <Ionicons name="share-social-outline" size={20} color="#fff" />
               )}
               <Text style={[styles.actionBtnText, styles.shareText]}>
                 Share Now
@@ -365,13 +365,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerTitle: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingXL,
     color: Colors.text.primary,
     letterSpacing: 0.5,
   },
   headerSubtitle: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     marginTop: 2,
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   },
 
   swipeHint: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodyXS,
     color: Colors.text.secondary,
     textAlign: "center",
@@ -438,12 +438,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   variantName: {
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     fontSize: FontSizes.headingMD,
     letterSpacing: 1,
   },
   variantDesc: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
   },
@@ -498,6 +498,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   shareText: {
-    color: "#000000",
+    color: "#ffffff",
   },
 });

@@ -1,6 +1,7 @@
 import { tabIcons } from "@/assets/images";
 import { workoutsService } from "@/api/services";
 import { BulletTextArea, Button, Gap, Page } from "@/components";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { MiniTimer } from "@/components/timer/MiniTimer";
 import { TimerSetupSheet } from "@/components/timer/TimerSetupSheet";
@@ -161,72 +162,73 @@ function ExerciseCard({
                   key={i}
                   style={[
                     styles.exerciseRow,
-                  i < wod.exercises.length - 1 && styles.exerciseRowBorder,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.exerciseNumBadge,
-                    { backgroundColor: accentColor + "20" },
+                    i < wod.exercises.length - 1 && styles.exerciseRowBorder,
                   ]}
                 >
-                  <Text
-                    style={[styles.exerciseNumText, { color: accentColor }]}
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </Text>
-                </View>
-                <View style={styles.exerciseInfo}>
-                  <Text style={styles.exerciseName}>{ex.name}</Text>
-                  {ex.instructions ? (
-                    <Text style={styles.exerciseInstructions}>
-                      {ex.instructions}
-                    </Text>
-                  ) : null}
                   <View
                     style={[
-                      styles.trackingBadge,
-                      { backgroundColor: accentColor + "18" },
+                      styles.exerciseNumBadge,
+                      { backgroundColor: accentColor + "20" },
                     ]}
                   >
                     <Text
-                      style={[
-                        styles.trackingBadgeText,
-                        { color: accentColor },
-                      ]}
+                      style={[styles.exerciseNumText, { color: accentColor }]}
                     >
-                      {ex.trackingType?.replace("_", " ")}
+                      {String(i + 1).padStart(2, "0")}
                     </Text>
                   </View>
+                  <View style={styles.exerciseInfo}>
+                    <Text style={styles.exerciseName}>{ex.name}</Text>
+                    {ex.instructions ? (
+                      <Text style={styles.exerciseInstructions}>
+                        {ex.instructions}
+                      </Text>
+                    ) : null}
+                    <View
+                      style={[
+                        styles.trackingBadge,
+                        { backgroundColor: accentColor + "18" },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.trackingBadgeText,
+                          { color: accentColor },
+                        ]}
+                      >
+                        {ex.trackingType?.replace("_", " ")}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </View>
-            ))
-          )}
-        </View>
+              ))
+            )}
+          </View>
+        )}
+      </View>
+
+      {/* Timer corner button — floats outside card top-right */}
+      {!hideMarkComplete && onOpenTimer && (
+        <TouchableOpacity
+          style={styles.timerCornerBtn}
+          onPress={onOpenTimer}
+          activeOpacity={0.85}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Image
+            source={tabIcons.timer}
+            style={styles.timerCornerIcon}
+            resizeMode="contain"
+          />
+        </TouchableOpacity>
       )}
     </View>
-
-    {/* Timer corner button — floats outside card top-right */}
-    {!hideMarkComplete && onOpenTimer && (
-      <TouchableOpacity
-        style={styles.timerCornerBtn}
-        onPress={onOpenTimer}
-        activeOpacity={0.85}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Image
-          source={tabIcons.timer}
-          style={styles.timerCornerIcon}
-          resizeMode="contain"
-        />
-      </TouchableOpacity>
-    )}
-  </View>
   );
 }
 
 const formatResultValue = (r: ResultData): string => {
-  if (r.weight != null && r.reps != null) return `${r.weight} kg × ${r.reps} reps`;
+  if (r.weight != null && r.reps != null)
+    return `${r.weight} kg × ${r.reps} reps`;
   const parts: string[] = [];
   if (r.weight != null) parts.push(`${r.weight} kg`);
   if (r.reps != null) parts.push(`${r.reps} reps`);
@@ -255,6 +257,10 @@ export default function WorkoutDetailScreen() {
 
   const [isEditingWorkout, setIsEditingWorkout] = useState(false);
   const [editedWods, setEditedWods] = useState<WOD[]>([]);
+  const [editedTitle, setEditedTitle] = useState<string>("");
+  const [editedNotes, setEditedNotes] = useState<string>("");
+  const [editedDate, setEditedDate] = useState<Date>(new Date());
+  const [showEditDatePicker, setShowEditDatePicker] = useState(false);
 
   // ─── Workout timer state ───────────────────────────────────────────────────
   const [timerSetupVisible, setTimerSetupVisible] = useState(false);
@@ -455,6 +461,9 @@ export default function WorkoutDetailScreen() {
   const handleEditWorkout = () => {
     if (workout) {
       setEditedWods(JSON.parse(JSON.stringify(wods)));
+      setEditedTitle(workout.title ?? "");
+      setEditedNotes(workout.notes ?? "");
+      setEditedDate(parseFirebaseDate(workout.scheduledFor));
       setIsEditingWorkout(true);
     }
   };
@@ -462,6 +471,9 @@ export default function WorkoutDetailScreen() {
   const handleCancelEdit = () => {
     setIsEditingWorkout(false);
     setEditedWods([]);
+    setEditedTitle("");
+    setEditedNotes("");
+    setShowEditDatePicker(false);
   };
 
   const handleCompleteRaw = () => {
@@ -496,6 +508,9 @@ export default function WorkoutDetailScreen() {
         JSON.stringify(updatedWods, null, 2),
       );
       const response = await workoutsService.updateWorkout(id as string, {
+        title: editedTitle || null,
+        notes: editedNotes || null,
+        scheduledFor: editedDate,
         wods: updatedWods,
       });
 
@@ -694,14 +709,13 @@ export default function WorkoutDetailScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-    <Page
-      title={workout.title || "Workout Details"}
-      showBackButton={true}
-      scrollable={true}
-      headerRight={
-        <View style={{ flexDirection: "row", gap: 16 }}>
-          {!isEditingWorkout ? (
-            !workout.completed && (
+      <Page
+        title={workout.title || "Workout Details"}
+        showBackButton={true}
+        scrollable={true}
+        headerRight={
+          <View style={{ flexDirection: "row", gap: 16 }}>
+            {!isEditingWorkout && !workout.completed && (
               <TouchableOpacity onPress={handleEditWorkout}>
                 <Ionicons
                   name="create-outline"
@@ -709,300 +723,392 @@ export default function WorkoutDetailScreen() {
                   color={Colors.text.primary}
                 />
               </TouchableOpacity>
-            )
+            )}
+            {!isEditingWorkout && (
+              <TouchableOpacity onPress={handleDeleteWorkout}>
+                <Ionicons
+                  name="trash-outline"
+                  size={24}
+                  color={Colors.error[500]}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        }
+        footer={
+          isEditingWorkout ? (
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Cancel"
+                  size="large"
+                  onPress={handleCancelEdit}
+                  variant="secondary"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Save"
+                  size="large"
+                  onPress={handleSaveWorkout}
+                  disabled={loading}
+                />
+              </View>
+            </View>
+          ) : workout.completed ? (
+            <View style={styles.completedFooterButton}>
+              <Ionicons name="checkmark-circle" size={18} color="#fff" />
+              <Text style={styles.footerButtonText}>Completed</Text>
+            </View>
           ) : (
-            <TouchableOpacity onPress={handleCancelEdit}>
-              <Ionicons name="close" size={24} color={Colors.text.primary} />
-            </TouchableOpacity>
-          )}
-          {!isEditingWorkout && (
-            <TouchableOpacity onPress={handleDeleteWorkout}>
-              <Ionicons
-                name="trash-outline"
-                size={24}
-                color={Colors.error[500]}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      }
-      footer={
-        isEditingWorkout ? (
-          <View style={{ flexDirection: "row", gap: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Button
-                title="Cancel"
-                size="large"
-                onPress={handleCancelEdit}
-                variant="secondary"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                title="Save Changes"
-                size="large"
-                onPress={handleSaveWorkout}
-                disabled={loading}
-              />
-            </View>
-          </View>
-        ) : workout.completed ? (
-          <View style={styles.completedFooterButton}>
-            <Ionicons name="checkmark-circle" size={18} color="#fff" />
-            <Text style={styles.footerButtonText}>Completed</Text>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.footerButton,
-              !allWodsCompleted && styles.footerButtonDisabled,
-            ]}
-            activeOpacity={allWodsCompleted ? 0.85 : 1}
-            disabled={!allWodsCompleted}
-            onPress={() =>
-              workout.wodType === "raw"
-                ? handleCompleteRaw()
-                : router.push({
-                    pathname: "/workout/results",
-                    params: { workoutData: JSON.stringify(workout) },
-                  })
-            }
-          >
-            <Ionicons
-              name="barbell-outline"
-              size={18}
-              color={allWodsCompleted ? "#fff" : Colors.text.secondary}
-            />
-            <Text
-              style={[
-                styles.footerButtonText,
-                !allWodsCompleted && { color: Colors.text.secondary },
-              ]}
-            >
-              {allWodsCompleted
-                ? "Complete Workout"
-                : `Complete Workout (${wods.filter((w) => w.completed).length}/${wods.length})`}
-            </Text>
-          </TouchableOpacity>
-        )
-      }
-    >
-      {/* ── Workout content ── */}
-      {isEditingWorkout ? (
-        workout.wodType === "raw" ? (
-          <View style={styles.editRawContainer}>
-            {editedWods.map((wod, i) => (
-              <View key={wod.id} style={styles.editRawWodCard}>
-                <View style={styles.editRawWodHeader}>
-                  <Text style={styles.editRawWodLabel}>WOD {i + 1}</Text>
-                  {editedWods.length > 1 && (
-                    <TouchableOpacity
-                      style={styles.editRemoveWodBtn}
-                      onPress={() => handleRemoveWod(wod.id)}
-                    >
-                      <Text style={styles.editRemoveWodText}>Remove</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-                <View style={styles.editInputGroup}>
-                  <Text style={styles.editInputLabel}>WOD Name</Text>
-                  <TextInput
-                    style={styles.editInput}
-                    value={wod.title}
-                    onChangeText={(t) => updateWodTitle(wod.id, t)}
-                    placeholder='e.g., "Metcon" or "Strength"'
-                    placeholderTextColor={Colors.text.tertiary}
-                  />
-                </View>
-                <View style={styles.editInputGroup}>
-                  <Text style={styles.editInputLabel}>Workout Description</Text>
-                  <BulletTextArea
-                    inputContainerStyle={styles.editRawTextarea}
-                    inputStyle={styles.editRawTextareaInput}
-                    value={wod.rawText ?? ""}
-                    onChangeText={(t) => updateWodRawText(wod.id, t)}
-                    placeholder={"Describe this WOD..."}
-                    minHeight={160}
-                  />
-                </View>
-              </View>
-            ))}
             <TouchableOpacity
-              style={styles.editAddWodBtn}
-              onPress={handleAddWod}
+              style={[
+                styles.footerButton,
+                !allWodsCompleted && styles.footerButtonDisabled,
+              ]}
+              activeOpacity={allWodsCompleted ? 0.85 : 1}
+              disabled={!allWodsCompleted}
+              onPress={() =>
+                workout.wodType === "raw"
+                  ? handleCompleteRaw()
+                  : router.push({
+                      pathname: "/workout/results",
+                      params: { workoutData: JSON.stringify(workout) },
+                    })
+              }
             >
-              <Text style={styles.editAddWodText}>+ Add WOD</Text>
+              <Ionicons
+                name="barbell-outline"
+                size={18}
+                color={allWodsCompleted ? "#fff" : Colors.text.secondary}
+              />
+              <Text
+                style={[
+                  styles.footerButtonText,
+                  !allWodsCompleted && { color: Colors.text.secondary },
+                ]}
+              >
+                {allWodsCompleted
+                  ? "Complete Workout"
+                  : `Complete Workout (${wods.filter((w) => w.completed).length}/${wods.length})`}
+              </Text>
             </TouchableOpacity>
-          </View>
-        ) : (
-          <WorkoutView
-            wods={editedWods}
-            isEditingWorkout={true}
-            expandedExercises={{}}
-            animatedValues={{}}
-            onToggleExercise={() => {}}
-            onToggleWODCompletion={() => {}}
-            onUpdateWodTitle={updateWodTitle}
-            onUpdateExercise={updateExercise}
-            onSelectExercise={selectExercise}
-            onAddWod={handleAddWod}
-            onRemoveWod={handleRemoveWod}
-            onAddExercise={handleAddExercise}
-            onRemoveExercise={handleRemoveExercise}
-          />
-        )
-      ) : (
-        <>
-          {/* Workout header */}
-          <View style={styles.workoutHeader}>
-            <View style={styles.workoutHeaderTop}>
-              <View style={styles.groupBadge}>
-                <Ionicons name="person" size={12} color={Colors.primary[500]} />
-                <Text style={styles.groupBadgeText}>Personal Workout</Text>
+          )
+        }
+      >
+        {/* ── Workout content ── */}
+        {isEditingWorkout ? (
+          <>
+            {/* Workout meta fields */}
+            <View style={styles.editMetaCard}>
+              <View style={styles.editInputGroup}>
+                <Text style={styles.editInputLabel}>Workout Title</Text>
+                <TextInput
+                  style={styles.editInput}
+                  value={editedTitle}
+                  onChangeText={setEditedTitle}
+                  placeholder="e.g., Monday Strength"
+                  placeholderTextColor={Colors.text.tertiary}
+                />
               </View>
-              {workout.completed && (
-                <View style={styles.completedBadge}>
+              <View style={styles.editInputGroup}>
+                <Text style={styles.editInputLabel}>Date</Text>
+                <TouchableOpacity
+                  style={styles.editInput}
+                  onPress={() => setShowEditDatePicker(true)}
+                >
+                  <Text
+                    style={{
+                      color: Colors.text.primary,
+                      fontFamily: FontFamilies.poppinsRegular,
+                      fontSize: FontSizes.bodySM,
+                    }}
+                  >
+                    {editedDate.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showEditDatePicker && (
+                  <>
+                    <DateTimePicker
+                      value={editedDate}
+                      mode="date"
+                      display={Platform.OS === "ios" ? "spinner" : "default"}
+                      onChange={(_, selectedDate) => {
+                        if (Platform.OS === "android")
+                          setShowEditDatePicker(false);
+                        if (selectedDate) setEditedDate(selectedDate);
+                      }}
+                    />
+                    {Platform.OS === "ios" && (
+                      <TouchableOpacity
+                        style={styles.editDoneButton}
+                        onPress={() => setShowEditDatePicker(false)}
+                      >
+                        <Text style={styles.editDoneButtonText}>Done</Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
+                )}
+              </View>
+              <View style={[styles.editInputGroup, { marginBottom: 0 }]}>
+                <Text style={styles.editInputLabel}>Notes</Text>
+                <TextInput
+                  style={[
+                    styles.editInput,
+                    { minHeight: 80, textAlignVertical: "top", paddingTop: 10 },
+                  ]}
+                  value={editedNotes}
+                  onChangeText={setEditedNotes}
+                  placeholder="Add notes for this workout..."
+                  placeholderTextColor={Colors.text.tertiary}
+                  multiline
+                />
+              </View>
+            </View>
+            {workout.wodType === "raw" ? (
+              <View style={styles.editRawContainer}>
+                {editedWods.map((wod, i) => (
+                  <View key={wod.id} style={styles.editRawWodCard}>
+                    <View style={styles.editRawWodHeader}>
+                      <Text style={styles.editRawWodLabel}>WOD {i + 1}</Text>
+                      {editedWods.length > 1 && (
+                        <TouchableOpacity
+                          style={styles.editRemoveWodBtn}
+                          onPress={() => handleRemoveWod(wod.id)}
+                        >
+                          <Text style={styles.editRemoveWodText}>Remove</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <View style={styles.editInputGroup}>
+                      <Text style={styles.editInputLabel}>WOD Name</Text>
+                      <TextInput
+                        style={styles.editInput}
+                        value={wod.title}
+                        onChangeText={(t) => updateWodTitle(wod.id, t)}
+                        placeholder='e.g., "Metcon" or "Strength"'
+                        placeholderTextColor={Colors.text.tertiary}
+                      />
+                    </View>
+                    <View style={styles.editInputGroup}>
+                      <Text style={styles.editInputLabel}>
+                        Workout Description
+                      </Text>
+                      <BulletTextArea
+                        inputContainerStyle={styles.editRawTextarea}
+                        inputStyle={styles.editRawTextareaInput}
+                        value={wod.rawText ?? ""}
+                        onChangeText={(t) => updateWodRawText(wod.id, t)}
+                        placeholder={"Describe this WOD..."}
+                        minHeight={160}
+                      />
+                    </View>
+                  </View>
+                ))}
+                <TouchableOpacity
+                  style={styles.editAddWodBtn}
+                  onPress={handleAddWod}
+                >
+                  <Text style={styles.editAddWodText}>+ Add WOD</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <WorkoutView
+                wods={editedWods}
+                isEditingWorkout={true}
+                expandedExercises={{}}
+                animatedValues={{}}
+                onToggleExercise={() => {}}
+                onToggleWODCompletion={() => {}}
+                onUpdateWodTitle={updateWodTitle}
+                onUpdateExercise={updateExercise}
+                onSelectExercise={selectExercise}
+                onAddWod={handleAddWod}
+                onRemoveWod={handleRemoveWod}
+                onAddExercise={handleAddExercise}
+                onRemoveExercise={handleRemoveExercise}
+              />
+            )}
+          </>
+        ) : (
+          <>
+            {/* Workout header */}
+            <View style={styles.workoutHeader}>
+              <View style={styles.workoutHeaderTop}>
+                <View style={styles.groupBadge}>
                   <Ionicons
-                    name="checkmark-circle"
+                    name="person"
                     size={12}
-                    color={Colors.success[500]}
+                    color={Colors.primary[500]}
                   />
-                  <Text style={styles.completedBadgeText}>Completed</Text>
+                  <Text style={styles.groupBadgeText}>Personal Workout</Text>
+                </View>
+                {workout.completed && (
+                  <View style={styles.completedBadge}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={12}
+                      color={Colors.success[500]}
+                    />
+                    <Text style={styles.completedBadgeText}>Completed</Text>
+                  </View>
+                )}
+              </View>
+              {workout.title ? (
+                <Text style={styles.workoutTitle}>{workout.title}</Text>
+              ) : null}
+              <Text style={styles.workoutDate}>
+                {scheduledDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </Text>
+              {workout.notes && (
+                <View style={styles.notesBox}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={14}
+                    color={Colors.text.secondary}
+                  />
+                  <Text style={styles.notesText}>{workout.notes}</Text>
                 </View>
               )}
             </View>
-            {workout.title ? (
-              <Text style={styles.workoutTitle}>{workout.title}</Text>
-            ) : null}
-            <Text style={styles.workoutDate}>
-              {scheduledDate.toLocaleDateString("en-US", {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Text>
-            {workout.notes && (
-              <View style={styles.notesBox}>
-                <Ionicons
-                  name="document-text-outline"
-                  size={14}
-                  color={Colors.text.secondary}
-                />
-                <Text style={styles.notesText}>{workout.notes}</Text>
-              </View>
-            )}
-          </View>
 
-          <Gap size={20} />
+            <Gap size={20} />
 
-          {/* Progress indicator */}
-          {wods.length > 0 && !workout.completed && (
-            <>
-              <View style={styles.progressRow}>
-                <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
-                <View style={styles.progressBadge}>
-                  <Text style={styles.progressBadgeText}>
-                    {wods.filter((w) => w.completed).length}/{wods.length} done
-                  </Text>
-                </View>
-              </View>
-              <Gap size={4} />
-              <View style={styles.progressBarTrack}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${(wods.filter((w) => w.completed).length / wods.length) * 100}%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Gap size={24} />
-            </>
-          )}
-
-          {workout.wods.map((wod, i) => {
-            const wodState = wods[i];
-            return (
-              <ExerciseCard
-                key={i}
-                wod={wod}
-                wodIndex={i}
-                isExpanded={expandedWods[i] ?? false}
-                isCompleted={wodState?.completed ?? false}
-                hideMarkComplete={workout.completed}
-                onToggle={() => toggleWodExpanded(i)}
-                onMarkComplete={() => toggleWodCompleted(i)}
-                onOpenTimer={
-                  !workout.completed && wodState
-                    ? () => handleOpenTimerSetup(wodState)
-                    : undefined
-                }
-              />
-            );
-          })}
-
-          {workout.completed && (workout.results?.length > 0 || workout.comment) && (
-            <>
-              <Gap size={4} />
-              <View style={styles.resultsSection}>
-                <View style={styles.resultsSectionHeader}>
-                  <Ionicons name="trophy-outline" size={15} color={Colors.primary[500]} />
-                  <Text style={styles.resultsSectionTitle}>My Results</Text>
-                </View>
-                {workout.comment ? (
-                  <View style={styles.resultCommentRow}>
-                    <Ionicons name="chatbubble-outline" size={13} color={Colors.text.secondary} />
-                    <Text style={styles.resultCommentText}>{workout.comment}</Text>
-                  </View>
-                ) : null}
-                {workout.results?.map((r, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.resultRow,
-                      i < (workout.results?.length ?? 0) - 1 && styles.resultRowBorder,
-                    ]}
-                  >
-                    <Text style={styles.resultExerciseName} numberOfLines={1}>
-                      {r.exerciseName ?? `Exercise ${i + 1}`}
+            {/* Progress indicator */}
+            {wods.length > 0 && !workout.completed && (
+              <>
+                <View style={styles.progressRow}>
+                  <Text style={styles.sectionHeader}>WODs &amp; Exercises</Text>
+                  <View style={styles.progressBadge}>
+                    <Text style={styles.progressBadgeText}>
+                      {wods.filter((w) => w.completed).length}/{wods.length}{" "}
+                      done
                     </Text>
-                    <Text style={styles.resultValue}>{formatResultValue(r)}</Text>
                   </View>
-                ))}
-              </View>
-            </>
-          )}
+                </View>
+                <Gap size={4} />
+                <View style={styles.progressBarTrack}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      {
+                        width: `${(wods.filter((w) => w.completed).length / wods.length) * 100}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Gap size={24} />
+              </>
+            )}
 
-          <Gap size={24} />
-        </>
+            {workout.wods.map((wod, i) => {
+              const wodState = wods[i];
+              return (
+                <ExerciseCard
+                  key={i}
+                  wod={wod}
+                  wodIndex={i}
+                  isExpanded={expandedWods[i] ?? false}
+                  isCompleted={wodState?.completed ?? false}
+                  hideMarkComplete={workout.completed}
+                  onToggle={() => toggleWodExpanded(i)}
+                  onMarkComplete={() => toggleWodCompleted(i)}
+                  onOpenTimer={
+                    !workout.completed && wodState
+                      ? () => handleOpenTimerSetup(wodState)
+                      : undefined
+                  }
+                />
+              );
+            })}
+
+            {workout.completed &&
+              (workout.results?.length > 0 || workout.comment) && (
+                <>
+                  <Gap size={4} />
+                  <View style={styles.resultsSection}>
+                    <View style={styles.resultsSectionHeader}>
+                      <Ionicons
+                        name="trophy-outline"
+                        size={15}
+                        color={Colors.primary[500]}
+                      />
+                      <Text style={styles.resultsSectionTitle}>My Results</Text>
+                    </View>
+                    {workout.comment ? (
+                      <View style={styles.resultCommentRow}>
+                        <Ionicons
+                          name="chatbubble-outline"
+                          size={13}
+                          color={Colors.text.secondary}
+                        />
+                        <Text style={styles.resultCommentText}>
+                          {workout.comment}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {workout.results?.map((r, i) => (
+                      <View
+                        key={i}
+                        style={[
+                          styles.resultRow,
+                          i < (workout.results?.length ?? 0) - 1 &&
+                            styles.resultRowBorder,
+                        ]}
+                      >
+                        <Text
+                          style={styles.resultExerciseName}
+                          numberOfLines={1}
+                        >
+                          {r.exerciseName ?? `Exercise ${i + 1}`}
+                        </Text>
+                        <Text style={styles.resultValue}>
+                          {formatResultValue(r)}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
+              )}
+
+            <Gap size={24} />
+          </>
+        )}
+      </Page>
+
+      {/* ── Timer setup sheet ── */}
+      <TimerSetupSheet
+        visible={timerSetupVisible}
+        onClose={() => setTimerSetupVisible(false)}
+        onConfirm={handleTimerStart}
+      />
+
+      {/* ── Timer overlay + mini pill ── */}
+      {(timerOverlayVisible || timerMinimized) && (
+        <WorkoutTimerOverlay
+          visible={timerOverlayVisible}
+          wod={activeTimerWod}
+          onMinimize={handleMinimize}
+          onStop={handleTimerStop}
+        />
       )}
-    </Page>
-
-    {/* ── Timer setup sheet ── */}
-    <TimerSetupSheet
-      visible={timerSetupVisible}
-      onClose={() => setTimerSetupVisible(false)}
-      onConfirm={handleTimerStart}
-    />
-
-    {/* ── Timer overlay + mini pill ── */}
-    {(timerOverlayVisible || timerMinimized) && (
-      <WorkoutTimerOverlay
-        visible={timerOverlayVisible}
-        wod={activeTimerWod}
-        onMinimize={handleMinimize}
-        onStop={handleTimerStop}
-      />
-    )}
-    {timerMinimized && (
-      <MiniTimer
-        onExpand={handleExpand}
-        onPlayPause={timerIsRunning ? timerPause : timerResume}
-        onStop={handleTimerStop}
-      />
-    )}
+      {timerMinimized && (
+        <MiniTimer
+          onExpand={handleExpand}
+          onPlayPause={timerIsRunning ? timerPause : timerResume}
+          onStop={handleTimerStop}
+        />
+      )}
     </View>
   );
 }
@@ -1231,6 +1337,27 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   /* Edit mode */
+  editMetaCard: {
+    backgroundColor: Colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: Colors.neutral[700],
+  },
+  editDoneButton: {
+    backgroundColor: Colors.primary[500],
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    alignItems: "center",
+    marginTop: 6,
+  },
+  editDoneButtonText: {
+    fontFamily: FontFamilies.poppinsSemiBold,
+    fontSize: responsiveSize(14),
+    color: "#fff",
+  },
   editRawContainer: { paddingTop: 8 },
   editRawWodCard: {
     backgroundColor: Colors.background.secondary,
@@ -1304,7 +1431,7 @@ const styles = StyleSheet.create({
   editAddWodText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: FontSizes.bodyMD,
-    color: "#000",
+    color: "#fff",
   },
   footerButton: {
     flexDirection: "row",

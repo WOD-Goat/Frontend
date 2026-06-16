@@ -102,8 +102,8 @@ function GroupCard({ group }: { group: Group & { isAdmin: boolean } }) {
           <View style={styles.statPill}>
             <Ionicons name="people" size={11} color={Colors.text.secondary} />
             <Text style={styles.statPillText}>
-              {group.memberIds?.length ?? 0} member
-              {(group.memberIds?.length ?? 0) !== 1 ? "s" : ""}
+              {group.totalMembers ?? 0} Athlete
+              {(group.totalMembers ?? 0) !== 1 ? "s" : ""}
             </Text>
           </View>
           {lastWorkout && (
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.secondary[600],
   },
   filterPillText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodySM,
   },
   headerActions: {
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary[500] + "18",
   },
   joinButtonText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.primary[500],
   },
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   groupAvatarText: {
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     fontSize: FontSizes.headingMD,
     color: Colors.primary[500],
     letterSpacing: 0.5,
@@ -499,7 +499,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   adminBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(10),
     color: Colors.primary[500],
   },
@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.neutral[700],
   },
   statPillText: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(11),
     color: Colors.text.secondary,
   },
@@ -583,12 +583,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary[500] + "50",
   },
   lockedBadgeText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
+    fontFamily: FontFamilies.spartanSemiBold,
     fontSize: responsiveSize(10),
     color: Colors.primary[400],
   },
   lockedHint: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: responsiveSize(11),
     color: Colors.primary[400],
   },
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   emptySubtext: {
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.text.secondary,
     textAlign: "center",

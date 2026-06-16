@@ -5,7 +5,7 @@
 // The form calls `onConfirm(config)` which bubbles to the screen.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { FontSizes } from "@/constants";
+import { FontFamilies, FontSizes } from "@/constants";
 import { Colors } from "@/constants/Colors";
 import type {
     AMRAPConfig,
@@ -624,7 +624,7 @@ const s = StyleSheet.create({
     letterSpacing: 0.3,
   },
   stepperUnit: {
-    fontFamily: "Poppins-Regular",
+    fontFamily: FontFamilies.spartanRegular,
     fontSize: FontSizes.bodySM,
     color: Colors.neutral[500],
     marginLeft: 6,

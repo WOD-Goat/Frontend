@@ -347,10 +347,10 @@ export default function PRDetailScreen() {
                   </View>
                 </View>
                 <View style={styles.percentageValueContainer}>
-                  <Text style={styles.percentageValue}>
-                    {formatted.display}
+                  <Text style={styles.percentageValue} numberOfLines={1}>
+                    {formatted.display}{" "}
+                    <Text style={styles.percentageUnit}>{formatted.unit}</Text>
                   </Text>
-                  <Text style={styles.percentageUnit}>{formatted.unit}</Text>
                 </View>
               </View>
             );
@@ -449,12 +449,12 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: FontSizes.bodyMD,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   errorText: {
     fontSize: FontSizes.bodyMD,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.error[500],
     textAlign: "center",
   },
@@ -521,12 +521,12 @@ const styles = StyleSheet.create({
   },
   prUnit: {
     fontSize: FontSizes.headingXL,
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
   prDate: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
     marginTop: 4,
   },
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   estimatedLabel: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     color: Colors.primary[500],
   },
   estimatedValue: {
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: FontSizes.heading2XL,
-    fontFamily: FontFamilies.spartanBold,
+    fontFamily: FontFamilies.poppinsBold,
     color: Colors.text.primary,
   },
   // Empty history
@@ -573,12 +573,12 @@ const styles = StyleSheet.create({
   },
   emptyHistoryText: {
     fontSize: FontSizes.bodyLG,
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     color: Colors.text.secondary,
   },
   emptyHistorySubtext: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.tertiary,
     marginTop: 4,
   },
@@ -644,7 +644,7 @@ const styles = StyleSheet.create({
   },
   historyUnit: {
     fontSize: FontSizes.headingMD,
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
   historyRight: {
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.secondary,
   },
   // Tab switcher
@@ -699,7 +699,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: FontSizes.bodySM,
-    fontFamily: FontFamilies.poppinsMedium,
+    fontFamily: FontFamilies.spartanMedium,
     color: Colors.text.secondary,
   },
   tabTextActive: {
@@ -719,7 +719,7 @@ const styles = StyleSheet.create({
   },
   percentagesNoteText: {
     fontSize: FontSizes.labelXS,
-    fontFamily: FontFamilies.poppinsRegular,
+    fontFamily: FontFamilies.spartanRegular,
     color: Colors.text.tertiary,
   },
   percentageRow: {
@@ -755,17 +755,17 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 2,
   },
   percentageValueContainer: {
-    width: 100,
+    flexShrink: 0,
     alignItems: "flex-end",
   },
   percentageValue: {
-    fontSize: FontSizes.display2XL,
+    fontSize: FontSizes.displayLG,
     fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
   percentageUnit: {
     fontSize: FontSizes.headingMD,
-    fontFamily: FontFamilies.poppinsBold,
+    fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
 });
