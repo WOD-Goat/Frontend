@@ -30,20 +30,19 @@ export default function OnboardingScreen() {
 
   const onboardingData = [
     {
+      image: mascotAssets.egypt,
+      title: "Egypt's First AI Fitness App",
+      subtitle: "Just speak your workout details and WODGoat transcribes them instantly — logging WODs has never been this fast.",
+    },
+    {
+      image: mascotAssets.community,
+      title: "Train Together, Win Together",
+      subtitle: "Join groups, take on shared WODs, and compete with your crew — accountability built right in.",
+    },
+    {
       image: mascotAssets.coach,
-      title: "Meet WODGoat",
-      subtitle:
-        "Your personal AI Fitness Buddy, here to track every WOD, PR, and push you to your best.",
-    },
-    {
-      image: mascotAssets.track,
-      title: "Smart WOD Tracking",
-      subtitle: "WODGoat remembers your PRs, guides your workouts, and adapts to your progress.",
-    },
-    {
-      image: mascotAssets.help,
-      title: "AI Guidance Anytime",
-        subtitle: "Log PRs hands-free and get workout guidance using WODGoat AI voice integration.",
+      title: "Never Watch the Clock Again",
+      subtitle: "Built-in timers for every WOD format — AMRAP, EMOM, For Time. Stay in the zone, we'll handle the clock.",
     },
   ];
 
