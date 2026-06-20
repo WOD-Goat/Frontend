@@ -23,6 +23,7 @@ import {
   Animated,
   Image,
   LayoutAnimation,
+  Linking,
   Platform,
   StyleSheet,
   Switch,
@@ -1017,6 +1018,29 @@ export default function GroupWorkoutDetailScreen() {
                 <Text style={styles.notesText}>{workout.notes}</Text>
               </View>
             )}
+
+            {workout.referenceLinks && workout.referenceLinks.length > 0 && (
+              <View style={styles.refVideosBox}>
+                <View style={styles.refVideosHeader}>
+                  <Ionicons name="play-circle-outline" size={14} color={Colors.primary[500]} />
+                  <Text style={styles.refVideosTitle}>Reference Videos</Text>
+                </View>
+                {workout.referenceLinks.map((link, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.refVideoRow}
+                    onPress={() => Linking.openURL(link.videoLink)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="logo-youtube" size={16} color="#FF0000" />
+                    <Text style={styles.refVideoText} numberOfLines={1}>
+                      {link.exerciseName}
+                    </Text>
+                    <Ionicons name="open-outline" size={14} color={Colors.text.secondary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <Gap size={20} />
@@ -1180,6 +1204,37 @@ const styles = StyleSheet.create({
     color: Colors.text.secondary,
     flex: 1,
     lineHeight: 18,
+  },
+  refVideosBox: {
+    marginTop: 12,
+    gap: 8,
+  },
+  refVideosHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  refVideosTitle: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: FontSizes.bodySM,
+    color: Colors.primary[500],
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  refVideoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutral[700],
+  },
+  refVideoText: {
+    fontFamily: FontFamilies.spartanRegular,
+    fontSize: FontSizes.bodySM,
+    color: Colors.text.primary,
+    flex: 1,
   },
   progressRow: {
     flexDirection: "row",

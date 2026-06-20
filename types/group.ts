@@ -62,6 +62,11 @@ export interface UserResult {
   comment?: string | null;
 }
 
+export interface VideoLibraryEntry {
+  exerciseName: string;
+  videoLink: string;
+}
+
 // Group Workout types
 export interface GroupWorkout {
   id?: string;
@@ -73,6 +78,7 @@ export interface GroupWorkout {
   wodType?: "structured" | "raw";
   rawText?: string | null;
   wods: WODData[];
+  referenceLinks?: VideoLibraryEntry[];
   createdBy: string;
   createdAt: Date;
   hasSubmitted?: boolean;
