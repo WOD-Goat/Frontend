@@ -44,7 +44,18 @@ export function useVoiceWorkout(mode: VoiceWorkoutMode = "structured") {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
       if (autoStopRef.current) clearTimeout(autoStopRef.current);
+      // If the screen navigates away mid-recording (not via the modal's own
+      // close button), make sure the mic session doesn't stay open forever.
+      if (isRecordingRef.current) {
+        isRecordingRef.current = false;
+        recorder.stop().catch(() => {});
+        AudioModule.setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+        }).catch(() => {});
+      }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -210,6 +221,12 @@ export function useVoiceWorkout(mode: VoiceWorkoutMode = "structured") {
     if (isRecordingRef.current) {
       try {
         await recorder.stop();
+      } catch {}
+      try {
+        await AudioModule.setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+        });
       } catch {}
       isRecordingRef.current = false;
     }
