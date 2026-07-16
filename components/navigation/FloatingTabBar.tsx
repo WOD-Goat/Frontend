@@ -1,6 +1,7 @@
 import { tabIcons } from "@/assets/images";
 import { Colors, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import TourTarget from "@/components/tour/TourTarget";
 import { useTimerStore } from "@/lib/timer/viewmodels/timerStore";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { BlurView } from "expo-blur";
@@ -147,26 +148,28 @@ export default function FloatingTabBar({
         {/* Outer glow wrapper */}
         <View style={styles.plusGlowOuter}>
           {/* Button */}
-          <Pressable
-            onPress={handlePlusPress}
-            style={({ pressed }) => [
-              styles.plusButton,
-              pressed && styles.plusButtonPressed,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              iconRoute === "index" ? "Create Workout"
-              : iconRoute === "timer" ? "Start Timer"
-              : iconRoute === "prs" ? "Add Personal Record"
-              : "Create Group"
-            }
-          >
-            <Ionicons
-              name={iconRoute === "timer" ? "play" : "add"}
-              size={iconRoute === "timer" ? 26 : 30}
-              color="#FFFFFF"
-            />
-          </Pressable>
+          <TourTarget id="tab-fab">
+            <Pressable
+              onPress={handlePlusPress}
+              style={({ pressed }) => [
+                styles.plusButton,
+                pressed && styles.plusButtonPressed,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={
+                iconRoute === "index" ? "Create Workout"
+                : iconRoute === "timer" ? "Start Timer"
+                : iconRoute === "prs" ? "Add Personal Record"
+                : "Create Group"
+              }
+            >
+              <Ionicons
+                name={iconRoute === "timer" ? "play" : "add"}
+                size={iconRoute === "timer" ? 26 : 30}
+                color="#FFFFFF"
+              />
+            </Pressable>
+          </TourTarget>
         </View>
       </Animated.View>
 

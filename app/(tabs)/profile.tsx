@@ -3,10 +3,12 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 import { mascotAssets } from "@/assets/images";
 import { Gap, Page, ProfileSkeleton } from "@/components";
 import { useGlobalState } from "@/components/lib";
+import TourTarget from "@/components/tour/TourTarget";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { useAuth } from "@/hooks/useAuth";
 import { useEntitlements } from "@/hooks/useEntitlements";
 import { useRevenueCat } from "@/hooks/useRevenueCat";
+import { useTourStore } from "@/lib/tour/tourStore";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
@@ -61,6 +63,12 @@ export default function ProfileScreen() {
   const user = globalState.get("user");
   const { logoutUser } = useRevenueCat();
   const { plan, coachApplicationStatus } = useEntitlements();
+  const startTour = useTourStore((s) => s.start);
+
+  const handleReplayTutorial = () => {
+    router.navigate("/(tabs)");
+    startTour();
+  };
   console.log("User data on profile screen:", plan, coachApplicationStatus);
 
   const displayName = useMemo(() => {
@@ -208,17 +216,19 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
-        <DetailRow
-          icon="sparkles"
-          label="Plan"
-          value={
-            plan === "coach"
-              ? "Coach ✨"
-              : plan === "athlete"
-                ? "Athlete Pro ✨"
-                : "Free"
-          }
-        />
+        <TourTarget id="profile-plan-badge">
+          <DetailRow
+            icon="sparkles"
+            label="Plan"
+            value={
+              plan === "coach"
+                ? "Coach ✨"
+                : plan === "athlete"
+                  ? "Athlete Pro ✨"
+                  : "Free"
+            }
+          />
+        </TourTarget>
         <View style={styles.detailDivider} />
         <DetailRow
           icon="mail-outline"
@@ -326,6 +336,12 @@ export default function ProfileScreen() {
       </View>
       <Gap size={10} />
       <View style={styles.detailsCard}>
+        <PressableDetailRow
+          icon="school-outline"
+          label="Replay Tutorial"
+          onPress={handleReplayTutorial}
+        />
+        <View style={styles.detailDivider} />
         <PressableDetailRow
           icon="shield-checkmark-outline"
           label="Privacy Policy"

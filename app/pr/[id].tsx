@@ -1,9 +1,12 @@
 import { personalRecordsService } from "@/api/services";
 import type { PRStickerData } from "@/components";
 import { Gap, Page, PRShareModal } from "@/components";
+import TourTarget from "@/components/tour/TourTarget";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
+import { DEMO_PR } from "@/lib/tour/demoData";
+import { useTourStore } from "@/lib/tour/tourStore";
 import { formatDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
@@ -107,22 +110,41 @@ const computePercentageValue = (
 
 export default function PRDetailScreen() {
   const params = useLocalSearchParams();
-  const { id, name } = params;
+  const { id, name, tourDemo } = params;
+  const isTourDemo = tourDemo === "1";
 
   const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const { guard } = useFeatureGuard();
+  const notifyTargetPress = useTourStore((s) => s.notifyTargetPress);
   const [activeTab, setActiveTab] = useState<"history" | "percentages">(
     "history",
   );
 
   useEffect(() => {
-    if (id && typeof id === "string") {
-      loadPRs(id);
+    if (!id || typeof id !== "string") return;
+    if (isTourDemo) {
+      // Skip the network call entirely — render the tour's fixture PR so a
+      // brand-new user can see this screen without any real data.
+      setPrs([DEMO_PR]);
+      setLoading(false);
+      return;
     }
-  }, [id]);
+    loadPRs(id);
+  }, [id, isTourDemo]);
+
+  const handleSharePress = () => {
+    if (isTourDemo) {
+      // Bypass the entitlement paywall for the tour's demo PR only — this
+      // does not change real gating behavior for actual users.
+      setShareModalVisible(true);
+      notifyTargetPress("pr-share-button");
+      return;
+    }
+    guard("prShareSticker", () => setShareModalVisible(true));
+  };
 
   const loadPRs = async (exerciseId: string) => {
     try {
@@ -203,19 +225,21 @@ export default function PRDetailScreen() {
       scrollable
       contentStyle={styles.content}
       headerRight={
-        <TouchableOpacity
-          style={styles.shareBtn}
-          onPress={() => guard("prShareSticker", () => setShareModalVisible(true))}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="share-social-outline"
-            size={20}
-            color={Colors.primary[500]}
-          />
-          <Text style={styles.shareBtnText}>Share PR</Text>
-        </TouchableOpacity>
+        <TourTarget id="pr-share-button">
+          <TouchableOpacity
+            style={styles.shareBtn}
+            onPress={handleSharePress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name="share-social-outline"
+              size={20}
+              color={Colors.primary[500]}
+            />
+            <Text style={styles.shareBtnText}>Share PR</Text>
+          </TouchableOpacity>
+        </TourTarget>
       }
     >
       {/* Main PR Card */}
@@ -431,6 +455,7 @@ export default function PRDetailScreen() {
           visible={shareModalVisible}
           onClose={() => setShareModalVisible(false)}
           data={stickerData}
+          isDemo={isTourDemo}
         />
       )}
     </Page>

@@ -2,6 +2,8 @@ import { personalRecordsService } from "@/api/services";
 import { Gap, Page, PRHeader, PRsSkeleton } from "@/components";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import standardExercises from "@/constants/standardExercises.json";
+import { DEMO_EXERCISE_ID, DEMO_PR } from "@/lib/tour/demoData";
+import { useTourStore } from "@/lib/tour/tourStore";
 import type { StandardExercise } from "@/types";
 import { formatShortDate } from "@/utils";
 import { Ionicons } from "@expo/vector-icons";
@@ -45,6 +47,15 @@ export default function PRsScreen() {
   const [visibleCount, setVisibleCount] = useState(PR_PAGE_SIZE);
   const searchInputRef = useRef<TextInput>(null);
   const navigation = useNavigation();
+  const isDemoMode = useTourStore((s) => s.isDemoMode);
+
+  // While the tour is running, a brand-new user with zero real PRs sees a
+  // fixture PR instead of the empty state, so the list/detail/share flow
+  // can be demoed end-to-end. Never touches real data or the backend.
+  const effectivePRs = useMemo(
+    () => (isDemoMode && prs.length === 0 ? [DEMO_PR] : prs),
+    [isDemoMode, prs],
+  );
 
   useEffect(() => {
     loadPRs();
@@ -193,19 +204,22 @@ export default function PRsScreen() {
 
   const handlePRPress = useCallback(
     (exerciseId: string, exerciseName: string) => {
+      const isDemoPR = isDemoMode && prs.length === 0 && exerciseId === DEMO_EXERCISE_ID;
       router.push({
         pathname: `/pr/${exerciseId}`,
-        params: { name: exerciseName },
+        params: isDemoPR
+          ? { name: exerciseName, tourDemo: "1" }
+          : { name: exerciseName },
       } as any);
     },
-    [],
+    [isDemoMode, prs.length],
   );
 
   // Filter PRs by search query using exerciseId, exerciseName, and aliases
   const filteredPRs = useMemo(() => {
-    if (!searchQuery.trim()) return prs;
+    if (!searchQuery.trim()) return effectivePRs;
     const q = searchQuery.toLowerCase();
-    return prs.filter((pr) => {
+    return effectivePRs.filter((pr) => {
       if (
         pr.exerciseId?.toLowerCase().includes(q) ||
         pr.exerciseName?.toLowerCase().includes(q)
@@ -218,7 +232,7 @@ export default function PRsScreen() {
         alias.toLowerCase().includes(q),
       );
     });
-  }, [prs, searchQuery]);
+  }, [effectivePRs, searchQuery]);
 
   // Paginated slice of filtered results
   const visiblePRs = useMemo(
@@ -246,12 +260,12 @@ export default function PRsScreen() {
 
   // Summary stats
   const stats = useMemo(() => {
-    const totalPRs = prs.length;
-    const withImprovement = prs.filter(
+    const totalPRs = effectivePRs.length;
+    const withImprovement = effectivePRs.filter(
       (pr) => pr.improvement !== null && pr.improvement > 0,
     ).length;
     return { totalPRs, withImprovement };
-  }, [prs]);
+  }, [effectivePRs]);
 
   if (loading) {
     return <PRsSkeleton />;
@@ -273,7 +287,7 @@ export default function PRsScreen() {
     );
   }
 
-  if (prs.length === 0) {
+  if (effectivePRs.length === 0) {
     return (
       <Page showBackButton={false} contentStyle={{ flex: 1 }} scrollable={true}>
         <PRHeader />
@@ -399,8 +413,8 @@ export default function PRsScreen() {
             />
           </View>
           <Text style={styles.statValue}>
-            {prs.length > 0
-              ? formatShortDate(new Date(prs[0].date?._seconds * 1000))
+            {effectivePRs.length > 0
+              ? formatShortDate(new Date(effectivePRs[0].date?._seconds * 1000))
               : "-"}
           </Text>
           <Text style={styles.statLabel}>Latest</Text>

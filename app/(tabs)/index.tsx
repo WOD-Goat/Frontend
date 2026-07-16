@@ -10,6 +10,7 @@ import {
   WorkoutsSkeleton,
 } from "@/components";
 import { useGlobalState } from "@/components/lib";
+import TourTarget from "@/components/tour/TourTarget";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import type { AssignedWorkoutData } from "@/types";
@@ -151,11 +152,13 @@ export default function WorkoutsScreen() {
         <HeaderSection userName={userName} streakDays={user?.statsSummary.currentStreak} weekLabel={weekLabel} />
         <Gap size={12} />
 
-        <WeekStrip
-          days={weekDays}
-          selectedDate={selectedDate}
-          onDaySelect={setSelectedDate}
-        />
+        <TourTarget id="home-day-card">
+          <WeekStrip
+            days={weekDays}
+            selectedDate={selectedDate}
+            onDaySelect={setSelectedDate}
+          />
+        </TourTarget>
         <Gap size={24} />
 
         <View style={styles.emptyCard}>
@@ -207,11 +210,13 @@ export default function WorkoutsScreen() {
       />
       <Gap size={12} />
 
-      <WeekStrip
-        days={weekDays}
-        selectedDate={selectedDate}
-        onDaySelect={setSelectedDate}
-      />
+      <TourTarget id="home-day-card">
+        <WeekStrip
+          days={weekDays}
+          selectedDate={selectedDate}
+          onDaySelect={setSelectedDate}
+        />
+      </TourTarget>
       <Gap size={16} />
 
       {selectedWorkouts.length === 0 ? (

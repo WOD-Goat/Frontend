@@ -18,10 +18,12 @@ import { storage, useStorage } from "../components/lib/storage";
 import { ToastProvider } from "../components/lib/toast/ToastProvider";
 import NoInternetScreen from "../components/ui/NoInternetScreen";
 import UpdateModal from "../components/ui/UpdateModal";
+import TourOverlay from "../components/tour/TourOverlay";
 import "../config/firebase";
 import { REVENUECAT_CONFIG } from "../config/revenuecat";
 import { auth } from "../config/firebase";
 import { useNotifications } from "../hooks/useNotifications";
+import { useTourStore } from "../lib/tour/tourStore";
 import { preloadImages } from "../utils/imagePreloader";
 import { isUpdateRequired } from "../utils/version";
 import Constants from "expo-constants";
@@ -43,6 +45,23 @@ export default function RootLayout() {
   const globalState = useGlobalState();
   const user = useZustandGlobalState((state) => state.user);
   const { registerForPushNotifications } = useNotifications();
+  const hasCompletedTour = useTourStore((s) => s.hasCompletedTour);
+  const hasCheckedTourCompletion = useTourStore((s) => s.hasCheckedTourCompletion);
+  const loadTourCompletion = useTourStore((s) => s.loadCompletion);
+  const startTour = useTourStore((s) => s.start);
+
+  useEffect(() => {
+    loadTourCompletion();
+  }, [loadTourCompletion]);
+
+  // First-launch guided tour — starts once for a new/returning-incomplete
+  // user after they land on the tabs, giving Home a moment to mount so its
+  // spotlight target is already registered.
+  useEffect(() => {
+    if (!isAuthenticated || !authChecked || !hasCheckedTourCompletion || hasCompletedTour) return;
+    const timer = setTimeout(() => startTour(), 600);
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, authChecked, hasCheckedTourCompletion, hasCompletedTour, startTour]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -266,6 +285,8 @@ export default function RootLayout() {
         {!isOnline && (
           <NoInternetScreen onRetry={handleRetry} loading={isRetrying} />
         )}
+
+        <TourOverlay />
 
         {updateReady && !updateDismissed && (
           <View style={updateStyles.banner}>

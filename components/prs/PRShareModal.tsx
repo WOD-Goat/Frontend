@@ -1,3 +1,5 @@
+import { useToast } from "@/components/lib/toast/ToastProvider";
+import TourTarget from "@/components/tour/TourTarget";
 import { Colors, FontFamilies, FontSizes } from "@/constants";
 import { Ionicons } from "@expo/vector-icons";
 import * as MediaLibrary from "expo-media-library";
@@ -59,15 +61,20 @@ interface PRShareModalProps {
   visible: boolean;
   onClose: () => void;
   data: PRStickerData;
+  /** True when this modal is showing the tour's fixture PR — real "Save"/
+   *  "Share" writes to the device are intercepted with a toast instead. */
+  isDemo?: boolean;
 }
 
 export default function PRShareModal({
   visible,
   onClose,
   data,
+  isDemo = false,
 }: PRShareModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [capturing, setCapturing] = useState(false);
+  const { showToast } = useToast();
 
   const scrollRef = useRef<ScrollView>(null);
   /** Off-screen ViewShot — always renders the currently selected variant */
@@ -104,6 +111,13 @@ export default function PRShareModal({
   };
 
   const handleDownload = async () => {
+    if (isDemo) {
+      showToast({
+        type: "success",
+        label: "This is a preview — log a real PR to save your own!",
+      });
+      return;
+    }
     try {
       setCapturing(true);
       const uri = await captureSticker();
@@ -125,6 +139,13 @@ export default function PRShareModal({
   };
 
   const handleShare = async () => {
+    if (isDemo) {
+      showToast({
+        type: "success",
+        label: "This is a preview — log a real PR to share your own!",
+      });
+      return;
+    }
     try {
       setCapturing(true);
       const uri = await captureSticker();
@@ -202,6 +223,7 @@ export default function PRShareModal({
           <Text style={styles.swipeHint}>← Swipe to explore designs →</Text>
 
           {/* ── Carousel ── */}
+          <TourTarget id="pr-sticker-carousel">
           <ScrollView
             ref={scrollRef}
             horizontal
@@ -255,6 +277,7 @@ export default function PRShareModal({
               );
             })}
           </ScrollView>
+          </TourTarget>
 
           {/* ── Dot indicators ── */}
           <View style={styles.dotsRow}>
