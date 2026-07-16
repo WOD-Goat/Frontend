@@ -12,6 +12,7 @@ export class ApiClient {
   private accessToken: string | null = null;
   private refreshToken: string | null = null;
   private isInitialized: boolean = false;
+  private refreshPromise: Promise<"success" | "invalid" | "network_error"> | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -86,13 +87,31 @@ export class ApiClient {
     this.refreshToken = null;
   }
 
-  async refreshAccessToken(): Promise<boolean> {
+  // Returns 'success' when the access token was refreshed, 'invalid' when the
+  // server explicitly rejected the refresh token (session is genuinely over),
+  // and 'network_error' when we simply couldn't reach the server — in that
+  // case existing tokens are preserved so a transient outage doesn't log the
+  // user out.
+  //
+  // Concurrent callers share a single in-flight request so a burst of 401s
+  // doesn't fire multiple refresh calls with the same refresh token.
+  async refreshAccessToken(): Promise<"success" | "invalid" | "network_error"> {
+    if (!this.refreshPromise) {
+      this.refreshPromise = this.doRefreshAccessToken().finally(() => {
+        this.refreshPromise = null;
+      });
+    }
+    return this.refreshPromise;
+  }
+
+  private async doRefreshAccessToken(): Promise<"success" | "invalid" | "network_error"> {
     if (!this.refreshToken) {
-      return false;
+      return "invalid";
     }
 
+    let response: Response;
     try {
-      const response = await fetch(
+      response = await fetch(
         `${this.baseURL}${API_ENDPOINTS.AUTH.REFRESH_TOKEN}`,
         {
           method: "POST",
@@ -105,33 +124,39 @@ export class ApiClient {
           body: JSON.stringify({ refreshToken: this.refreshToken }),
         },
       );
+    } catch {
+      console.log("⚠️ Token refresh failed due to a network error, keeping existing session");
+      return "network_error";
+    }
 
-      if (!response.ok) {
-        // Check if this is a 401
-        if (response.status === 401 || this.refreshToken === null) {
-          console.log("⚠️ Session expired, please log in again");
-          await this.clearTokens();
-          const { router } = await import("expo-router");
-          router.push("/auth/login");
-        }
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.log("⚠️ Session expired, please log in again");
         await this.clearTokens();
-        return false;
+        const { router } = await import("expo-router");
+        router.push("/auth/login");
+        return "invalid";
       }
+      console.log(`⚠️ Token refresh failed with status ${response.status}, keeping existing session`);
+      return "network_error";
+    }
 
+    try {
       const data: RefreshTokenResponse = await response.json();
 
       if (data.success && data.accessToken) {
         await this.setAccessToken(data.accessToken);
         console.log("✅ Access token refreshed successfully");
-        return true;
+        return "success";
       }
-
-      await this.clearTokens();
-      return false;
     } catch {
-      await this.clearTokens();
-      return false;
+      console.log("⚠️ Token refresh response was unreadable, keeping existing session");
+      return "network_error";
     }
+
+    // Server responded 200 but without a usable token — treat as a genuine rejection
+    await this.clearTokens();
+    return "invalid";
   }
 
   private async request<T>(
@@ -178,16 +203,20 @@ export class ApiClient {
         console.log(
           "🔄 API Client: Detected token error, attempting refresh...",
         );
-        const refreshed = await this.refreshAccessToken();
-        if (refreshed) {
+        const result = await this.refreshAccessToken();
+        if (result === "success") {
           console.log(
             "🔄 API Client: Token refreshed, retrying original request...",
           );
           // Retry the original request with the new token
           return await makeRequest();
-        } else {
-          console.log("🔄 API Client: Token refresh failed, tokens cleared");
+        } else if (result === "invalid") {
+          console.log("🔄 API Client: Refresh token invalid, tokens cleared");
           // Redirect is already handled in refreshAccessToken()
+        } else {
+          console.log(
+            "🔄 API Client: Token refresh failed due to a network error, keeping session",
+          );
         }
       }
 

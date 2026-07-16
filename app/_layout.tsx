@@ -155,45 +155,34 @@ export default function RootLayout() {
           return;
         }
 
-        console.log("🔐 Layout: Tokens found, validating refresh token...");
+        // Trust the locally stored tokens rather than forcing a refresh call
+        // on every cold start — a transient network hiccup here used to look
+        // identical to an invalid session and log the user out. Actual token
+        // expiry is handled lazily: the API client refreshes on the first
+        // request that comes back 401.
+        console.log("🔐 Layout: Tokens found, trusting stored session");
 
-        try {
-          const refreshed = await apiClient.refreshAccessToken();
-
-          if (refreshed) {
-            console.log("✅ Layout: Refresh token valid, access token refreshed");
-
-            const firebaseUser = await new Promise<any>((resolve) => {
-              const unsubscribe = onAuthStateChanged(auth, (user) => {
-                unsubscribe();
-                resolve(user);
-              });
-            });
-            if (firebaseUser && !firebaseUser.emailVerified) {
-              console.log("⚠️ Layout: Email not verified, logging out");
-              await apiClient.clearTokens();
-              setIsAuthenticated(false);
-              setAuthChecked(true);
-              return;
-            }
-
-            const userData = await getStorage("user");
-            if (userData) {
-              console.log("👤 Layout: User data loaded from storage");
-              globalState.set("user", userData);
-            }
-
-            setIsAuthenticated(true);
-          } else {
-            console.log("⚠️ Layout: Refresh token invalid, clearing storage");
-            await apiClient.clearTokens();
-            setIsAuthenticated(false);
-          }
-        } catch {
-          console.log("⚠️ Layout: Session expired, please log in again");
+        const firebaseUser = await new Promise<any>((resolve) => {
+          const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user);
+          });
+        });
+        if (firebaseUser && !firebaseUser.emailVerified) {
+          console.log("⚠️ Layout: Email not verified, logging out");
           await apiClient.clearTokens();
           setIsAuthenticated(false);
+          setAuthChecked(true);
+          return;
         }
+
+        const userData = await getStorage("user");
+        if (userData) {
+          console.log("👤 Layout: User data loaded from storage");
+          globalState.set("user", userData);
+        }
+
+        setIsAuthenticated(true);
       } catch (error) {
         console.error("❌ Layout auth check error:", error);
         setIsAuthenticated(false);

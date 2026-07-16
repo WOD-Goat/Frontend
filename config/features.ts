@@ -28,8 +28,8 @@ export const FEATURE_CONFIG: Record<Plan, PlanFeatures> = {
     groupJoinMax: 1,
     createGroup: false,
     leaderboard: false,
-    prShareSticker: false,
-    customTimerIntervals: false,
+    prShareSticker: true,
+    customTimerIntervals: true,
   },
   athlete: {
     voiceWorkoutMaxCountPerMonth: null,
