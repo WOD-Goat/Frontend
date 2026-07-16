@@ -1,7 +1,5 @@
 // Tab Icons
 export const tabIcons = {
-  home: require("./home.png"),
-  homeSelected: require("./home-selected.png"),
   workout: require("./workout.png"),
   workoutSelected: require("./workout-selected.png"),
   pr: require("./pr.png"),
@@ -17,29 +15,14 @@ export const tabIcons = {
 // App Icons
 export const appIcons = {
   logo: require("./logo.png"),
-  applogo: require("./applogo.png")
 };
 
 export const mascotAssets = {
-  backsquat: require("./backsquat.png"),
-  bike: require("./bike.png"),
-  doctor: require("./doctor.png"),
-  goatai: require("./goatai.png"),
   premium: require("./premium.png"),
-  pushup: require("./pushup.png"),
-  sledpush: require("./sledpush.png"),
-  snatch: require("./snatch.png"),
   standard: require("./standard.png"),
-  upcoming: require("./upcoming.png"),
-  whistle: require("./whistle.png"),
-  help: require("./help.png"),
   coach: require("./coach.png"),
-  track: require("./track.png"),
   community: require("./community.png"),
   egypt: require("./egypt.png"),
-  "hands-free": require("./hands-free.png"),
-  rest: require("./rest.png"),
-  female: require("./female.png"),
 };
 
 export const icons = {
