@@ -8,8 +8,8 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -142,37 +142,31 @@ export default function WorkoutHistoryScreen() {
 
   return (
     <Page showBackButton={true} title="Workout History" scrollable={false}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
-        {workouts.map((workout, i) => (
-          <View key={`${workout.id}-${i}`}>
-            <HistoryWorkoutItem workout={workout} />
-            {i < workouts.length - 1 && <Gap size={10} />}
+      <FlatList
+        data={workouts}
+        keyExtractor={(workout, i) => `${workout.id}-${i}`}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item, index }) => (
+          <View>
+            <HistoryWorkoutItem workout={item} />
+            {index < workouts.length - 1 && <Gap size={10} />}
           </View>
-        ))}
-
-        {hasMore && (
-          <>
-            <Gap size={12} />
-            <TouchableOpacity
-              style={styles.loadMoreButton}
-              onPress={() => loadHistory(cursor, true)}
-              disabled={loadingMore}
-              activeOpacity={0.75}
-            >
-              {loadingMore ? (
-                <ActivityIndicator size="small" color={Colors.primary[500]} />
-              ) : (
-                <>
-                  <Ionicons name="chevron-down" size={16} color={Colors.primary[500]} />
-                  <Text style={styles.loadMoreText}>Load More</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </>
         )}
-
-        <Gap size={40} />
-      </ScrollView>
+        onEndReached={() => {
+          if (hasMore && !loadingMore) loadHistory(cursor, true);
+        }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <View style={{ paddingVertical: 16 }}>
+              <ActivityIndicator size="small" color={Colors.primary[500]} />
+            </View>
+          ) : (
+            <Gap size={40} />
+          )
+        }
+      />
     </Page>
   );
 }
@@ -276,21 +270,5 @@ const styles = StyleSheet.create({
   statusText: {
     fontFamily: FontFamilies.poppinsSemiBold,
     fontSize: responsiveSize(10),
-  },
-  loadMoreButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.primary[500] + "40",
-    backgroundColor: Colors.background.secondary,
-  },
-  loadMoreText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.primary[500],
   },
 });

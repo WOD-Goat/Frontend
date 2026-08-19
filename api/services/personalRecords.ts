@@ -9,14 +9,17 @@ import type {
 
 export const personalRecordsService = {
   /**
-   * Get all personal records for the authenticated user
+   * Get personal records for the authenticated user, most recently updated first.
+   * Capped at `limit` (backend max 100) so this can't silently fetch an unbounded
+   * history — the PRs screen relies on the full set being in memory for instant
+   * client-side search, so this isn't paginated further on the frontend.
    */
-  getAllPersonalRecords: async (): Promise<PersonalRecordsResponse> => {
+  getAllPersonalRecords: async (limit = 100): Promise<PersonalRecordsResponse> => {
     console.log("💪 PersonalRecordsService: Fetching all personal records");
 
     try {
       const response = await apiClient.get<PersonalRecordsResponse>(
-        API_ENDPOINTS.PERSONAL_RECORDS.GET_ALL,
+        `${API_ENDPOINTS.PERSONAL_RECORDS.GET_ALL}?limit=${limit}`,
       );
 
       console.log("💪 PersonalRecordsService: Get all PRs response:", response);

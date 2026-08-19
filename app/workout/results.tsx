@@ -1,4 +1,4 @@
-import { authService, groupsService, workoutsService } from "@/api/services";
+import { authService, groupsService, programsService, workoutsService } from "@/api/services";
 import {
   BottomSheetSelect,
   Button,
@@ -76,6 +76,7 @@ export default function PRsScreen() {
     type?: string;
     workoutId?: string;
     groupId?: string;
+    programId?: string;
   }>();
 
   const type = params.type ?? "personal";
@@ -83,8 +84,9 @@ export default function PRsScreen() {
   const isRaw = parsed.wodType === "raw";
   const wods: WODData[] = parsed.wods ?? [];
   const resolvedWorkoutId: string =
-    type === "group" ? (params.workoutId ?? "") : (parsed.id ?? "");
+    type === "group" || type === "program" ? (params.workoutId ?? "") : (parsed.id ?? "");
   const groupId = params.groupId ?? "";
+  const programId = params.programId ?? "";
 
   const [results, setResults] = useState<ResultEntry[]>([
     blankEntry("result-1"),
@@ -249,6 +251,13 @@ export default function PRsScreen() {
           [],
           trimmedComment,
         );
+      } else if (type === "program") {
+        await programsService.submitProgramWorkout(
+          programId,
+          resolvedWorkoutId,
+          [],
+          trimmedComment,
+        );
       } else {
         await workoutsService.completeWorkout(
           resolvedWorkoutId,
@@ -305,6 +314,13 @@ export default function PRsScreen() {
       if (type === "group") {
         response = await groupsService.submitGroupWorkout(
           groupId,
+          resolvedWorkoutId,
+          formattedResults,
+          trimmedComment,
+        );
+      } else if (type === "program") {
+        response = await programsService.submitProgramWorkout(
+          programId,
           resolvedWorkoutId,
           formattedResults,
           trimmedComment,

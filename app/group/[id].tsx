@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
   Pressable,
   ScrollView,
   Share,
@@ -615,6 +616,7 @@ function MemberItem({ member, groupId, isAdmin }: { member: GroupMember; groupId
 
 // ── GroupDetailScreen ────────────────────────────────────────────────────────
 const PAST_PAGE_SIZE = 20;
+const MEMBERS_PAGE_SIZE = 20;
 
 export default function GroupDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -630,6 +632,12 @@ export default function GroupDetailScreen() {
   const [loadingPast, setLoadingPast]     = useState(false);
   const [loadingMorePast, setLoadingMorePast] = useState(false);
   const [pastLoaded, setPastLoaded]       = useState(false);
+  const [members, setMembers]             = useState<GroupMember[]>([]);
+  const [membersOffset, setMembersOffset] = useState(0);
+  const [membersHasMore, setMembersHasMore] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [loadingMoreMembers, setLoadingMoreMembers] = useState(false);
+  const [membersLoaded, setMembersLoaded] = useState(false);
 
   const { showToast } = useToast();
   const globalState = useGlobalState();
@@ -680,9 +688,30 @@ export default function GroupDetailScreen() {
     }
   };
 
+  const loadMembers = async (offsetParam: number, isLoadMore: boolean) => {
+    try {
+      isLoadMore ? setLoadingMoreMembers(true) : setLoadingMembers(true);
+      const res = await groupsService.getGroupMembers(id, MEMBERS_PAGE_SIZE, offsetParam);
+      if (res.success && res.data) {
+        setMembers((prev) => (isLoadMore ? [...prev, ...res.data.members] : res.data.members));
+        setMembersOffset(offsetParam + res.data.members.length);
+        setMembersHasMore(res.data.hasMore);
+      } else {
+        showToast({ type: "error", label: res.message || "Failed to load athletes" });
+      }
+    } catch (err: any) {
+      showToast({ type: "error", label: err.message || "Failed to load athletes" });
+    } finally {
+      setLoadingMembers(false);
+      setLoadingMoreMembers(false);
+      setMembersLoaded(true);
+    }
+  };
+
   const handleTabChange = (tab: DetailTab) => {
     setActiveTab(tab);
     if (tab === "past" && !pastLoaded) loadPastWorkouts(null, false);
+    if (tab === "athletes" && !membersLoaded) loadMembers(0, false);
   };
 
   const handleRegenerateCode = async () => {
@@ -759,17 +788,10 @@ export default function GroupDetailScreen() {
     );
   }
 
-  const adminMember = group.members?.find((m) => m.uid === group.createdBy);
+  const adminMember = group.admin ?? undefined;
   const rawCoachName = adminMember?.name ?? adminMember?.nickname ?? "Coach";
   const coachName    = rawCoachName.split(" ").slice(0, 2).join(" ");
   const memberCount = group.totalMembers ?? 0;
-
-  const sortedMembers = group.members
-    ? [
-        ...(adminMember ? [adminMember] : []),
-        ...(group.members.filter((m) => m.uid !== group.createdBy)),
-      ]
-    : [];
 
   const initials = group.name
     .trim()
@@ -894,34 +916,34 @@ export default function GroupDetailScreen() {
             <Text style={styles.emptySubtext}>Completed group workouts will appear here.</Text>
           </View>
         ) : (
-          <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-            {pastWorkouts.map((workout) => (
-              <WorkoutItem key={workout.id} workout={workout} groupId={id} isAdmin={isAdmin} />
-            ))}
-            {pastHasMore && (
-              <>
-                <Gap size={12} />
-                <TouchableOpacity
-                  style={styles.loadMoreButton}
-                  onPress={() => loadPastWorkouts(pastCursor, true)}
-                  disabled={loadingMorePast}
-                  activeOpacity={0.75}
-                >
-                  {loadingMorePast ? (
-                    <ActivityIndicator size="small" color={Colors.primary[500]} />
-                  ) : (
-                    <>
-                      <Ionicons name="chevron-down" size={16} color={Colors.primary[500]} />
-                      <Text style={styles.loadMoreText}>Load More</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </>
+          <FlatList
+            style={styles.tabContent}
+            data={pastWorkouts}
+            keyExtractor={(workout) => workout.id!}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <WorkoutItem workout={item} groupId={id} isAdmin={isAdmin} />
             )}
-            <Gap size={120} />
-          </ScrollView>
+            onEndReached={() => {
+              if (pastHasMore && !loadingMorePast) loadPastWorkouts(pastCursor, true);
+            }}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              loadingMorePast ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator size="small" color={Colors.primary[500]} />
+                </View>
+              ) : (
+                <Gap size={120} />
+              )
+            }
+          />
         )
-      ) : sortedMembers.length === 0 ? (
+      ) : loadingMembers ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={Colors.primary[500]} />
+        </View>
+      ) : !adminMember && members.length === 0 ? (
         <View style={styles.centerContainer}>
           <Ionicons name="people-outline" size={40} color={Colors.text.secondary} />
           <Gap size={12} />
@@ -929,12 +951,33 @@ export default function GroupDetailScreen() {
           <Text style={styles.emptySubtext}>Athlete details could not be loaded.</Text>
         </View>
       ) : (
-        <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-          {sortedMembers.map((member) => (
-            <MemberItem key={member.uid} member={member} groupId={id} isAdmin={isAdmin} />
-          ))}
-          <Gap size={120} />
-        </ScrollView>
+        <FlatList
+          style={styles.tabContent}
+          data={members}
+          keyExtractor={(member) => member.uid}
+          renderItem={({ item }) => (
+            <MemberItem member={item} groupId={id} isAdmin={isAdmin} />
+          )}
+          ListHeaderComponent={
+            adminMember ? (
+              <MemberItem member={adminMember} groupId={id} isAdmin={isAdmin} />
+            ) : null
+          }
+          onEndReached={() => {
+            if (membersHasMore && !loadingMoreMembers) loadMembers(membersOffset, true);
+          }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMoreMembers ? (
+              <View style={{ paddingVertical: 16 }}>
+                <ActivityIndicator size="small" color={Colors.primary[500]} />
+              </View>
+            ) : (
+              <Gap size={120} />
+            )
+          }
+          showsVerticalScrollIndicator={false}
+        />
       )}
     </Page>
   );
@@ -1203,23 +1246,7 @@ const styles = StyleSheet.create({
     color: Colors.primary[500],
   },
 
-  // ── Load more / empty / FAB ──
-  loadMoreButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.primary[500] + "40",
-    backgroundColor: Colors.background.secondary,
-  },
-  loadMoreText: {
-    fontFamily: FontFamilies.poppinsSemiBold,
-    fontSize: FontSizes.bodyMD,
-    color: Colors.primary[500],
-  },
+  // ── Empty / FAB ──
   emptyState: { alignItems: "center", paddingTop: 40, paddingHorizontal: 32 },
   emptyTitle: {
     fontFamily: FontFamilies.poppinsSemiBold,

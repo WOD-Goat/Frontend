@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
     REGISTER_TOKEN: "/api/notifications/token",
     DELETE_TOKEN: "/api/notifications/token",
   },
+  JOIN: {
+    RESOLVE_CODE: "/api/join/resolve",
+  },
   GROUPS: {
     CREATE: "/api/groups",
     GET_MY_GROUPS: "/api/groups/my-groups",
@@ -56,6 +59,7 @@ export const API_ENDPOINTS = {
       `/api/groups/${groupId}/workouts/${workoutId}`,
     DELETE_WORKOUT: (groupId: string, workoutId: string) =>
       `/api/groups/${groupId}/workouts/${workoutId}`,
+    GET_MEMBERS: (groupId: string) => `/api/groups/${groupId}/members`,
     REMOVE_MEMBER: (groupId: string, userId: string) =>
       `/api/groups/${groupId}/members/${userId}`,
     GET_MEMBER_DETAIL: (groupId: string, userId: string) =>
@@ -64,6 +68,18 @@ export const API_ENDPOINTS = {
       `/api/groups/${groupId}/members/${userId}/subscription`,
     GET_MEMBER_SUBSCRIPTION: (groupId: string, userId: string) =>
       `/api/groups/${groupId}/members/${userId}/subscription`,
+  },
+  PROGRAMS: {
+    LOOKUP_BY_CODE: (code: string) => `/api/programs/by-code/${code}`,
+    JOIN: "/api/programs/join",
+    GET_MEMBER_PROGRAMS: "/api/programs/member-programs",
+    GET_BY_ID: (id: string) => `/api/programs/${id}`,
+    GET_WORKOUTS: (id: string) => `/api/programs/${id}/workouts`,
+    GET_WORKOUT: (id: string, workoutId: string) =>
+      `/api/programs/${id}/workouts/${workoutId}`,
+    SUBMIT_WORKOUT: (id: string, workoutId: string) =>
+      `/api/programs/${id}/workouts/${workoutId}/submit`,
+    LEAVE: (id: string, userId: string) => `/api/programs/${id}/members/${userId}`,
   },
   APP: {
     VERSION: '/api/app/version',

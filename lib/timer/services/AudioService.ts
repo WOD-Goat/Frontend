@@ -75,6 +75,7 @@ class AudioService {
       await setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
+        interruptionMode: "duckOthers",
       });
 
       this._preloadSounds();

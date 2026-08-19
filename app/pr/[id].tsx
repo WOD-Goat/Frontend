@@ -240,6 +240,12 @@ export default function PRDetailScreen() {
               {" "}
               {formatPRValue(latestPR.actualPR, trackingType).unit}
             </Text>
+            {trackingType === "weight_reps" && !!latestPR.reps && (
+              <Text style={styles.prReps}>
+                {" "}
+                × {latestPR.reps} REPS
+              </Text>
+            )}
           </Text>
         </View>
         {latestPR.estimatedPR !== null &&
@@ -247,7 +253,7 @@ export default function PRDetailScreen() {
           latestPR.estimatedPR !== latestPR.actualPR && (
             <View style={styles.estimatedBadge}>
               <Ionicons name="sparkles" size={16} color={Colors.primary[500]} />
-              <Text style={styles.estimatedLabel}>Next Estimated 1RM</Text>
+              <Text style={styles.estimatedLabel}>Next Estimated 1RM = </Text>
               <Text style={styles.estimatedValue}>
                 {formatPRValue(latestPR.estimatedPR, trackingType).display}{" "}
                 {formatPRValue(latestPR.estimatedPR, trackingType).unit}
@@ -391,6 +397,9 @@ export default function PRDetailScreen() {
                       {" "}
                       {formatPRValue(pr.actualPR, trackingType).unit}
                     </Text>
+                    {trackingType === "weight_reps" && !!pr.reps && (
+                      <Text style={styles.historyReps}> × {pr.reps} REPS</Text>
+                    )}
                   </Text>
                   <View style={styles.historyRight}>
                     <View style={styles.rankBadge}>
@@ -519,6 +528,11 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
   },
+  prReps: {
+    fontSize: FontSizes.headingXL,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.text.secondary,
+  },
   prUnit: {
     fontSize: FontSizes.headingXL,
     fontFamily: FontFamilies.spartanBold,
@@ -541,7 +555,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    gap: 8,
+    gap: 0,
   },
   estimatedLabel: {
     fontSize: FontSizes.bodySM,
@@ -646,6 +660,11 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.headingMD,
     fontFamily: FontFamilies.spartanBold,
     color: Colors.text.inverse,
+  },
+  historyReps: {
+    fontSize: FontSizes.headingMD,
+    fontFamily: FontFamilies.spartanBold,
+    color: Colors.text.secondary,
   },
   historyRight: {
     alignItems: "flex-end",

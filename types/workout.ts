@@ -50,7 +50,10 @@ export interface AssignedWorkoutData {
   assignedBy: string; // userId of creator (self/friend)
   groupId: string | null; // optional if assigned to a group
   groupName?: string | null; // name of the group if this is a group workout
-  source?: "personal" | "group"; // source of the workout
+  programId?: string | null; // set when source === "program"
+  programName?: string | null; // name of the program if this is a program-day workout
+  dayNumber?: number; // program-relative day number, present when source === "program"
+  source?: "personal" | "group" | "program"; // source of the workout
   assignedAt: Date;
   scheduledFor: Date; // day user is expected to do it
   completed: boolean;

@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from "@/api/endpoints";
 import type {
   CreateGroupData,
   CreateGroupWorkoutData,
+  GroupMembersPageResponse,
   GroupMembersResponse,
   GroupResponse,
   GroupsResponse,
@@ -27,31 +28,64 @@ export const groupsService = {
   /**
    * Get groups created by the current user
    */
-  getMyGroups: async (): Promise<GroupsResponse> => {
-    const response = await apiClient.get<GroupsResponse>(
-      API_ENDPOINTS.GROUPS.GET_MY_GROUPS,
-    );
+  getMyGroups: async (
+    limit?: number,
+    cursor?: string | null,
+  ): Promise<GroupsResponse> => {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append("limit", String(limit));
+    if (cursor) params.append("cursor", cursor);
+    const query = params.toString();
+    const endpoint = query
+      ? `${API_ENDPOINTS.GROUPS.GET_MY_GROUPS}?${query}`
+      : API_ENDPOINTS.GROUPS.GET_MY_GROUPS;
+    const response = await apiClient.get<GroupsResponse>(endpoint);
     return response as unknown as GroupsResponse;
   },
 
   /**
    * Get groups the current user is a member of (but didn't create)
    */
-  getMemberGroups: async (): Promise<GroupsResponse> => {
-    const response = await apiClient.get<GroupsResponse>(
-      API_ENDPOINTS.GROUPS.GET_MEMBER_GROUPS,
-    );
+  getMemberGroups: async (
+    limit?: number,
+    cursor?: string | null,
+  ): Promise<GroupsResponse> => {
+    const params = new URLSearchParams();
+    if (limit !== undefined) params.append("limit", String(limit));
+    if (cursor) params.append("cursor", cursor);
+    const query = params.toString();
+    const endpoint = query
+      ? `${API_ENDPOINTS.GROUPS.GET_MEMBER_GROUPS}?${query}`
+      : API_ENDPOINTS.GROUPS.GET_MEMBER_GROUPS;
+    const response = await apiClient.get<GroupsResponse>(endpoint);
     return response as unknown as GroupsResponse;
   },
 
   /**
-   * Get a specific group with member details
+   * Get a specific group (summary + admin profile; roster is paginated separately via getGroupMembers)
    */
   getGroupById: async (groupId: string): Promise<GroupMembersResponse> => {
     const response = await apiClient.get<GroupMembersResponse>(
       API_ENDPOINTS.GROUPS.GET_BY_ID(groupId),
     );
     return response as unknown as GroupMembersResponse;
+  },
+
+  /**
+   * Get a paginated page of a group's (non-admin) members
+   */
+  getGroupMembers: async (
+    groupId: string,
+    limit: number,
+    offset: number,
+  ): Promise<GroupMembersPageResponse> => {
+    const params = new URLSearchParams();
+    params.append("limit", String(limit));
+    params.append("offset", String(offset));
+    const response = await apiClient.get<GroupMembersPageResponse>(
+      `${API_ENDPOINTS.GROUPS.GET_MEMBERS(groupId)}?${params.toString()}`,
+    );
+    return response as unknown as GroupMembersPageResponse;
   },
 
   /**

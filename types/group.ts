@@ -6,7 +6,7 @@ export interface Group {
   name: string;
   createdBy: string;
   memberIds?: string[];   // list endpoints (getMyGroups / getMemberGroups)
-  members?: GroupMember[]; // detail endpoint (getGroupById)
+  admin?: GroupMember | null; // detail endpoint (getGroupById) — coach/admin profile only
   totalMembers?: number;
   joinCode?: string;
   createdAt: Date;
@@ -23,6 +23,7 @@ export interface GroupResponse {
 export interface GroupsResponse {
   success: boolean;
   data: Group[];
+  nextCursor?: string | null;
   message?: string;
 }
 
@@ -50,6 +51,16 @@ export type GroupWithMembers = Group;
 export interface GroupMembersResponse {
   success: boolean;
   data: Group;
+  message?: string;
+}
+
+export interface GroupMembersPageResponse {
+  success: boolean;
+  data: {
+    members: GroupMember[];
+    totalMembers: number;
+    hasMore: boolean;
+  };
   message?: string;
 }
 

@@ -1,16 +1,17 @@
-import { groupsService } from "@/api/services";
+import { groupsService, programsService } from "@/api/services";
 import { Gap, Page } from "@/components";
 import { useGlobalState } from "@/components/lib";
 import { useToast } from "@/components/lib/toast/ToastProvider";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
-import type { Group } from "@/types";
+import type { Group, MemberProgram } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { parseFirebaseDate } from "@/utils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  FlatList,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -134,6 +135,47 @@ function GroupCard({ group }: { group: Group & { isAdmin: boolean } }) {
   );
 }
 
+function ProgramCard({ program }: { program: MemberProgram }) {
+  const initials = program.name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 3);
+  const progressPct = Math.min(100, Math.max(0, Math.round((program.currentDayNumber / program.durationDays) * 100)));
+
+  return (
+    <Pressable style={styles.groupCard} onPress={() => router.push(`/program/${program.id}` as any)}>
+      <View style={[styles.groupAvatar, styles.programAvatar]}>
+        <Text style={styles.groupAvatarText}>{initials}</Text>
+      </View>
+      <View style={styles.groupCardContent}>
+        <View style={styles.groupCardNameRow}>
+          <Text style={styles.groupCardName} numberOfLines={1}>
+            {program.name}
+          </Text>
+          <View style={styles.programBadge}>
+            <Ionicons name="calendar" size={10} color={Colors.primary[500]} />
+            <Text style={styles.adminBadgeText}>Program</Text>
+          </View>
+        </View>
+        <View style={styles.statPills}>
+          <View style={styles.statPill}>
+            <Ionicons name="flame-outline" size={11} color={Colors.text.secondary} />
+            <Text style={styles.statPillText}>
+              {program.isComplete ? "Completed" : `Day ${program.currentDayNumber}/${program.durationDays}`}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.programProgressTrack}>
+          <View style={[styles.programProgressFill, { width: `${progressPct}%` }]} />
+        </View>
+      </View>
+      <Ionicons name="chevron-forward" size={16} color={Colors.neutral[600]} />
+    </Pressable>
+  );
+}
+
 function LockedGroupCard({
   group,
   hint,
@@ -187,16 +229,26 @@ function EmptyState() {
   );
 }
 
-type FilterType = "all" | "admin" | "member";
+type FilterType = "all" | "groups" | "programs";
 
 const FILTER_TABS: { key: FilterType; label: string; icon: any }[] = [
   { key: "all", label: "All", icon: "apps" },
-  { key: "admin", label: "Admin", icon: "star" },
-  { key: "member", label: "Member", icon: "person" },
+  { key: "groups", label: "Groups", icon: "people" },
+  { key: "programs", label: "Programs", icon: "calendar" },
 ];
+
+type ListItem =
+  | { kind: "group"; id: string; group: Group & { isAdmin: boolean } }
+  | { kind: "program"; id: string; program: MemberProgram };
+
+// Bounds the "fetch everything" backend read — real infinite scroll isn't wired
+// up here yet since the groupJoinMax lock logic below depends on having the
+// full joined-groups set in memory to compute which ones are over the limit.
+const GROUPS_FETCH_LIMIT = 100;
 
 export default function GroupsScreen() {
   const [allGroups, setAllGroups] = useState<(Group & { isAdmin: boolean })[]>([]);
+  const [programs, setPrograms] = useState<MemberProgram[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>("all");
   const { showToast } = useToast();
@@ -227,15 +279,17 @@ export default function GroupsScreen() {
   const loadGroups = async () => {
     try {
       setLoading(true);
-      const [myRes, memberRes] = await Promise.all([
-        groupsService.getMyGroups(),
-        groupsService.getMemberGroups(),
+      const [myRes, memberRes, programsRes] = await Promise.all([
+        groupsService.getMyGroups(GROUPS_FETCH_LIMIT),
+        groupsService.getMemberGroups(GROUPS_FETCH_LIMIT),
+        programsService.getMemberPrograms(),
       ]);
 const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isAdmin: true }));
       const joinedGroups = (memberRes.success ? memberRes.data ?? [] : [])
         .filter((g) => g.createdBy !== currentUid)
         .map((g) => ({ ...g, isAdmin: false }));
       setAllGroups([...myGroups, ...joinedGroups]);
+      setPrograms(programsRes.success ? programsRes.data ?? [] : []);
       if (!myRes.success || !memberRes.success) {
         showToast({ type: "error", label: "Failed to load some groups" });
       }
@@ -245,6 +299,30 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
       setLoading(false);
     }
   };
+
+  // Determine which joined groups are over the plan limit.
+  // Sort by createdAt ascending so the oldest (first joined) stays accessible.
+  const joinedGroups = allGroups.filter((g) => !g.isAdmin);
+  const sortedJoined = [...joinedGroups].sort((a, b) => {
+    const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
+    const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
+    return aDate - bDate;
+  });
+  const lockedJoinedIds = new Set(
+    sortedJoined
+      .filter((_, i) => !withinLimit("groupJoinMax", i))
+      .map((g) => g.id),
+  );
+
+  const combinedItems: ListItem[] = [
+    ...programs.map((program): ListItem => ({ kind: "program", id: `program-${program.id}`, program })),
+    ...allGroups.map((group): ListItem => ({ kind: "group", id: `group-${group.id}`, group })),
+  ];
+
+  const visibleItems = combinedItems.filter((item) => {
+    if (filter === "all") return true;
+    return filter === "programs" ? item.kind === "program" : item.kind === "group";
+  });
 
   return (
     <Page showBackButton={false}>
@@ -279,7 +357,7 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
       <Gap size={16} />
 
       {/* Filter pills */}
-      {!loading && allGroups.length > 0 && (
+      {!loading && combinedItems.length > 0 && (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -321,65 +399,52 @@ const myGroups = (myRes.success ? myRes.data ?? [] : []).map((g) => ({ ...g, isA
         <>
           {[0, 1, 2, 3].map((i) => <GroupCardSkeleton key={i} />)}
         </>
-      ) : allGroups.length === 0 ? (
+      ) : combinedItems.length === 0 ? (
         <EmptyState />
       ) : (
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {(() => {
-            // Determine which joined groups are over the plan limit.
-            // Sort by createdAt ascending so the oldest (first joined) stays accessible.
-            const joinedGroups = allGroups.filter((g) => !g.isAdmin);
-            const sortedJoined = [...joinedGroups].sort((a, b) => {
-              const aDate = a.createdAt ? parseFirebaseDate(a.createdAt).getTime() : 0;
-              const bDate = b.createdAt ? parseFirebaseDate(b.createdAt).getTime() : 0;
-              return aDate - bDate;
-            });
-            const lockedJoinedIds = new Set(
-              sortedJoined
-                .filter((_, i) => !withinLimit("groupJoinMax", i))
-                .map((g) => g.id),
-            );
-
-            return allGroups
-              .filter((g) => filter === "all" || (filter === "admin" ? g.isAdmin : !g.isAdmin))
-              .map((group) => {
-                if (!group.isAdmin && lockedJoinedIds.has(group.id)) {
-                  return (
-                    <LockedGroupCard
-                      key={group.id}
-                      group={group}
-                      hint="Upgrade to Athlete Pro to access"
-                      onUpgrade={() =>
-                        guardLimit("groupJoinMax", joinedGroups.length, () =>
-                          router.push(`/group/${group.id}`),
-                        )
-                      }
-                    />
-                  );
-                }
-                if (group.isAdmin && !canAccess("createGroup")) {
-                  return (
-                    <LockedGroupCard
-                      key={group.id}
-                      group={group}
-                      hint={
-                        coachSuspensionReason === 'expired'
-                          ? "Subscription expired — contact WODGoat team to resubscribe"
-                          : coachSuspensionReason === 'admin'
-                          ? "Account suspended — contact WODGoat team"
-                          : "Coach feature — apply from your profile"
-                      }
-                      onUpgrade={() =>
-                        guard("createGroup", () => router.push(`/group/${group.id}`))
-                      }
-                    />
-                  );
-                }
-                return <GroupCard key={group.id} group={group} />;
-              });
-          })()}
-          <Gap size={160} />
-        </ScrollView>
+        <FlatList
+          data={visibleItems}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            if (item.kind === "program") {
+              return <ProgramCard program={item.program} />;
+            }
+            const group = item.group;
+            if (!group.isAdmin && lockedJoinedIds.has(group.id)) {
+              return (
+                <LockedGroupCard
+                  group={group}
+                  hint="Upgrade to Athlete Pro to access"
+                  onUpgrade={() =>
+                    guardLimit("groupJoinMax", joinedGroups.length, () =>
+                      router.push(`/group/${group.id}`),
+                    )
+                  }
+                />
+              );
+            }
+            if (group.isAdmin && !canAccess("createGroup")) {
+              return (
+                <LockedGroupCard
+                  group={group}
+                  hint={
+                    coachSuspensionReason === 'expired'
+                      ? "Subscription expired — contact WODGoat team to resubscribe"
+                      : coachSuspensionReason === 'admin'
+                      ? "Account suspended — contact WODGoat team"
+                      : "Coach feature — apply from your profile"
+                  }
+                  onUpgrade={() =>
+                    guard("createGroup", () => router.push(`/group/${group.id}`))
+                  }
+                />
+              );
+            }
+            return <GroupCard group={group} />;
+          }}
+          ListFooterComponent={<Gap size={160} />}
+        />
       )}
     </Page>
   );
@@ -445,6 +510,37 @@ const styles = StyleSheet.create({
     fontFamily: FontFamilies.spartanSemiBold,
     fontSize: FontSizes.bodySM,
     color: Colors.primary[500],
+  },
+  sectionLabel: {
+    fontFamily: FontFamilies.spartanBold,
+    fontSize: responsiveSize(12),
+    color: Colors.text.secondary,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  programAvatar: {
+    backgroundColor: Colors.primary[500] + "30",
+  },
+  programBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: Colors.primary[500] + "18",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  programProgressTrack: {
+    height: 3,
+    backgroundColor: Colors.neutral[700],
+    borderRadius: 2,
+    overflow: "hidden",
+    marginTop: 2,
+  },
+  programProgressFill: {
+    height: 3,
+    backgroundColor: Colors.primary[500],
+    borderRadius: 2,
   },
   groupCard: {
     flexDirection: "row",

@@ -21,7 +21,10 @@ const STATUS_CONFIG: Record<WorkoutStatus, { label: string; color: string }> = {
 };
 
 function getStatus(workout: AssignedWorkoutData): WorkoutStatus {
-  const done = workout.source === "group" ? workout.hasSubmitted : workout.completed;
+  const done =
+    workout.source === "group" || workout.source === "program"
+      ? workout.hasSubmitted
+      : workout.completed;
   if (done) return "completed";
   const scheduled = parseFirebaseDate(workout.scheduledFor);
   if (scheduled.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)) return "missed";
@@ -95,11 +98,17 @@ export default function DayWorkoutCard({ workout, selectedDate, isToday, showEye
   const visibleWods = workout.wods.slice(0, 2);
   const extraCount = workout.wods.length - 2;
   const sourceLabel =
-    workout.source === "group" && workout.groupName ? workout.groupName : "Personal";
+    workout.source === "group" && workout.groupName
+      ? workout.groupName
+      : workout.source === "program" && workout.programName
+      ? workout.programName
+      : "Personal";
 
   const navigateToWorkout = () => {
     if (workout.source === "group" && workout.groupId) {
       router.push(`/group/workout/${workout.id}?groupId=${workout.groupId}` as any);
+    } else if (workout.source === "program" && workout.programId) {
+      router.push(`/program/workout/${workout.id}?programId=${workout.programId}` as any);
     } else {
       router.push(`/workout/${workout.id}` as any);
     }

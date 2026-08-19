@@ -80,7 +80,10 @@ export default function WorkoutsScreen() {
   };
 
   const workoutStatus = (workout: AssignedWorkoutData): "completed" | "missed" | "not-started-yet" => {
-    const done = workout.source === "group" ? workout.hasSubmitted : workout.completed;
+    const done =
+      workout.source === "group" || workout.source === "program"
+        ? workout.hasSubmitted
+        : workout.completed;
     if (done) return "completed";
     const scheduled = parseFirebaseDate(workout.scheduledFor);
     if (scheduled.setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0)) return "missed";
