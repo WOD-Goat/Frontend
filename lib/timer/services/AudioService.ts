@@ -56,6 +56,16 @@ class AudioService {
   // Minimum ms between identical sound effects (prevents double-fire on rapid ticks)
   private readonly DEBOUNCE_MS = 150;
 
+  // How long to hold background music ducked after the last cue before
+  // letting it back up to full volume. Long enough to bridge back-to-back
+  // per-second cues (e.g. "3", "2", "1", go-horn) into one continuous duck,
+  // short enough to release quickly once cues actually stop (e.g. the silent
+  // stretch of the lead-in countdown between "Get Ready" and "3").
+  private readonly UNDUCK_GRACE_MS = 1300;
+
+  private _isDucking = false;
+  private _unduckTimer: ReturnType<typeof setTimeout> | null = null;
+
   // ─── Initialization ─────────────────────────────────────────────────────────
 
   /**
@@ -65,8 +75,9 @@ class AudioService {
    * Audio session config:
    *  - `staysActiveInBackground: true`  → keeps playback alive when screen locks
    *  - `playsInSilentModeIOS: true`     → overrides iOS silent/ringer switch
-   *  - `interruptionModeIOS: DuckOthers` → lowers background music for our beeps
-   *  - `shouldDuckAndroid: true`         → same for Android
+   *  - `interruptionMode: mixWithOthers` → background music plays at full volume
+   *    by default; we only switch to `duckOthers` transiently around each cue
+   *    (see `_duckForCue`) instead of holding the whole session ducked.
    */
   async init(): Promise<void> {
     if (this.state.isReady) return;
@@ -75,7 +86,7 @@ class AudioService {
       await setAudioModeAsync({
         playsInSilentMode: true,
         shouldPlayInBackground: true,
-        interruptionMode: "duckOthers",
+        interruptionMode: "mixWithOthers",
       });
 
       this._preloadSounds();
@@ -97,6 +108,7 @@ class AudioService {
     this._currentTTSPriority = -1;
     this.state.ttsPriorityQueue = [];
     this.state.lastPlayed = {};
+    this._releaseDuck();
   }
 
   /** Release all Sound objects. Call on timer screen unmount. */
@@ -111,6 +123,7 @@ class AudioService {
     this.state.ttsPriorityQueue = [];
     this.state.isSpeaking = false;
     Speech.stop();
+    this._releaseDuck();
   }
 
   // ─── Event processing ───────────────────────────────────────────────────────
@@ -159,6 +172,8 @@ class AudioService {
     const player = this.state.sounds[id];
     if (!player) return;
 
+    this._duckForCue();
+
     try {
       // Rewind to start so rapid re-triggers work correctly.
       // Fire-and-forget seekTo — don't await it; the player handles
@@ -188,6 +203,8 @@ class AudioService {
       Speech.stop();
     }
 
+    this._duckForCue();
+
     this._currentTTSPriority = priority;
     this.state.isSpeaking = true;
 
@@ -213,6 +230,59 @@ class AudioService {
         this._currentTTSPriority = -1;
       },
     });
+  }
+
+  // ─── Ducking ─────────────────────────────────────────────────────────────────
+
+  /**
+   * Switch to `duckOthers` right before a cue plays, and schedule a
+   * switch back to `mixWithOthers` after a grace period. Called on every
+   * cue, so consecutive cues within the grace window (e.g. "3", "2", "1")
+   * just re-arm the timer and never audibly un-duck in between — but a real
+   * silent stretch (e.g. the lead-in between "Get Ready" and "3") lets
+   * background music back up to full volume instead of staying lowered
+   * the whole time.
+   */
+  private _duckForCue(): void {
+    if (this._unduckTimer) {
+      clearTimeout(this._unduckTimer);
+      this._unduckTimer = null;
+    }
+
+    if (!this._isDucking) {
+      this._isDucking = true;
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: "duckOthers",
+      }).catch(() => {});
+    }
+
+    this._unduckTimer = setTimeout(() => {
+      this._unduckTimer = null;
+      this._isDucking = false;
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: "mixWithOthers",
+      }).catch(() => {});
+    }, this.UNDUCK_GRACE_MS);
+  }
+
+  /** Cancel any pending un-duck and force background audio back to full volume. */
+  private _releaseDuck(): void {
+    if (this._unduckTimer) {
+      clearTimeout(this._unduckTimer);
+      this._unduckTimer = null;
+    }
+    if (this._isDucking) {
+      this._isDucking = false;
+      setAudioModeAsync({
+        playsInSilentMode: true,
+        shouldPlayInBackground: true,
+        interruptionMode: "mixWithOthers",
+      }).catch(() => {});
+    }
   }
 
   // ─── Preload ─────────────────────────────────────────────────────────────────

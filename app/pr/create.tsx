@@ -76,11 +76,20 @@ export default function CreatePRScreen() {
   const formAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(formAnim, {
-      toValue: selectedExercise ? 1 : 0,
-      duration: 280,
-      useNativeDriver: true,
-    }).start();
+    const target = selectedExercise ? 1 : 0;
+    // Deferred to the next frame so this doesn't start in the same tick the
+    // exercise search sheet is dismissed (its own close transition can
+    // otherwise swallow this animation's commit and leave it stuck at 0).
+    const raf = requestAnimationFrame(() => {
+      Animated.timing(formAnim, {
+        toValue: target,
+        duration: 280,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) formAnim.setValue(target);
+      });
+    });
+    return () => cancelAnimationFrame(raf);
   }, [selectedExercise]);
 
   const handleSelectExercise = (exercise: StandardExercise) => {

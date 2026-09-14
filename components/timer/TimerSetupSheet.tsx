@@ -6,24 +6,18 @@ import {
   Animated,
   Dimensions,
   Keyboard,
-  LayoutAnimation,
   Platform,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  UIManager,
   View,
 } from "react-native";
 import { BottomSheet as RNBottomSheet } from "react-native-btr";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WODConfigForm } from "./WODConfigForm";
 import type { WODConfigFormHandle } from "./WODConfigForm";
-
-if (Platform.OS === "android") {
-  UIManager.setLayoutAnimationEnabledExperimental?.(true);
-}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -72,35 +66,29 @@ export function TimerSetupSheet({ visible, onClose, onConfirm }: TimerSetupSheet
     }
   }, [visible]);
 
-  const configureLayout = () =>
-    LayoutAnimation.configureNext({
-      duration: 260,
-      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      update: { type: LayoutAnimation.Types.easeInEaseOut },
-      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-    });
-
   const advanceTo1 = (mode: WODMode) => {
     setSelectedMode(mode);
     slideAnim.setValue(SCREEN_WIDTH);
-    configureLayout();
     setStep(1);
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 260,
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      if (!finished) slideAnim.setValue(0);
+    });
   };
 
   const backTo0 = () => {
     slideAnim.setValue(-SCREEN_WIDTH);
-    configureLayout();
     setStep(0);
     Animated.timing(slideAnim, {
       toValue: 0,
       duration: 260,
       useNativeDriver: true,
-    }).start();
+    }).start(({ finished }) => {
+      if (!finished) slideAnim.setValue(0);
+    });
   };
 
   const handleClose = () => {
