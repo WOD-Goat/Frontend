@@ -6,8 +6,7 @@
 //
 // Required packages (add to package.json):
 //   expo-keep-awake  → npx expo install expo-keep-awake
-//   expo-av          → npx expo install expo-av
-//   expo-speech      → npx expo install expo-speech
+//   expo-audio       → npx expo install expo-audio
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useKeepAwake } from "expo-keep-awake";
@@ -69,7 +68,7 @@ export function useTimer() {
           backgroundedAtRef.current = Date.now();
           if (store.isRunning) {
             // Save snapshot so we can restore if the OS kills the app.
-            // The engine keeps ticking; expo-av audio mode keeps sounds alive.
+            // The engine keeps ticking; the expo-audio keep-alive loop keeps JS alive.
             store.saveSnapshot();
           }
         }

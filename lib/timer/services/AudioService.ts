@@ -27,12 +27,10 @@ import type { AudioEvent, SoundCueId } from "../types";
 const KEEPALIVE_ASSET: number = require("../../../assets/sounds/timer/silence.wav");
 
 const SOUND_ASSETS: Record<SoundCueId, number> = {
-  beep_countdown: require("../../../assets/sounds/timer/beep_countdown.wav"),
   beep_go: require("../../../assets/sounds/timer/beep_go.wav"),
   beep_warning: require("../../../assets/sounds/timer/beep_warning.wav"),
   horn_start: require("../../../assets/sounds/timer/horn_start.wav"),
   horn_end: require("../../../assets/sounds/timer/horn_end.wav"),
-  buzzer_transition: require("../../../assets/sounds/timer/buzzer_transition.wav"),
 };
 
 // ─── Pre-generated voice clips ────────────────────────────────────────────────

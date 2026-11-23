@@ -164,12 +164,10 @@ export interface TickResult {
 // ─── Audio ───────────────────────────────────────────────────────────────────
 
 export type SoundCueId =
-  | "beep_countdown" // 3-2-1 each pip
   | "beep_go" // Final GO beep
-  | "beep_warning" // 5-second warning single beep
+  | "beep_warning" // Halfway / transition warning beep
   | "horn_start" // Round/interval start air horn
-  | "horn_end" // Session complete air horn
-  | "buzzer_transition"; // Work→Rest or Rest→Work transition
+  | "horn_end"; // Session complete air horn
 
 export interface AudioEvent {
   type: "SOUND" | "TTS";

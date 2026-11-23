@@ -10,7 +10,7 @@
 1. [Feature Specification](#1-feature-specification)
 2. [Timer Engine Design](#2-timer-engine-design)
 3. [Background + Audio Configuration](#3-background--audio-configuration)
-4. [Sound + TTS Strategy](#4-sound--tts-strategy)
+4. [Sound + Voice Strategy](#4-sound--voice-strategy)
 5. [MVVM Structure](#5-mvvm-structure)
 6. [State Management](#6-state-management)
 7. [UX Design for Distance Visibility](#7-ux-design-for-distance-visibility)
@@ -42,7 +42,7 @@
 #### EMOM (Every Minute On the Minute)
 
 - Repeating 60-second intervals. `N` total intervals = `N` minutes total session.
-- At the **start of every minute**: air horn + TTS "Round N".
+- At the **start of every minute**: air horn + voice "Next Round".
 - Countdown beeps in the final 3 seconds of each minute.
 - Engine completes after `N` minutes.
 - Display: primary = current minute countdown. Secondary = overall session time remaining.
@@ -57,7 +57,7 @@
 
 - Alternating **work / rest** blocks. Default: 20 s work / 10 s rest × 8 rounds.
 - Phase transitions trigger distinct sounds: horn for work start, buzzer for rest start.
-- TTS on work: "Work!", on rest: "Rest", on new round: "Round N. Work!".
+- Voice on work: "Work!", on rest: "Rest", on new round: "Next Round".
 - Background colour changes completely on phase transition (WORK = orange, REST = teal).
 - Final 3 seconds: countdown beeps regardless of phase.
 
@@ -65,14 +65,14 @@
 
 - Athlete defines an **ordered list of named blocks** (each: label, duration, phase type).
 - Blocks repeat for N **cycles** (e.g. blocks × 5 cycles = full session).
-- Each block can enable/disable TTS announcement.
-- Audio: TTS announces block label on transition. Countdown beeps in final 3 seconds of each block.
+- Each block can enable/disable its voice announcement.
+- Audio: voice says "Work!" or "Rest" by block type on transition (never the label). Countdown beeps in final 3 seconds of each block.
 - Use cases: "Squat 40s / Rest 20s / Pull-up 40s / Rest 20s" × 10.
 
 #### DEATH BY
 
 - The classic CrossFit ladder: perform N reps in minute N.
-- Engine tracks **per-minute intervals**. At the start of each minute: horn + TTS "Minute N — N reps!".
+- Engine tracks **per-minute intervals**. At the start of each minute: horn + voice "Next Minute".
 - 5-second warning beeps per minute.
 - Engine does not automatically detect failure — athlete stops manually or hits the max-minutes safety cap.
 - Clock display: current minute countdown (secondary), overall elapsed (primary).
@@ -83,7 +83,7 @@
 
 - Configurable: 3–30 seconds. Default: **10 seconds**.
 - Final 3 seconds: individual pip beeps (3...2...1).
-- At zero: "Go!" TTS + GO beep.
+- At zero: GO beep (`beep_go`).
 - Phase during lead-in: `COUNTDOWN` (yellow UI).
 
 ---
@@ -160,60 +160,39 @@ The `LeadInStrategy` is a Decorator that wraps any inner strategy with a countdo
 ### Required Packages
 
 ```bash
-npx expo install expo-av
-npx expo install expo-speech
+npx expo install expo-audio
 npx expo install expo-keep-awake
 ```
 
-### expo-av Audio Session (call ONCE on timer feature mount)
+### Audio session (set once in `AudioService.init()`)
 
 ```typescript
-await Audio.setAudioModeAsync({
-  allowsRecordingIOS: false,
-  staysActiveInBackground: true, // ← critical for background audio
-  playsInSilentModeIOS: true, // ← overrides iOS ringer switch
-  interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_DO_NOT_MIX,
-  interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
-  shouldDuckAndroid: false,
-  playThroughEarpieceAndroid: false,
+await setAudioModeAsync({
+  playsInSilentMode: true, // overrides the iOS ringer switch
+  shouldPlayInBackground: true, // keeps audio alive when the screen locks
+  interruptionMode: "mixWithOthers", // cues play over the user's music, no ducking
 });
 ```
 
-**Why `staysActiveInBackground: true`**: When the iOS app moves to background, the audio session would normally deactivate. This flag keeps it alive so sounds can still play when the screen locks.
+### app.json
 
-**Why `playsInSilentModeIOS: true`**: CrossFit athletes often use their phone in silent/vibrate mode. Without this flag, all workout cues would be silenced.
+The `expo-audio` plugin with `"enableBackgroundPlayback": true` adds the iOS `UIBackgroundModes: ["audio"]` entry and the Android foreground-service permissions. These are native settings: they only take effect in a dev/store build, **not** in Expo Go and not via OTA.
 
-### app.json Permissions
+### Background reliability
 
-```json
-{
-  "expo": {
-    "ios": {
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
-    },
-    "android": {
-      "permissions": ["FOREGROUND_SERVICE", "WAKE_LOCK"]
-    }
-  }
-}
-```
+`setInterval` is suspended when the app is backgrounded, so the timer never trusts it:
 
-`UIBackgroundModes: ["audio"]` is required by Apple for any app that plays audio in background. Without it the audio session is suspended within ~30 seconds of backgrounding. This flag also prevents App Store rejection.
+1. **Timestamp engine**: elapsed time is always `now - startedAt + accumulated`, never a tick count.
+2. **Silent keep-alive loop**: `AudioService.startKeepAlive()` loops `assets/sounds/timer/silence.wav` (volume 0) while the timer runs, so the OS keeps JS alive. It mixes with other audio, so the user's music is not interrupted. It stops on pause, stop and completion, so a paused workout can never fire cues.
+3. **Catch-up**: if a tick arrives more than 1.5 s late, `TimerEngine._tick` replays the skipped seconds and fires every cue crossed in between. Gaps over 10 s are treated as stale and dropped.
 
-### Background Reliability: What Actually Works
+| Mechanism | Screen locked? |
+| --- | --- |
+| `setInterval` alone | ❌ Throttled or paused |
+| Timestamp engine + keep-alive loop + catch-up | ✅ (verify on a real device; Android battery optimisation can still interfere) |
+| `expo-task-manager` background fetch | ❌ Fires every ~15 min |
 
-| Mechanism                                  | Works when screen locked?       | Works in background? |
-| ------------------------------------------ | ------------------------------- | -------------------- |
-| `setInterval` alone                        | ❌ Throttled to ~1 Hz or paused | ❌                   |
-| `expo-av` audio session (configured above) | ✅                              | ✅                   |
-| `expo-task-manager` background fetch       | Limited — fires every 15 min    | Partial              |
-| Timestamp-diff engine + audio session      | ✅                              | ✅                   |
-
-**The `expo-av` audio session keeps the JS runtime partially alive** when audio is buffered. Since our sounds are preloaded into `Audio.Sound` objects, the runtime stays active enough for our interval to fire correctly.
-
-**For absolute reliability on Android**: Consider adding a Foreground Service notification. This is a V2 item — V1 with the audio session is sufficient for 95% of workout durations.
+**For absolute reliability on Android**: consider a Foreground Service notification (V2).
 
 ### Screen Lock (Keep Awake)
 
@@ -227,51 +206,43 @@ Only render the component containing `useKeepAwake` while the timer is active. W
 
 ---
 
-## 4. Sound + TTS Strategy
+## 4. Sound + Voice Strategy
 
-### Decision Matrix: Sound Effect vs TTS
+There is **no device TTS**. Spoken cues are pre-generated MP3 clips in `assets/audio/`; sound effects are WAVs in `assets/sounds/timer/`.
 
-| Situation                    | Use                                                      | Reason                                                                |
-| ---------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------- |
-| 3-2-1 countdown pips         | **Sound** (beep)                                         | Must be fast, sub-50ms latency. TTS synthesis adds 200–400ms latency. |
-| GO! signal                   | **TTS** ("Go!")                                          | More motivating than a beep, still fast enough                        |
-| Phase transition (work→rest) | **Sound** (buzzer) + **TTS** ("Rest")                    | Redundant cues ensure athlete hears it during noise                   |
-| Round start                  | **Sound** (horn) + **TTS** ("Round N")                   | Context-bearing: athlete needs to know which round                    |
-| 5-second final warning       | **Sound** (warning beep)                                 | No time for TTS synthesis                                             |
-| Session complete             | **Sound** (horn) + **TTS** ("Time! Stop where you are.") | Both channels for certainty                                           |
-| 1-minute remaining           | **TTS** only                                             | Not time-critical; TTS is clearer than a beep alone                   |
+### Sound effects (`SoundCueId`)
 
-### Sound Preloading
+| ID | Fired by |
+| --- | --- |
+| `beep_go` | Go signal at the end of the lead-in |
+| `beep_warning` | Halfway alerts, Tabata work→rest, Custom block change |
+| `horn_start` | New EMOM/EXMOM/Death By round; Tabata new round or rest→work |
+| `horn_end` | Session complete |
 
-All sounds are loaded into `Audio.Sound` objects during `AudioService.init()`. Loading is parallel (`Promise.allSettled`). Failed loads are non-fatal — that sound simply stays silent.
+### Voice clips
 
-Loading strategy:
+The engine emits `TTS` events with fixed text. `AudioService` maps that exact text to a clip in `VOICE_ASSETS`. **Text with no clip is silent.** To add a cue: add the MP3 to `assets/audio/`, add one entry to `VOICE_ASSETS`, and emit the same text from the engine.
 
-- Use **WAV** format for beeps/horns (instant seek, no codec init latency)
-- Use **AAC** for longer sounds if file size is a concern (>1 second clips)
-- Store in `assets/sounds/timer/` — included in the app bundle, no network dependency
-- Maximum recommended file size: 100 KB per sound
+| Engine text | Clip |
+| --- | --- |
+| Get Ready, 1–5, 10, Rest | same-named file |
+| Halfway! | Halfway There |
+| One minute remaining | 1 min Remaining |
+| Work! | Lets Go |
+| Next Round / Next Minute | Next Round / Next Minute |
+| Time cap! Great work! | Time Cap Well Done Champ |
+| Time! Stop where you are. (AMRAP) | Time Out Well Done Champ |
+| EMOM complete. Well done! | Time Up Catch Your Breath You Earned It |
+| Tabata complete! / Workout complete! | Workout Completed |
 
-### Preventing Sound Overlap
+### Playback rules
 
-Two mechanisms:
-
-1. **Per-sound debounce** (150 ms): `lastPlayed[id]` timestamp. If the same sound was played within 150 ms, skip. This prevents double-firing when the engine tick straddles a second boundary.
-
-2. **TTS priority queue**: The `AudioService` tracks `currentTTSPriority`. If a new TTS arrives with higher priority, it calls `Speech.stop()` and speaks the new text immediately. Lower-priority TTS is discarded, not queued. This prevents a TTS backlog building up during rapid announcements.
-
-### Recommended Sound Files
-
-| ID                  | Description        | Duration | Source suggestion      |
-| ------------------- | ------------------ | -------- | ---------------------- |
-| `beep_countdown`    | Short pip          | ~100ms   | Single 880Hz sine tone |
-| `beep_go`           | Longer bright beep | ~300ms   | 3-pip ascending        |
-| `beep_warning`      | Warning tone       | ~200ms   | Lower 440Hz tone       |
-| `horn_start`        | Air horn           | ~500ms   | Classic air horn       |
-| `horn_end`          | Air horn (2x)      | ~800ms   | Two air horns          |
-| `buzzer_transition` | Buzzer             | ~400ms   | Sports buzzer          |
-
-Use royalty-free sound libraries: Freesound.org, ZapSplat, or generate using Audacity.
+- All players are preloaded in `AudioService.init()`.
+- Each player rewinds itself on `didJustFinish`, so the next `play()` starts instantly (avoids a seek/play race that made repeat cues silent).
+- **Beeps**: per-sound 150 ms debounce.
+- **Voice**: one clip at a time. A new cue of equal or higher priority interrupts; a lower priority cue is dropped, not queued. If several voice events land in one tick only the highest priority plays.
+- **No ducking**: cues play over the user's music at full volume.
+- `DEBUG_AUDIO` in `AudioService.ts` logs every play/skip (temporary; remove when stable).
 
 ---
 
@@ -284,7 +255,7 @@ features/timer/
 ├── engine/
 │   └── TimerEngine.ts        ← Pure timer logic. No React. No state. Just compute().
 ├── services/
-│   └── AudioService.ts       ← expo-av + expo-speech. Preload, play, TTS queue.
+│   └── AudioService.ts       ← expo-audio. Preload, play, voice queue, keep-alive.
 ├── viewmodels/
 │   └── timerStore.ts         ← Zustand store. Bridges engine output → React state.
 ├── hooks/
@@ -314,7 +285,7 @@ Pure computation. Zero React dependencies. Zero Zustand. Zero audio.
 **`services/`**
 Side effects only. No React state.
 
-- `AudioService` owns the `expo-av` session, preloaded sounds, and TTS queue.
+- `AudioService` owns the `expo-audio` session, preloaded sounds, voice clips, and the background keep-alive loop.
 - Called imperatively by the store on every tick.
 - Has its own internal state (sound instances, debounce timestamps).
 
@@ -503,8 +474,7 @@ The background flash uses React Native's standard `Animated` API (`useNativeDriv
 ### New packages to add
 
 ```bash
-npx expo install expo-av
-npx expo install expo-speech
+npx expo install expo-audio
 npx expo install expo-keep-awake
 ```
 
@@ -515,39 +485,14 @@ Already in `package.json` and ready to use:
 - `react-native-reanimated` ~3.17.4 ✅
 - `@react-native-async-storage/async-storage` ^2.2.0 ✅
 
-### app.json additions
+### app.json
 
-```json
-{
-  "expo": {
-    "plugins": [["expo-av", { "microphonePermission": false }]],
-    "ios": {
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
-    },
-    "android": {
-      "permissions": [
-        "android.permission.FOREGROUND_SERVICE",
-        "android.permission.WAKE_LOCK"
-      ]
-    }
-  }
-}
-```
+Use the `expo-audio` plugin with `enableBackgroundPlayback: true` (see section 3). Background audio is a native setting: it needs a dev/store build, not Expo Go or OTA.
 
-### Sound assets
+### Audio assets
 
-Create `assets/sounds/timer/` and add:
-
-```
-beep_countdown.wav
-beep_go.wav
-beep_warning.wav
-horn_start.wav
-horn_end.wav
-buzzer_transition.wav
-```
+- `assets/sounds/timer/`: `beep_go.wav`, `beep_warning.wav`, `horn_start.wav`, `horn_end.wav`, `silence.wav` (keep-alive loop).
+- `assets/audio/`: the voice MP3s listed in section 4.
 
 ### Expo Router route
 
@@ -568,8 +513,8 @@ export { default } from "@/features/timer/components/TimerScreen";
 | All 6 WOD modes (ForTime, AMRAP, EMOM, EXMOM, Tabata, Custom, DeathBy) | ✅ Implemented |
 | Drift-free timestamp engine                                            | ✅ Implemented |
 | Zustand MVVM store                                                     | ✅ Implemented |
-| expo-av background audio                                               | ✅ Implemented |
-| expo-speech TTS                                                        | ✅ Implemented |
+| expo-audio background audio (keep-alive loop + catch-up)               | ✅ Implemented |
+| Pre-generated voice clips (no device TTS)                              | ✅ Implemented |
 | Lead-in countdown + sounds                                             | ✅ Implemented |
 | Phase-driven colour system                                             | ✅ Implemented |
 | Final-second flash                                                     | ✅ Implemented |
@@ -615,5 +560,5 @@ export { default } from "@/features/timer/components/TimerScreen";
 
 ### ADR-04: No expo-task-manager for Background
 
-**Decision**: Rely on expo-av audio session for background persistence.  
-**Rationale**: `expo-task-manager` background fetch fires every 15 minutes — useless for workout timers. The audio session keep-alive is the right primitive for this use case. Tested reliable up to 90 minutes on both iOS and Android.
+**Decision**: Rely on the expo-audio session plus a silent keep-alive loop and timestamp catch-up for background persistence.  
+**Rationale**: `expo-task-manager` background fetch fires every 15 minutes — useless for workout timers. The audio session keep-alive is the right primitive for this use case. Verify on a real device with the screen locked (iOS and Android).
