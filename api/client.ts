@@ -3,7 +3,10 @@ import type { RefreshTokenResponse } from "@/types/auth";
 import type { ApiResponse } from "@/types/common";
 import { API_ENDPOINTS } from "./endpoints";
 
-const API_BASE_URL = "https://api.wodgoat.com";
+// Set EXPO_PUBLIC_API_URL in .env (local) or EAS env (builds). Falls back to production.
+const API_BASE_URL = (
+  process.env.EXPO_PUBLIC_API_URL || "https://api.wodgoat.com"
+).replace(/\/+$/, "");
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 

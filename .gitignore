@@ -40,3 +40,8 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# env files (examples are tracked)
+.env
+.env.local
+.env.*.local
