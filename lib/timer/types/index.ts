@@ -114,7 +114,7 @@ export interface CustomBlock {
   /** Duration of this block in seconds. */
   durationSeconds: number;
   phase: "WORK" | "REST";
-  /** If true, the engine announces this block label via TTS. Default true. */
+  /** If true, the engine announces the block start ("Work!" or "Rest" by phase). Default true. */
   announce: boolean;
 }
 

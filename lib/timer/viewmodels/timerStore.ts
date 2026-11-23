@@ -133,8 +133,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   // ─── Configure a new WOD ──────────────────────────────────────────────────
 
   configure(config: WODConfig) {
-    // Stop any in-flight speech from the previous session so isSpeaking
-    // never stays stuck at true and silences the new session's TTS.
+    // Stop any in-flight voice clip from the previous session so isSpeaking
+    // never stays stuck at true and silences the new session's cues.
     audioService.reset();
 
     // Reset throttle state
@@ -163,6 +163,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       });
 
       if (result.isComplete) {
+        audioService.stopKeepAlive();
         set({ isRunning: false });
         get().clearSnapshot();
       }
@@ -182,6 +183,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
 
   start() {
     if (!get().config) return;
+    audioService.startKeepAlive();
     timerEngine.start();
     set({ isRunning: true, hasStarted: true });
   },
@@ -189,6 +191,7 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
   // ─── Pause ────────────────────────────────────────────────────────────────
 
   pause() {
+    audioService.stopKeepAlive();
     const accumulated = timerEngine.pause();
     set({ isRunning: false, accumulatedMs: accumulated });
     get().saveSnapshot();
@@ -218,17 +221,20 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
         },
       });
       if (result.isComplete) {
+        audioService.stopKeepAlive();
         set({ isRunning: false });
         get().clearSnapshot();
       }
     });
 
+    audioService.startKeepAlive();
     set({ isRunning: true });
   },
 
   // ─── Stop ─────────────────────────────────────────────────────────────────
 
   stop() {
+    audioService.stopKeepAlive();
     timerEngine.stop();
     set({ isRunning: false });
     get().clearSnapshot();

@@ -287,7 +287,7 @@ class EMOMStrategy implements ModeStrategy {
 
     if (isNewRound) {
       audioEvents.push(beep("horn_start"));
-      audioEvents.push(tts(`Round ${round + 1}`, 8));
+      audioEvents.push(tts("Next Round", 8));
     }
 
     // Per-interval halfway alert
@@ -384,7 +384,7 @@ class TabataStrategy implements ModeStrategy {
 
     if (newRound) {
       audioEvents.push(beep("horn_start"));
-      audioEvents.push(tts(`Round ${round + 1}. Work!`, 8));
+      audioEvents.push(tts("Next Round", 8));
     } else if (phaseChanged && !isWork) {
       audioEvents.push(beep("beep_warning"));
       audioEvents.push(tts("Rest", 7));
@@ -508,7 +508,8 @@ class CustomStrategy implements ModeStrategy {
     if (block.id !== prevBlock.id) {
       audioEvents.push(beep("beep_warning"));
       if (block.announce) {
-        audioEvents.push(tts(block.label, 8));
+        // Voice clips are fixed: "Work!" / "Rest" by block type, never the label.
+        audioEvents.push(tts(block.phase === "REST" ? "Rest" : "Work!", 8));
       }
     } else {
       // Per-block halfway alert
@@ -581,9 +582,7 @@ class DeathByStrategy implements ModeStrategy {
     const prevMinute = Math.floor(previousElapsed / 60) + 1;
     if (currentMinute > prevMinute) {
       audioEvents.push(beep("horn_start"));
-      audioEvents.push(
-        tts(`Minute ${currentMinute}. ${currentMinute} reps!`, 8),
-      );
+      audioEvents.push(tts("Next Minute", 8));
     }
 
     if (crossedSecond(previousElapsed, elapsedSeconds)) {
@@ -678,6 +677,7 @@ export class TimerEngine {
 
   private readonly NORMAL_INTERVAL_MS = 100;
   private readonly FAST_INTERVAL_MS = 50;
+  private readonly MAX_CATCHUP_S = 10;
 
   // ─── Public API ─────────────────────────────────────────────────────────────
 
@@ -761,10 +761,31 @@ export class TimerEngine {
     const totalElapsedMs = this.accumulatedMs + (nowMs - this.startedAt);
     const elapsedSeconds = totalElapsedMs / 1000;
 
+    // CATCH-UP: setInterval may be throttled or suspended in the background.
+    // Strategies only look at the window (previous, now], so a late tick would
+    // skip every cue crossed in between. Replay the missed seconds one by one
+    // and collect their audio events. Gaps longer than MAX_CATCHUP_S are stale
+    // (e.g. app was frozen for minutes), so those cues are dropped.
+    const gap = elapsedSeconds - this.previousElapsedSeconds;
+    const missed: AudioEvent[] = [];
+    if (gap > 1.5 && gap <= this.MAX_CATCHUP_S) {
+      let prev = this.previousElapsedSeconds;
+      for (let t = prev + 1; t < elapsedSeconds; t += 1) {
+        const step = this.strategy.compute(t, prev);
+        missed.push(...step.audioEvents);
+        prev = t;
+        if (step.isComplete) break;
+      }
+      this.previousElapsedSeconds = prev;
+    }
+
     const result = this.strategy.compute(
       elapsedSeconds,
       this.previousElapsedSeconds,
     );
+    if (missed.length > 0) {
+      result.audioEvents = [...missed, ...result.audioEvents];
+    }
     this.previousElapsedSeconds = elapsedSeconds;
 
     this.onTick(result);
