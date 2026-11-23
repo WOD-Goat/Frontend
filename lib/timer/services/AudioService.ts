@@ -58,7 +58,7 @@ const VOICE_ASSETS: Record<string, number> = {
 };
 
 // TEMP: set false (or delete the dbg() calls) once dropped cues are fixed.
-const DEBUG_AUDIO = true;
+const DEBUG_AUDIO = false;
 const dbg = (msg: string): void => {
   if (DEBUG_AUDIO) console.log(`[audio ${Date.now() % 100000}] ${msg}`);
 };
