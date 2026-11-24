@@ -163,7 +163,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
       });
 
       if (result.isComplete) {
-        audioService.stopKeepAlive();
+        // Delay so the ending horn/voice are not cut by pausing the loop.
+        audioService.stopKeepAlive(8000);
         set({ isRunning: false });
         get().clearSnapshot();
       }
@@ -221,7 +222,8 @@ export const useTimerStore = create<TimerStore>((set, get) => ({
         },
       });
       if (result.isComplete) {
-        audioService.stopKeepAlive();
+        // Delay so the ending horn/voice are not cut by pausing the loop.
+        audioService.stopKeepAlive(8000);
         set({ isRunning: false });
         get().clearSnapshot();
       }

@@ -92,6 +92,8 @@ class AudioService {
 
   // ─── Initialization ─────────────────────────────────────────────────────────
 
+  private _initPromise: Promise<void> | null = null;
+
   /**
    * Call once, early in the timer feature's mount lifecycle (not at app boot,
    * to avoid unnecessary overhead on screens that don't use the timer).
@@ -104,21 +106,29 @@ class AudioService {
    */
   async init(): Promise<void> {
     if (this.state.isReady) return;
+    // Single-flight: concurrent callers (e.g. start handler + overlay mount)
+    // share one init so players are never preloaded twice.
+    if (this._initPromise) return this._initPromise;
 
-    try {
-      await setAudioModeAsync({
-        playsInSilentMode: true,
-        shouldPlayInBackground: true,
-        interruptionMode: "mixWithOthers",
-      });
+    this._initPromise = (async () => {
+      try {
+        await setAudioModeAsync({
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: "mixWithOthers",
+        });
 
-      this._preloadSounds();
-      this._preloadVoices();
-      this.state.isReady = true;
-    } catch (err) {
-      // Non-fatal: timer still works, just muted
-      console.warn("[AudioService] init failed:", err);
-    }
+        this._preloadSounds();
+        this._preloadVoices();
+        this.state.isReady = true;
+      } catch (err) {
+        // Non-fatal: timer still works, just muted
+        console.warn("[AudioService] init failed:", err);
+      } finally {
+        this._initPromise = null;
+      }
+    })();
+    return this._initPromise;
   }
 
   /**
@@ -129,6 +139,17 @@ class AudioService {
   reset(): void {
     this.stopKeepAlive();
     this._stopVoice();
+    // Silence and rewind every beep and voice clip so nothing from the
+    // previous timer is still playing or left mid-clip.
+    for (const player of [
+      ...Object.values(this.state.sounds),
+      ...Object.values(this.state.voices),
+    ]) {
+      try {
+        player?.pause();
+        player?.seekTo(0);
+      } catch (_) {}
+    }
     this.state.isSpeaking = false;
     this._currentTTSPriority = -1;
     this.state.ttsPriorityQueue = [];
@@ -290,8 +311,11 @@ class AudioService {
 
   private _keepAlive: AudioPlayer | null = null;
 
+  private _keepAliveStopTimer: ReturnType<typeof setTimeout> | null = null;
+
   /** Call when the timer starts or resumes. Safe to call repeatedly. */
   startKeepAlive(): void {
+    this._cancelKeepAliveStop();
     if (!this.state.isReady) return;
     try {
       if (!this._keepAlive) {
@@ -305,11 +329,30 @@ class AudioService {
     }
   }
 
-  /** Call on pause, stop, reset and completion. */
-  stopKeepAlive(): void {
+  /**
+   * Call on pause, stop, reset and completion.
+   * On completion pass a delay: pausing the loop in the same instant the ending
+   * horn/voice start made them inaudible, so let those finish first.
+   */
+  stopKeepAlive(delayMs = 0): void {
+    this._cancelKeepAliveStop();
+    if (delayMs > 0) {
+      this._keepAliveStopTimer = setTimeout(() => {
+        this._keepAliveStopTimer = null;
+        this.stopKeepAlive();
+      }, delayMs);
+      return;
+    }
     try {
       this._keepAlive?.pause();
     } catch (_) {}
+  }
+
+  private _cancelKeepAliveStop(): void {
+    if (this._keepAliveStopTimer) {
+      clearTimeout(this._keepAliveStopTimer);
+      this._keepAliveStopTimer = null;
+    }
   }
 
   // ─── Preload ─────────────────────────────────────────────────────────────────

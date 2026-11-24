@@ -723,6 +723,7 @@ export class TimerEngine {
     this.startedAt = null;
     this.accumulatedMs = 0;
     this.previousElapsedSeconds = 0;
+    this._currentIntervalMs = this.NORMAL_INTERVAL_MS;
   }
 
   /** Returns current accumulated ms without pausing. Useful for snapshotting. */
