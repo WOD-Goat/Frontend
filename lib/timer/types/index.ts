@@ -114,7 +114,7 @@ export interface CustomBlock {
   /** Duration of this block in seconds. */
   durationSeconds: number;
   phase: "WORK" | "REST";
-  /** If true, the engine announces this block label via TTS. Default true. */
+  /** If true, the engine announces the block start ("Work!" or "Rest" by phase). Default true. */
   announce: boolean;
 }
 
@@ -164,12 +164,10 @@ export interface TickResult {
 // ─── Audio ───────────────────────────────────────────────────────────────────
 
 export type SoundCueId =
-  | "beep_countdown" // 3-2-1 each pip
   | "beep_go" // Final GO beep
-  | "beep_warning" // 5-second warning single beep
+  | "beep_warning" // Halfway / transition warning beep
   | "horn_start" // Round/interval start air horn
-  | "horn_end" // Session complete air horn
-  | "buzzer_transition"; // Work→Rest or Rest→Work transition
+  | "horn_end"; // Session complete air horn
 
 export interface AudioEvent {
   type: "SOUND" | "TTS";

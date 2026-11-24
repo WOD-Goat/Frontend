@@ -126,14 +126,7 @@ export function WorkoutTimerOverlay({
             </Text>
           </TouchableOpacity>
 
-          {timer.isComplete ? (
-            <TouchableOpacity style={styles.headerBtn} onPress={onStop}>
-              <Ionicons name="checkmark-done" size={responsiveSize(18)} color="#34C759" />
-              <Text style={[styles.headerBtnText, { color: "#34C759" }]}>
-                Done
-              </Text>
-            </TouchableOpacity>
-          ) : !timer.isRunning && (
+          {!timer.isRunning && !timer.isComplete && (
             <TouchableOpacity style={styles.headerBtn} onPress={onStop}>
               <Ionicons name="close" size={responsiveSize(18)} color="#FF3B30" />
               <Text style={[styles.headerBtnText, { color: "#FF3B30" }]}>

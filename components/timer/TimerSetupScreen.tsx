@@ -5,7 +5,7 @@
 // On confirm:   pushes to app/timer/active  (full-screen, no bottom nav)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { Gap } from "@/components";
+import Gap from "@/components/ui/Gap";
 import Page from "@/components/ui/Page";
 import { Colors, FontFamilies, FontSizes, responsiveSize } from "@/constants";
 import { useFeatureGuard } from "@/hooks/useFeatureGuard";
